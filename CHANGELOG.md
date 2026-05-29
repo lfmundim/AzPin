@@ -13,3 +13,5 @@ All notable changes to AzPin are documented in this file.
 - Added `version.json` (Nerdbank.GitVersioning config, major=0, minor starts at 1).
 - Added `ExportOptions.plist` for Developer ID archive export.
 - Added `.github/workflows/release.yml` for tag-triggered build, notarization, and DMG release.
+- Added phased development task files (POC / MVP / Pre-release) to `src/macos/tasks/` (gitignored).
+- Added `.claude/skills/changelog-update.md` skill for PR-driven changelog updates.

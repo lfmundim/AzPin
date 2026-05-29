@@ -63,3 +63,6 @@ Fabric/
 .env
 .env.local
 secrets.xcconfig
+
+# Local dev tasks (not source controlled)
+src/macos/tasks/
