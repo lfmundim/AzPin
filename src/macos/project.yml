@@ -1,0 +1,45 @@
+name: AzPin
+options:
+  bundleIdPrefix: com.lfmundim
+  generateEmptyDirectories: true
+  defaultConfig: Debug
+  deploymentTarget:
+    macOS: "26.0"
+
+configs:
+  Debug: debug
+  Release: release
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "26.0"
+    ENABLE_HARDENED_RUNTIME: YES
+
+targets:
+  AzPin:
+    type: application
+    platform: macOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: AzPin
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lfmundim.azpin
+        INFOPLIST_FILE: AzPin/Info.plist
+        CODE_SIGN_ENTITLEMENTS: AzPin/AzPin.entitlements
+    scheme:
+      testTargets:
+        - AzPinTests
+
+  AzPinTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: AzPinTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lfmundim.azpin.tests
+    dependencies:
+      - target: AzPin
