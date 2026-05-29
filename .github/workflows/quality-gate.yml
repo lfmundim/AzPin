@@ -1,0 +1,29 @@
+name: Quality Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'release/v*'
+
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Select Xcode 26
+        run: sudo xcode-select -s /Applications/Xcode_26.app/Contents/Developer
+
+      - name: Install tooling
+        run: brew install xcbeautify
+
+      - name: Run tests
+        run: |
+          xcodebuild -scheme AzPin \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            test | xcbeautify

@@ -52,6 +52,7 @@ These are non-negotiable. Do not work around them.
 - **App Sandbox is OFF.** Required for `az` CLI shell access.
 - **No `DispatchQueue.main.async`.** Use `@MainActor` instead.
 - **No emoji in UI.** SF Symbols only.
+- **Every testable unit of code must ship with tests.** At minimum: all happy paths and all mapped error/sad paths. No exceptions for service layer code. See `.claude/skills/testing-approach.md`.
 
 ---
 

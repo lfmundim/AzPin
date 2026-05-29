@@ -4,6 +4,16 @@ Use this file when writing tests, setting up mocks, or deciding what to test. Az
 
 ---
 
+## Coverage Requirement
+
+Every testable unit of code added must include tests for:
+1. **All happy paths** — expected inputs produce expected outputs
+2. **All mapped sad paths** — every `catch`, `guard`, `.failure`, or conditional error branch must have a corresponding test
+
+This is a hard rule, not a guideline. PRs that add service logic without covering its error branches will fail review.
+
+---
+
 ## Philosophy
 
 Test the service layer thoroughly. Test views minimally. Do not test SwiftUI layout — that is what Preview is for.
