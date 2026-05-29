@@ -26,4 +26,14 @@ jobs:
           xcodebuild -scheme AzPin \
             -configuration Debug \
             -destination 'platform=macOS' \
+            -enableCodeCoverage YES \
+            -resultBundlePath build/test.xcresult \
             test | xcbeautify
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          swift_project: build/test.xcresult
+          fail_ci_if_error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
