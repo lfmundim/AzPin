@@ -7,7 +7,6 @@ protocol AzCLIServiceProtocol: Sendable {
     func isInstalled() -> Bool
 }
 
-@MainActor
 @Observable
 final class AzCLIService: AzCLIServiceProtocol {
     private let shell: ShellRunner

@@ -4,12 +4,10 @@ protocol PermissionsServiceProtocol: Sendable {
     func canManage(resource: PinnedResource) async -> Bool
 }
 
-@MainActor
-@Observable
 final class PermissionsService: PermissionsServiceProtocol {
     private let tokenCache: any TokenCacheProtocol
     private let session: URLSession
-    private var cache: [String: Bool] = [:]
+    private let cache = Cache()
 
     init(tokenCache: any TokenCacheProtocol, session: URLSession = .shared) {
         self.tokenCache = tokenCache
@@ -17,9 +15,9 @@ final class PermissionsService: PermissionsServiceProtocol {
     }
 
     func canManage(resource: PinnedResource) async -> Bool {
-        if let cached = cache[resource.id] { return cached }
+        if let cached = await cache.get(resource.id) { return cached }
         let result = await checkAccess(resource: resource)
-        cache[resource.id] = result
+        await cache.set(resource.id, value: result)
         return result
     }
 
@@ -38,5 +36,17 @@ final class PermissionsService: PermissionsServiceProtocol {
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let value = json["value"] as? [[String: Any]] else { return false }
         return !value.isEmpty
+    }
+
+    private actor Cache {
+        private var storage: [String: Bool] = [:]
+
+        func get(_ key: String) -> Bool? {
+            storage[key]
+        }
+
+        func set(_ key: String, value: Bool) {
+            storage[key] = value
+        }
     }
 }

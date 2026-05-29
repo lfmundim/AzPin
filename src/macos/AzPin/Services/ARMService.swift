@@ -13,7 +13,6 @@ enum AppRunningState: Sendable {
     case running, stopped, unknown
 }
 
-@MainActor
 @Observable
 final class ARMService: ARMServiceProtocol {
     private let tokenCache: any TokenCacheProtocol

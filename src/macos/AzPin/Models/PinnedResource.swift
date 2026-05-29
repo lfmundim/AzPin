@@ -1,7 +1,7 @@
 import SwiftData
 
 @Model
-final class PinnedResource {
+final class PinnedResource: @unchecked Sendable {
     var id: String
     var name: String
     var type: String
