@@ -2,12 +2,14 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches:
+      - 'release/v*'
 
 jobs:
   build-and-release:
     runs-on: macos-15
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,7 +20,32 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_26.app/Contents/Developer
 
       - name: Install tooling
-        run: brew install xcbeautify create-dmg
+        run: |
+          brew install xcbeautify create-dmg
+          dotnet tool install -g nbgv
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Compute version
+        id: version
+        run: |
+          MAJOR="${GITHUB_REF_NAME#release/v}"
+          NBGV=$(nbgv get-version -f json)
+          MINOR=$(echo "$NBGV" | jq -r '.VersionMinor')
+          HEIGHT=$(echo "$NBGV" | jq -r '.VersionHeight')
+          VERSION="${MAJOR}.${MINOR}.${HEIGHT}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push release tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git ls-remote --tags origin "${{ steps.version.outputs.tag }}" | grep -q .; then
+            git tag "${{ steps.version.outputs.tag }}"
+            git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}" "${{ steps.version.outputs.tag }}"
+          fi
 
       - name: Import Developer ID certificate
         env:
@@ -67,7 +94,6 @@ jobs:
 
       - name: Create DMG
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           create-dmg \
             --volname "AzPin" \
             --window-pos 200 120 \
@@ -76,12 +102,14 @@ jobs:
             --icon "AzPin.app" 150 185 \
             --hide-extension "AzPin.app" \
             --app-drop-link 450 185 \
-            "AzPin-${VERSION}.dmg" \
+            "AzPin-${{ steps.version.outputs.version }}.dmg" \
             "build/export/"
 
-      - name: Upload DMG to release
+      - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          gh release upload "$GITHUB_REF_NAME" "AzPin-${VERSION}.dmg" --clobber
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "AzPin ${{ steps.version.outputs.version }}" \
+            --generate-notes \
+            "AzPin-${{ steps.version.outputs.version }}.dmg"
