@@ -1,10 +1,16 @@
 import Foundation
 
 protocol AzCLIServiceProtocol: Sendable {
-    func fetchToken(subscriptionId: String) async throws -> AzureTokenResponse
+    func fetchToken(subscriptionId: String, tenantId: String) async throws -> AzureTokenResponse
     func currentAccount() async throws -> AzureAccount
     func listSubscriptions() async throws -> [AzureSubscription]
     func isInstalled() -> Bool
+}
+
+extension AzCLIServiceProtocol {
+    func fetchToken(subscriptionId: String) async throws -> AzureTokenResponse {
+        try await fetchToken(subscriptionId: subscriptionId, tenantId: "")
+    }
 }
 
 @Observable
@@ -17,8 +23,13 @@ final class AzCLIService: AzCLIServiceProtocol {
         self.jsonDecoder = jsonDecoder
     }
 
-    func fetchToken(subscriptionId: String) async throws -> AzureTokenResponse {
-        let json = try await shell.run("\(resolveAzPath()) account get-access-token --subscription \(subscriptionId) --output json")
+    func fetchToken(subscriptionId: String, tenantId: String) async throws -> AzureTokenResponse {
+        var command = "\(resolveAzPath()) account get-access-token --subscription \(subscriptionId)"
+        if !tenantId.isEmpty {
+            command += " --tenant \(tenantId)"
+        }
+        command += " --output json"
+        let json = try await shell.run(command)
         return try jsonDecoder.decode(AzureTokenResponse.self, from: json)
     }
 

@@ -34,7 +34,7 @@ struct AzureAccountUser: Decodable, Sendable {
     let name: String
 }
 
-struct AzureSubscription: Decodable, Sendable {
+struct AzureSubscription: Decodable, Sendable, Hashable {
     let id: String
     let name: String
     let tenantId: String

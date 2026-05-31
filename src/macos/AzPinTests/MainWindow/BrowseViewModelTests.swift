@@ -7,6 +7,9 @@ final class BrowseViewModelTests: XCTestCase {
     private var mockARM: MockARMService!
     private var vm: BrowseViewModel!
 
+    private let sub1 = AzureSubscription(id: "sub-1", name: "Prod", tenantId: "tenant-a")
+    private let sub2 = AzureSubscription(id: "sub-2", name: "Dev", tenantId: "tenant-b")
+
     override func setUp() {
         mockAzCLI = MockAzCLIService()
         mockARM = MockARMService()
@@ -22,31 +25,23 @@ final class BrowseViewModelTests: XCTestCase {
     // MARK: - loadSubscriptions
 
     func testLoadSubscriptions_populatesListAndAutoSelectsFirst() async {
-        let subs = [
-            AzureSubscription(id: "sub-1", name: "Prod", tenantId: "tenant"),
-            AzureSubscription(id: "sub-2", name: "Dev", tenantId: "tenant")
-        ]
-        mockAzCLI.subscriptionsResult = .success(subs)
+        mockAzCLI.subscriptionsResult = .success([sub1, sub2])
 
         await vm.loadSubscriptions()
 
         XCTAssertEqual(vm.subscriptions.count, 2)
-        XCTAssertEqual(vm.selectedSubscriptionId, "sub-1")
+        XCTAssertEqual(vm.selectedSubscription?.id, "sub-1")
         XCTAssertNil(vm.errorMessage)
         XCTAssertFalse(vm.isLoadingSubscriptions)
     }
 
     func testLoadSubscriptions_preservesExistingSelection() async {
-        let subs = [
-            AzureSubscription(id: "sub-1", name: "Prod", tenantId: "tenant"),
-            AzureSubscription(id: "sub-2", name: "Dev", tenantId: "tenant")
-        ]
-        mockAzCLI.subscriptionsResult = .success(subs)
-        vm.selectedSubscriptionId = "sub-2"
+        mockAzCLI.subscriptionsResult = .success([sub1, sub2])
+        vm.selectedSubscription = sub2
 
         await vm.loadSubscriptions()
 
-        XCTAssertEqual(vm.selectedSubscriptionId, "sub-2")
+        XCTAssertEqual(vm.selectedSubscription?.id, "sub-2")
     }
 
     func testLoadSubscriptions_onError_setsErrorMessageAndClearsLoading() async {
@@ -64,8 +59,7 @@ final class BrowseViewModelTests: XCTestCase {
         await vm.loadSubscriptions()
         XCTAssertNotNil(vm.errorMessage)
 
-        let subs = [AzureSubscription(id: "sub-1", name: "Prod", tenantId: "tenant")]
-        mockAzCLI.subscriptionsResult = .success(subs)
+        mockAzCLI.subscriptionsResult = .success([sub1])
         await vm.loadSubscriptions()
 
         XCTAssertNil(vm.errorMessage)
@@ -73,9 +67,8 @@ final class BrowseViewModelTests: XCTestCase {
     }
 
     func testLoadSubscriptions_triggersResourceGroupLoad() async {
-        let subs = [AzureSubscription(id: "sub-1", name: "Prod", tenantId: "tenant")]
         let rgs = [AzureResourceGroup(id: "/rg-1", name: "rg-prod", location: "eastus")]
-        mockAzCLI.subscriptionsResult = .success(subs)
+        mockAzCLI.subscriptionsResult = .success([sub1])
         mockARM.resourceGroupsResult = .success(rgs)
 
         await vm.loadSubscriptions()
@@ -94,7 +87,7 @@ final class BrowseViewModelTests: XCTestCase {
     }
 
     func testLoadResourceGroups_populatesList() async {
-        vm.selectedSubscriptionId = "sub-1"
+        vm.selectedSubscription = sub1
         let rgs = [
             AzureResourceGroup(id: "/rg-1", name: "rg-prod", location: "eastus"),
             AzureResourceGroup(id: "/rg-2", name: "rg-dev", location: "westus")
@@ -109,7 +102,7 @@ final class BrowseViewModelTests: XCTestCase {
     }
 
     func testLoadResourceGroups_onError_setsErrorMessage() async {
-        vm.selectedSubscriptionId = "sub-1"
+        vm.selectedSubscription = sub1
         mockARM.resourceGroupsResult = .failure(URLError(.badServerResponse))
 
         await vm.loadResourceGroups()
@@ -120,7 +113,7 @@ final class BrowseViewModelTests: XCTestCase {
     }
 
     func testLoadResourceGroups_resetsResourceState() async {
-        vm.selectedSubscriptionId = "sub-1"
+        vm.selectedSubscription = sub1
         vm.selectedResourceGroupName = "old-rg"
         vm.resources = [AzureResource(id: "/old", name: "old", type: "Microsoft.Web/sites", location: "eastus")]
         mockARM.resourceGroupsResult = .success([])
@@ -141,7 +134,7 @@ final class BrowseViewModelTests: XCTestCase {
     }
 
     func testLoadResources_populatesList() async {
-        vm.selectedSubscriptionId = "sub-1"
+        vm.selectedSubscription = sub1
         let res = [
             AzureResource(id: "/r1", name: "my-app", type: "Microsoft.Web/sites", location: "eastus"),
             AzureResource(id: "/r2", name: "my-fn", type: "Microsoft.Web/sites/functions", location: "eastus")
@@ -156,7 +149,7 @@ final class BrowseViewModelTests: XCTestCase {
     }
 
     func testLoadResources_onError_setsErrorMessage() async {
-        vm.selectedSubscriptionId = "sub-1"
+        vm.selectedSubscription = sub1
         mockARM.resourcesResult = .failure(URLError(.badServerResponse))
 
         await vm.loadResources(in: "rg-prod")

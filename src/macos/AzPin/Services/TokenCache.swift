@@ -2,8 +2,14 @@ import Foundation
 import SwiftData
 
 protocol TokenCacheProtocol: Sendable {
-    func token(for subscriptionId: String) async throws -> String
+    func token(for subscriptionId: String, tenantId: String) async throws -> String
     func invalidate(subscriptionId: String) async
+}
+
+extension TokenCacheProtocol {
+    func token(for subscriptionId: String) async throws -> String {
+        try await token(for: subscriptionId, tenantId: "")
+    }
 }
 
 @MainActor
@@ -18,7 +24,7 @@ final class TokenCache: TokenCacheProtocol {
         self.azCLI = azCLI
     }
 
-    func token(for subscriptionId: String) async throws -> String {
+    func token(for subscriptionId: String, tenantId: String) async throws -> String {
         let descriptor = FetchDescriptor<CachedToken>(
             predicate: #Predicate { $0.subscriptionId == subscriptionId }
         )
@@ -26,7 +32,7 @@ final class TokenCache: TokenCacheProtocol {
            cached.expiresOn > Date.now.addingTimeInterval(expiryBuffer) {
             return cached.accessToken
         }
-        return try await refresh(subscriptionId: subscriptionId)
+        return try await refresh(subscriptionId: subscriptionId, tenantId: tenantId)
     }
 
     func invalidate(subscriptionId: String) async {
@@ -37,8 +43,8 @@ final class TokenCache: TokenCacheProtocol {
         modelContext.delete(cached)
     }
 
-    private func refresh(subscriptionId: String) async throws -> String {
-        let response = try await azCLI.fetchToken(subscriptionId: subscriptionId)
+    private func refresh(subscriptionId: String, tenantId: String) async throws -> String {
+        let response = try await azCLI.fetchToken(subscriptionId: subscriptionId, tenantId: tenantId)
         let descriptor = FetchDescriptor<CachedToken>(
             predicate: #Predicate { $0.subscriptionId == subscriptionId }
         )

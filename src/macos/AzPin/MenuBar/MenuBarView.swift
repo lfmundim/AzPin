@@ -3,7 +3,7 @@ import SwiftData
 
 #if DEBUG
 final class MockAzCLIService: AzCLIServiceProtocol {
-    func fetchToken(subscriptionId: String) async throws -> AzureTokenResponse {
+    func fetchToken(subscriptionId: String, tenantId: String) async throws -> AzureTokenResponse {
         AzureTokenResponse(accessToken: "mock", expiresOn: .distantFuture)
     }
 

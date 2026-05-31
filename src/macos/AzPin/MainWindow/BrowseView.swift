@@ -12,7 +12,7 @@ struct BrowseView: View {
         .task {
             await vm.loadSubscriptions()
         }
-        .onChange(of: vm.selectedSubscriptionId) { _, newValue in
+        .onChange(of: vm.selectedSubscription) { _, newValue in
             guard newValue != nil else { return }
             Task { await vm.loadResourceGroups() }
         }
@@ -23,10 +23,10 @@ struct BrowseView: View {
         if vm.subscriptions.isEmpty && !vm.isLoadingSubscriptions {
             EmptyView()
         } else {
-            Picker("Subscription", selection: Bindable(vm).selectedSubscriptionId) {
-                Text("Select...").tag(Optional<String>.none)
+            Picker("Subscription", selection: Bindable(vm).selectedSubscription) {
+                Text("Select...").tag(Optional<AzureSubscription>.none)
                 ForEach(vm.subscriptions, id: \.id) { sub in
-                    Text(sub.name).tag(Optional(sub.id))
+                    Text(sub.name).tag(Optional(sub))
                 }
             }
             .padding()
@@ -46,7 +46,7 @@ struct BrowseView: View {
                 systemImage: "list.bullet",
                 description: Text("Ensure your account has access to at least one Azure subscription.")
             )
-        } else if let _ = vm.selectedSubscriptionId {
+        } else if let _ = vm.selectedSubscription {
             if vm.isLoadingResourceGroups {
                 ProgressView("Loading resource groups...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -69,7 +69,7 @@ struct BrowseView: View {
                                 ForEach(Array(vm.resources.enumerated()), id: \.element.id) { index, resource in
                                     ResourceRow(
                                         resource: resource,
-                                        subscriptionId: vm.selectedSubscriptionId ?? "",
+                                        subscriptionId: vm.selectedSubscription?.id ?? "",
                                         resourceGroup: vm.selectedResourceGroupName ?? "",
                                         displayOrder: index
                                     )

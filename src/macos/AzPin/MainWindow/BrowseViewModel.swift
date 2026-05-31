@@ -7,7 +7,7 @@ final class BrowseViewModel {
     private let arm: any ARMServiceProtocol
 
     var subscriptions: [AzureSubscription] = []
-    var selectedSubscriptionId: String?
+    var selectedSubscription: AzureSubscription?
     var isLoadingSubscriptions = false
     var resourceGroups: [AzureResourceGroup] = []
     var isLoadingResourceGroups = false
@@ -27,8 +27,8 @@ final class BrowseViewModel {
         defer { isLoadingSubscriptions = false }
         do {
             subscriptions = try await azCLI.listSubscriptions()
-            if selectedSubscriptionId == nil {
-                selectedSubscriptionId = subscriptions.first?.id
+            if selectedSubscription == nil {
+                selectedSubscription = subscriptions.first
             }
             await loadResourceGroups()
         } catch {
@@ -37,24 +37,24 @@ final class BrowseViewModel {
     }
 
     func loadResourceGroups() async {
-        guard let subId = selectedSubscriptionId else { return }
+        guard let sub = selectedSubscription else { return }
         selectedResourceGroupName = nil
         resources = []
         isLoadingResourceGroups = true
         defer { isLoadingResourceGroups = false }
         do {
-            resourceGroups = try await arm.fetchResourceGroups(subscriptionId: subId)
+            resourceGroups = try await arm.fetchResourceGroups(subscriptionId: sub.id, tenantId: sub.tenantId)
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
     func loadResources(in rgName: String) async {
-        guard let subId = selectedSubscriptionId else { return }
+        guard let sub = selectedSubscription else { return }
         isLoadingResources = true
         defer { isLoadingResources = false }
         do {
-            resources = try await arm.fetchResources(subscriptionId: subId, resourceGroup: rgName)
+            resources = try await arm.fetchResources(subscriptionId: sub.id, resourceGroup: rgName, tenantId: sub.tenantId)
         } catch {
             errorMessage = error.localizedDescription
         }

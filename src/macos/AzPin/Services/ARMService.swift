@@ -1,8 +1,8 @@
 import Foundation
 
 protocol ARMServiceProtocol: Sendable {
-    func fetchResourceGroups(subscriptionId: String) async throws -> [AzureResourceGroup]
-    func fetchResources(subscriptionId: String, resourceGroup: String) async throws -> [AzureResource]
+    func fetchResourceGroups(subscriptionId: String, tenantId: String) async throws -> [AzureResourceGroup]
+    func fetchResources(subscriptionId: String, resourceGroup: String, tenantId: String) async throws -> [AzureResource]
     func fetchAppState(resource: PinnedResource) async throws -> AppRunningState
     func startApp(resource: PinnedResource) async throws
     func stopApp(resource: PinnedResource) async throws
@@ -23,8 +23,8 @@ final class ARMService: ARMServiceProtocol {
         self.session = session
     }
 
-    func fetchResourceGroups(subscriptionId: String) async throws -> [AzureResourceGroup] {
-        let token = try await tokenCache.token(for: subscriptionId)
+    func fetchResourceGroups(subscriptionId: String, tenantId: String) async throws -> [AzureResourceGroup] {
+        let token = try await tokenCache.token(for: subscriptionId, tenantId: tenantId)
         let url = URL(string: "https://management.azure.com/subscriptions/\(subscriptionId)/resourcegroups?api-version=2021-04-01")!
         var request = URLRequest(url: url)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -32,8 +32,8 @@ final class ARMService: ARMServiceProtocol {
         return try JSONDecoder().decode(ResourceGroupListResponse.self, from: data).value
     }
 
-    func fetchResources(subscriptionId: String, resourceGroup: String) async throws -> [AzureResource] {
-        let token = try await tokenCache.token(for: subscriptionId)
+    func fetchResources(subscriptionId: String, resourceGroup: String, tenantId: String) async throws -> [AzureResource] {
+        let token = try await tokenCache.token(for: subscriptionId, tenantId: tenantId)
         let url = URL(string: "https://management.azure.com/subscriptions/\(subscriptionId)/resourceGroups/\(resourceGroup)/resources?api-version=2021-04-01")!
         var request = URLRequest(url: url)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
