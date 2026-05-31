@@ -8,6 +8,7 @@ struct AzPinApp: App {
     let tokenCache: TokenCache
     let arm: ARMService
     let permissions: PermissionsService
+    let authViewModel: AuthViewModel
     
     init() {
         let c = try! ModelContainer(for: PinnedResourceGroup.self, PinnedResource.self, CachedToken.self)
@@ -18,6 +19,7 @@ struct AzPinApp: App {
         tokenCache = tc
         arm = ARMService(tokenCache: tc)
         permissions = PermissionsService(tokenCache: tc)
+        authViewModel = AuthViewModel(azCLI: az)
     }
     
     var body: some Scene {
@@ -27,6 +29,7 @@ struct AzPinApp: App {
                 .environment(tokenCache)
                 .environment(arm)
                 .environment(permissions)
+                .environment(authViewModel)
         }
         .menuBarExtraStyle(.menu)
 
@@ -36,6 +39,7 @@ struct AzPinApp: App {
                 .environment(tokenCache)
                 .environment(arm)
                 .environment(permissions)
+                .environment(authViewModel)
         }
         .windowStyle(.titleBar)
         .defaultSize(width: 900, height: 600)
@@ -46,6 +50,7 @@ struct AzPinApp: App {
                 .environment(tokenCache)
                 .environment(arm)
                 .environment(permissions)
+                .environment(authViewModel)
         }
     }
 }

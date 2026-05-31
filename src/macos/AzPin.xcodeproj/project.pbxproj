@@ -35,6 +35,7 @@
 		E5F7184F1CC8ECB7DAFB3DD1 /* MockPermissionsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCEC3AEAEE4E9B53F11E03BB /* MockPermissionsService.swift */; };
 		E7F42F2E2FCCC6FA005D884D /* AzJSONDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7F42F2D2FCCC6F6005D884D /* AzJSONDecoder.swift */; };
 		E7F42F322FCCC859005D884D /* AzJSONDecoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7F42F312FCCC855005D884D /* AzJSONDecoderTests.swift */; };
+		E7F42F342FCCCDA2005D884D /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7F42F332FCCCD9F005D884D /* AuthViewModel.swift */; };
 		ED3C1CCF3B66FD3F2ACD5834 /* PinnedResourceGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6C326753BA4F59896FC3F0 /* PinnedResourceGroup.swift */; };
 		ED92C557C42724A321EBF964 /* ResourceTypeMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A475B3D5B517FA5B8694583 /* ResourceTypeMapper.swift */; };
 		F07B5C236F2BA26B5967AF17 /* CachedToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F61BC016078C182FF51F9E /* CachedToken.swift */; };
@@ -90,6 +91,7 @@
 		C2508E5F1A6E181D1994D255 /* ResourceTypeMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceTypeMapperTests.swift; sourceTree = "<group>"; };
 		E7F42F2D2FCCC6F6005D884D /* AzJSONDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AzJSONDecoder.swift; sourceTree = "<group>"; };
 		E7F42F312FCCC855005D884D /* AzJSONDecoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AzJSONDecoderTests.swift; sourceTree = "<group>"; };
+		E7F42F332FCCCD9F005D884D /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		E8F3ADAB904438A648F7311D /* ResourceGroupMenuItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceGroupMenuItem.swift; sourceTree = "<group>"; };
 		E998B1BDF6A1C58028E89DEC /* AzPin.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AzPin.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -219,6 +221,7 @@
 		D93CD0BFC6CC22A44A7F1485 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				E7F42F332FCCCD9F005D884D /* AuthViewModel.swift */,
 				6854D13A0CE8AD0D484EF09A /* ARMService.swift */,
 				058BC49418DF8FB7AE66C712 /* AzCLIService.swift */,
 				BF26866B352453B4921139C9 /* PermissionsService.swift */,
@@ -356,6 +359,7 @@
 				885D4709D2990C1AF8B86D2E /* ResourceMenuItem.swift in Sources */,
 				ED92C557C42724A321EBF964 /* ResourceTypeMapper.swift in Sources */,
 				FBB406BC6A7823B4DE7AF4F3 /* SettingsView.swift in Sources */,
+				E7F42F342FCCCDA2005D884D /* AuthViewModel.swift in Sources */,
 				AAE055A87A8056B36960A004 /* ShellRunner.swift in Sources */,
 				89CF8F2CF4F4E9E5B2B50702 /* SidebarView.swift in Sources */,
 				53A393D9DA775938DD6761C4 /* TokenCache.swift in Sources */,
