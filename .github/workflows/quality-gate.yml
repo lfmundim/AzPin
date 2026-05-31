@@ -20,6 +20,7 @@ jobs:
         run: brew install xcbeautify
 
       - name: Run tests
+        working-directory: src/macos
         run: |
           xcodebuild -scheme AzPin \
             -configuration Debug \
@@ -31,7 +32,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          swift_project: build/test.xcresult
+          swift_project: src/macos/build/test.xcresult
           fail_ci_if_error: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
