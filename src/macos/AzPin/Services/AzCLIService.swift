@@ -10,24 +10,26 @@ protocol AzCLIServiceProtocol: Sendable {
 @Observable
 final class AzCLIService: AzCLIServiceProtocol {
     private let shell: ShellRunner
+    private let jsonDecoder: AzJSONDecoder
 
-    init(shell: ShellRunner = ShellRunner()) {
+    init(shell: ShellRunner = ShellRunner(), jsonDecoder: AzJSONDecoder = AzJSONDecoder()) {
         self.shell = shell
+        self.jsonDecoder = jsonDecoder
     }
 
     func fetchToken(subscriptionId: String) async throws -> AzureTokenResponse {
         let json = try await shell.run("\(resolveAzPath()) account get-access-token --subscription \(subscriptionId) --output json")
-        return try JSONDecoder().decode(AzureTokenResponse.self, from: Data(json.utf8))
+        return try jsonDecoder.decode(AzureTokenResponse.self, from: json)
     }
 
     func currentAccount() async throws -> AzureAccount {
         let json = try await shell.run("\(resolveAzPath()) account show --output json")
-        return try JSONDecoder().decode(AzureAccount.self, from: Data(json.utf8))
+        return try jsonDecoder.decode(AzureAccount.self, from: json)
     }
 
     func listSubscriptions() async throws -> [AzureSubscription] {
         let json = try await shell.run("\(resolveAzPath()) account list --output json")
-        return try JSONDecoder().decode([AzureSubscription].self, from: Data(json.utf8))
+        return try jsonDecoder.decode([AzureSubscription].self, from: json)
     }
 
     func isInstalled() -> Bool {

@@ -1,7 +1,7 @@
 import Foundation
 @testable import AzPin
 
-final class MockAzCLIService: AzCLIServiceProtocol {
+final class MockAzCLIService: AzCLIServiceProtocol, @unchecked Sendable {
     var tokenResult: Result<AzureTokenResponse, Error> = .success(
         AzureTokenResponse(accessToken: "mock-token", expiresOn: .distantFuture)
     )

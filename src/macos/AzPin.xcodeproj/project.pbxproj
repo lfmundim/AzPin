@@ -33,6 +33,9 @@
 		E364F498D203021BBC0B8605 /* MockARMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B649902B6FD5BABE9801644B /* MockARMService.swift */; };
 		E3FDC31D7D210F7CF321EE3E /* PermissionsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA295AF6DE33B0A7D091A90 /* PermissionsServiceTests.swift */; };
 		E5F7184F1CC8ECB7DAFB3DD1 /* MockPermissionsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCEC3AEAEE4E9B53F11E03BB /* MockPermissionsService.swift */; };
+		E7F42F2E2FCCC6FA005D884D /* AzJSONDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7F42F2D2FCCC6F6005D884D /* AzJSONDecoder.swift */; };
+		E7F42F322FCCC859005D884D /* AzJSONDecoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7F42F312FCCC855005D884D /* AzJSONDecoderTests.swift */; };
+		E7F42F342FCCCDA2005D884D /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7F42F332FCCCD9F005D884D /* AuthViewModel.swift */; };
 		ED3C1CCF3B66FD3F2ACD5834 /* PinnedResourceGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6C326753BA4F59896FC3F0 /* PinnedResourceGroup.swift */; };
 		ED92C557C42724A321EBF964 /* ResourceTypeMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A475B3D5B517FA5B8694583 /* ResourceTypeMapper.swift */; };
 		F07B5C236F2BA26B5967AF17 /* CachedToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F61BC016078C182FF51F9E /* CachedToken.swift */; };
@@ -86,6 +89,9 @@
 		BDCEC25B9DA17F6F880C12FE /* AzureResource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AzureResource.swift; sourceTree = "<group>"; };
 		BF26866B352453B4921139C9 /* PermissionsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsService.swift; sourceTree = "<group>"; };
 		C2508E5F1A6E181D1994D255 /* ResourceTypeMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceTypeMapperTests.swift; sourceTree = "<group>"; };
+		E7F42F2D2FCCC6F6005D884D /* AzJSONDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AzJSONDecoder.swift; sourceTree = "<group>"; };
+		E7F42F312FCCC855005D884D /* AzJSONDecoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AzJSONDecoderTests.swift; sourceTree = "<group>"; };
+		E7F42F332FCCCD9F005D884D /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		E8F3ADAB904438A648F7311D /* ResourceGroupMenuItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceGroupMenuItem.swift; sourceTree = "<group>"; };
 		E998B1BDF6A1C58028E89DEC /* AzPin.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AzPin.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -94,6 +100,7 @@
 		221466AB4D0A6779E000D8FB /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				E7F42F2D2FCCC6F6005D884D /* AzJSONDecoder.swift */,
 				6731858DD1D32E08A77EAE95 /* PortalURL.swift */,
 				4A475B3D5B517FA5B8694583 /* ResourceTypeMapper.swift */,
 				5D08408A31A6E3A6FE1E47B4 /* ShellRunner.swift */,
@@ -204,6 +211,7 @@
 		A0A8A9EE97DC62C1FD24DA3E /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				E7F42F312FCCC855005D884D /* AzJSONDecoderTests.swift */,
 				2D510F100EBE50A6555BDAF0 /* PortalURLTests.swift */,
 				C2508E5F1A6E181D1994D255 /* ResourceTypeMapperTests.swift */,
 			);
@@ -213,6 +221,7 @@
 		D93CD0BFC6CC22A44A7F1485 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				E7F42F332FCCCD9F005D884D /* AuthViewModel.swift */,
 				6854D13A0CE8AD0D484EF09A /* ARMService.swift */,
 				058BC49418DF8FB7AE66C712 /* AzCLIService.swift */,
 				BF26866B352453B4921139C9 /* PermissionsService.swift */,
@@ -276,8 +285,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = F89F681EE0ED54E4A4332166 /* Build configuration list for PBXProject "AzPin" */;
 			developmentRegion = en;
@@ -322,6 +329,7 @@
 				FE73A19C0AC1AF4252182242 /* MockTokenCache.swift in Sources */,
 				E3FDC31D7D210F7CF321EE3E /* PermissionsServiceTests.swift in Sources */,
 				667268007D262D627D8FAA09 /* PortalURLTests.swift in Sources */,
+				E7F42F322FCCC859005D884D /* AzJSONDecoderTests.swift in Sources */,
 				40B9DAC5AB2675FE0C5B2BDB /* ResourceTypeMapperTests.swift in Sources */,
 				A04872A8517A8D7BA4B2D483 /* TokenCacheTests.swift in Sources */,
 			);
@@ -341,6 +349,7 @@
 				F1F3D6AE5F5419F03ED657E6 /* DetailView.swift in Sources */,
 				AB24E4A399E436260BD3EEC8 /* MainAppView.swift in Sources */,
 				19FB6AF81E5CE58F2B7027B2 /* MenuBarView.swift in Sources */,
+				E7F42F2E2FCCC6FA005D884D /* AzJSONDecoder.swift in Sources */,
 				6743B79458E5306AD2AD8AC0 /* PermissionsService.swift in Sources */,
 				4EBD72040775552FF96AAB70 /* PinnedResource.swift in Sources */,
 				ED3C1CCF3B66FD3F2ACD5834 /* PinnedResourceGroup.swift in Sources */,
@@ -350,6 +359,7 @@
 				885D4709D2990C1AF8B86D2E /* ResourceMenuItem.swift in Sources */,
 				ED92C557C42724A321EBF964 /* ResourceTypeMapper.swift in Sources */,
 				FBB406BC6A7823B4DE7AF4F3 /* SettingsView.swift in Sources */,
+				E7F42F342FCCCDA2005D884D /* AuthViewModel.swift in Sources */,
 				AAE055A87A8056B36960A004 /* ShellRunner.swift in Sources */,
 				89CF8F2CF4F4E9E5B2B50702 /* SidebarView.swift in Sources */,
 				53A393D9DA775938DD6761C4 /* TokenCache.swift in Sources */,
@@ -372,6 +382,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -527,6 +538,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
