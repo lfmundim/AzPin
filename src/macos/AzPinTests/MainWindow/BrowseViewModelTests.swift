@@ -118,4 +118,51 @@ final class BrowseViewModelTests: XCTestCase {
         XCTAssertTrue(vm.resourceGroups.isEmpty)
         XCTAssertFalse(vm.isLoadingResourceGroups)
     }
+
+    func testLoadResourceGroups_resetsResourceState() async {
+        vm.selectedSubscriptionId = "sub-1"
+        vm.selectedResourceGroupName = "old-rg"
+        vm.resources = [AzureResource(id: "/old", name: "old", type: "Microsoft.Web/sites", location: "eastus")]
+        mockARM.resourceGroupsResult = .success([])
+
+        await vm.loadResourceGroups()
+
+        XCTAssertNil(vm.selectedResourceGroupName)
+        XCTAssertTrue(vm.resources.isEmpty)
+    }
+
+    // MARK: - loadResources
+
+    func testLoadResources_noopWhenNoSubscriptionSelected() async {
+        await vm.loadResources(in: "rg-prod")
+
+        XCTAssertTrue(vm.resources.isEmpty)
+        XCTAssertFalse(vm.isLoadingResources)
+    }
+
+    func testLoadResources_populatesList() async {
+        vm.selectedSubscriptionId = "sub-1"
+        let res = [
+            AzureResource(id: "/r1", name: "my-app", type: "Microsoft.Web/sites", location: "eastus"),
+            AzureResource(id: "/r2", name: "my-fn", type: "Microsoft.Web/sites/functions", location: "eastus")
+        ]
+        mockARM.resourcesResult = .success(res)
+
+        await vm.loadResources(in: "rg-prod")
+
+        XCTAssertEqual(vm.resources.count, 2)
+        XCTAssertNil(vm.errorMessage)
+        XCTAssertFalse(vm.isLoadingResources)
+    }
+
+    func testLoadResources_onError_setsErrorMessage() async {
+        vm.selectedSubscriptionId = "sub-1"
+        mockARM.resourcesResult = .failure(URLError(.badServerResponse))
+
+        await vm.loadResources(in: "rg-prod")
+
+        XCTAssertNotNil(vm.errorMessage)
+        XCTAssertTrue(vm.resources.isEmpty)
+        XCTAssertFalse(vm.isLoadingResources)
+    }
 }

@@ -11,6 +11,9 @@ final class BrowseViewModel {
     var isLoadingSubscriptions = false
     var resourceGroups: [AzureResourceGroup] = []
     var isLoadingResourceGroups = false
+    var selectedResourceGroupName: String?
+    var resources: [AzureResource] = []
+    var isLoadingResources = false
     var errorMessage: String?
 
     init(azCLI: any AzCLIServiceProtocol, arm: any ARMServiceProtocol) {
@@ -35,10 +38,23 @@ final class BrowseViewModel {
 
     func loadResourceGroups() async {
         guard let subId = selectedSubscriptionId else { return }
+        selectedResourceGroupName = nil
+        resources = []
         isLoadingResourceGroups = true
         defer { isLoadingResourceGroups = false }
         do {
             resourceGroups = try await arm.fetchResourceGroups(subscriptionId: subId)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func loadResources(in rgName: String) async {
+        guard let subId = selectedSubscriptionId else { return }
+        isLoadingResources = true
+        defer { isLoadingResources = false }
+        do {
+            resources = try await arm.fetchResources(subscriptionId: subId, resourceGroup: rgName)
         } catch {
             errorMessage = error.localizedDescription
         }

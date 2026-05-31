@@ -8,6 +8,7 @@ All notable changes to AzPin are documented in this file.
 
 ## [Unreleased]
 
+- Tapping a resource group in BrowseView loads its resources inline with correct SF Symbol icons via ResourceTypeMapper. Switching subscription clears stale RG selection and resource list. ResourceRow introduced.
 - BrowseView shows resource groups for the selected subscription; selecting a different subscription reloads the list. DetailView now renders BrowseView (temporary scaffolding until task 3.8 tabs). ResourceGroupRow introduced.
 - BrowseView now loads real Azure subscriptions via AzCLIService, auto-selects the first, and shows loading/error/empty states. BrowseViewModel introduced as the @Observable backing for BrowseView.
 - MenuBarView now shows live az CLI auth status: signed-in account name, "run az login" warning, or CLI not installed.

@@ -54,7 +54,25 @@ struct BrowseView: View {
                 ContentUnavailableView("No resource groups", systemImage: "folder")
             } else {
                 List(vm.resourceGroups, id: \.id) { rg in
-                    ResourceGroupRow(resourceGroup: rg)
+                    VStack(alignment: .leading, spacing: 0) {
+                        ResourceGroupRow(resourceGroup: rg)
+                            .onTapGesture {
+                                vm.selectedResourceGroupName = rg.name
+                                Task { await vm.loadResources(in: rg.name) }
+                            }
+
+                        if vm.selectedResourceGroupName == rg.name {
+                            if vm.isLoadingResources {
+                                ProgressView()
+                                    .padding(.leading, 24)
+                            } else {
+                                ForEach(vm.resources, id: \.id) { resource in
+                                    ResourceRow(resource: resource)
+                                        .padding(.leading, 24)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         } else {
