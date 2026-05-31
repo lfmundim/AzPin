@@ -4,6 +4,7 @@ protocol PermissionsServiceProtocol: Sendable {
     func canManage(resource: PinnedResource) async -> Bool
 }
 
+@Observable
 final class PermissionsService: PermissionsServiceProtocol {
     private let tokenCache: any TokenCacheProtocol
     private let session: URLSession
