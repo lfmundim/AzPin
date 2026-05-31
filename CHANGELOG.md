@@ -8,6 +8,7 @@ All notable changes to AzPin are documented in this file.
 
 ## [Unreleased]
 
+- BrowseView now loads real Azure subscriptions via AzCLIService, auto-selects the first, and shows loading/error/empty states. BrowseViewModel introduced as the @Observable backing for BrowseView.
 - MenuBarView now shows live az CLI auth status: signed-in account name, "run az login" warning, or CLI not installed.
 - AuthViewModel added with AuthState enum — coordinates az CLI auth state for views.
 - Services (AzCLIService, TokenCache, ARMService, PermissionsService) and SwiftData container wired into SwiftUI environment at app startup.

@@ -14,6 +14,8 @@
 		4E78A725509BF848C35F7854 /* ResourceGroupMenuItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F3ADAB904438A648F7311D /* ResourceGroupMenuItem.swift */; };
 		4EBD72040775552FF96AAB70 /* PinnedResource.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6DC583ACFCA01D8BCDA18A5 /* PinnedResource.swift */; };
 		4ECEBF54131A5E9FE1814A77 /* BrowseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95A17A927064412FE45FD659 /* BrowseView.swift */; };
+		A1A2A3A4A5A6A7A8A9AAAAAB /* BrowseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2B3B4B5B6B7B8B9BABBBC /* BrowseViewModel.swift */; };
+		C1C2C3C4C5C6C7C8C9CACBCC /* BrowseViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D2D3D4D5D6D7D8D9DADBDC /* BrowseViewModelTests.swift */; };
 		53A393D9DA775938DD6761C4 /* TokenCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 088B66AD957350D17525104B /* TokenCache.swift */; };
 		667268007D262D627D8FAA09 /* PortalURLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D510F100EBE50A6555BDAF0 /* PortalURLTests.swift */; };
 		6743B79458E5306AD2AD8AC0 /* PermissionsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF26866B352453B4921139C9 /* PermissionsService.swift */; };
@@ -79,6 +81,8 @@
 		8AB44490DD10AD83F9B88DED /* AzPinTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AzPinTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8DA3CB5A9CA3007EE68D384C /* MainAppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainAppView.swift; sourceTree = "<group>"; };
 		95A17A927064412FE45FD659 /* BrowseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowseView.swift; sourceTree = "<group>"; };
+		B1B2B3B4B5B6B7B8B9BABBBC /* BrowseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowseViewModel.swift; sourceTree = "<group>"; };
+		D1D2D3D4D5D6D7D8D9DADBDC /* BrowseViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowseViewModelTests.swift; sourceTree = "<group>"; };
 		9A8D86AEFEE3AE945152DBA0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A6DC583ACFCA01D8BCDA18A5 /* PinnedResource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedResource.swift; sourceTree = "<group>"; };
 		AC626AEC6A0AA2FFCF35A702 /* MockTokenCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockTokenCache.swift; sourceTree = "<group>"; };
@@ -181,10 +185,19 @@
 			children = (
 				22A8ED60A6214713CEDB9487 /* AzPinTests.swift */,
 				2AEA5CC76F02EE930968E6D2 /* Mocks */,
+				E1E2E3E4E5E6E7E8E9EAEBEC /* MainWindow */,
 				89913D2547B6A2C961F242AC /* Services */,
 				A0A8A9EE97DC62C1FD24DA3E /* Utilities */,
 			);
 			path = AzPinTests;
+			sourceTree = "<group>";
+		};
+		E1E2E3E4E5E6E7E8E9EAEBEC /* MainWindow */ = {
+			isa = PBXGroup;
+			children = (
+				D1D2D3D4D5D6D7D8D9DADBDC /* BrowseViewModelTests.swift */,
+			);
+			path = MainWindow;
 			sourceTree = "<group>";
 		};
 		89913D2547B6A2C961F242AC /* Services */ = {
@@ -200,6 +213,7 @@
 			isa = PBXGroup;
 			children = (
 				95A17A927064412FE45FD659 /* BrowseView.swift */,
+				B1B2B3B4B5B6B7B8B9BABBBC /* BrowseViewModel.swift */,
 				81F848932D8993F17C471DD4 /* DetailView.swift */,
 				8DA3CB5A9CA3007EE68D384C /* MainAppView.swift */,
 				024B95E760522247E58D8861 /* PinnedResourcesView.swift */,
@@ -323,6 +337,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				214BFADAD5A98DE52D2543C8 /* AzPinTests.swift in Sources */,
+				C1C2C3C4C5C6C7C8C9CACBCC /* BrowseViewModelTests.swift in Sources */,
 				E364F498D203021BBC0B8605 /* MockARMService.swift in Sources */,
 				9157C2FF1876D43D747F723B /* MockAzCLIService.swift in Sources */,
 				E5F7184F1CC8ECB7DAFB3DD1 /* MockPermissionsService.swift in Sources */,
@@ -345,6 +360,7 @@
 				9675ECBE1F2FFE0D8A78D45D /* AzPinApp.swift in Sources */,
 				9C8A13FC10D9B28B82CE8999 /* AzureResource.swift in Sources */,
 				4ECEBF54131A5E9FE1814A77 /* BrowseView.swift in Sources */,
+				A1A2A3A4A5A6A7A8A9AAAAAB /* BrowseViewModel.swift in Sources */,
 				F07B5C236F2BA26B5967AF17 /* CachedToken.swift in Sources */,
 				F1F3D6AE5F5419F03ED657E6 /* DetailView.swift in Sources */,
 				AB24E4A399E436260BD3EEC8 /* MainAppView.swift in Sources */,
