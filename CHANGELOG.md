@@ -8,6 +8,10 @@ All notable changes to AzPin are documented in this file.
 
 ## [Unreleased]
 
+- MenuBarView now shows live az CLI auth status: signed-in account name, "run az login" warning, or CLI not installed.
+- AuthViewModel added with AuthState enum — coordinates az CLI auth state for views.
+- Services (AzCLIService, TokenCache, ARMService, PermissionsService) and SwiftData container wired into SwiftUI environment at app startup.
+- AzJSONDecoder added to correctly parse az CLI date format ("yyyy-MM-dd HH:mm:ss.SSSSSS") — fixes silent decoding failure on token fetch.
 - Initial changelog created.
 - Added MIT LICENSE.
 - Added `version.json` (Nerdbank.GitVersioning config, major=0, minor starts at 1).
