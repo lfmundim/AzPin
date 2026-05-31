@@ -24,12 +24,7 @@ final class AzCLIService: AzCLIServiceProtocol {
     }
 
     func fetchToken(subscriptionId: String, tenantId: String) async throws -> AzureTokenResponse {
-        var command = "\(resolveAzPath()) account get-access-token --subscription \(subscriptionId)"
-        if !tenantId.isEmpty {
-            command += " --tenant \(tenantId)"
-        }
-        command += " --output json"
-        let json = try await shell.run(command)
+        let json = try await shell.run("\(resolveAzPath()) account get-access-token --subscription \(subscriptionId) --output json")
         return try jsonDecoder.decode(AzureTokenResponse.self, from: json)
     }
 

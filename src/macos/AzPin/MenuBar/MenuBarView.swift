@@ -52,6 +52,7 @@ struct MenuBarView: View {
 
             Button("Open AzPin...") {
                 openWindow(id: "main")
+                NSApp.activate(ignoringOtherApps: true)
             }
             Button("Quit AzPin") {
                 NSApplication.shared.terminate(nil)
