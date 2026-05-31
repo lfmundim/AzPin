@@ -31,6 +31,13 @@ final class ShellRunner: Sendable {
     }
 }
 
-enum ShellError: Error, Sendable {
+enum ShellError: LocalizedError, Sendable {
     case nonZeroExit(code: Int32, stderr: String)
+
+    var errorDescription: String? {
+        switch self {
+        case .nonZeroExit(let code, let stderr):
+            return stderr.isEmpty ? "az exited with code \(code)" : stderr
+        }
+    }
 }
