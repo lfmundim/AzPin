@@ -66,9 +66,14 @@ struct BrowseView: View {
                                 ProgressView()
                                     .padding(.leading, 24)
                             } else {
-                                ForEach(vm.resources, id: \.id) { resource in
-                                    ResourceRow(resource: resource)
-                                        .padding(.leading, 24)
+                                ForEach(Array(vm.resources.enumerated()), id: \.element.id) { index, resource in
+                                    ResourceRow(
+                                        resource: resource,
+                                        subscriptionId: vm.selectedSubscriptionId ?? "",
+                                        resourceGroup: vm.selectedResourceGroupName ?? "",
+                                        displayOrder: index
+                                    )
+                                    .padding(.leading, 24)
                                 }
                             }
                         }

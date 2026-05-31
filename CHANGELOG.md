@@ -8,6 +8,7 @@ All notable changes to AzPin are documented in this file.
 
 ## [Unreleased]
 
+- ResourceRow now has a pin button that saves a PinnedResource to SwiftData. Duplicate check via FetchDescriptor before insert; button shows pin.fill and disables once pinned. State persists across app restarts.
 - Tapping a resource group in BrowseView loads its resources inline with correct SF Symbol icons via ResourceTypeMapper. Switching subscription clears stale RG selection and resource list. ResourceRow introduced.
 - BrowseView shows resource groups for the selected subscription; selecting a different subscription reloads the list. DetailView now renders BrowseView (temporary scaffolding until task 3.8 tabs). ResourceGroupRow introduced.
 - BrowseView now loads real Azure subscriptions via AzCLIService, auto-selects the first, and shows loading/error/empty states. BrowseViewModel introduced as the @Observable backing for BrowseView.
