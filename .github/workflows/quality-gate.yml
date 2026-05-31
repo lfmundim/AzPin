@@ -29,10 +29,14 @@ jobs:
             -resultBundlePath build/test.xcresult \
             test | xcbeautify
 
+      - name: Convert coverage to JSON
+        working-directory: src/macos
+        run: xcrun xccov view --report --json build/test.xcresult > coverage.json
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          swift_project: src/macos/build/test.xcresult
+          files: src/macos/coverage.json
           fail_ci_if_error: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
