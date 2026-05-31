@@ -8,27 +8,19 @@ import XCTest
 @testable import AzPin
 
 final class AzJSONDecoderTests: XCTestCase {
-    func test_decodeExpiresOn_fromAzCLIFormat() throws {
-        // Arrange
+    func test_decodeExpiresOn_fromUnixTimestamp() throws {
+        // expires_on is a UTC Unix timestamp — immune to local timezone offset
         let json = """
         {
             "accessToken": "tok",
-            "expiresOn": "2025-06-01 14:30:00.000000"
+            "expires_on": 1748784600
         }
         """
-        
+
         let decoder = AzJSONDecoder()
-        
-        // Act
         let response = try decoder.decode(AzureTokenResponse.self, from: Data(json.utf8))
-        
-        // Assert
+
         XCTAssertEqual(response.accessToken, "tok")
-        XCTAssertNotNil(response.expiresOn)
-        let calendar = Calendar.current
-        let components = calendar.dateComponents([.day, .month, .year], from: response.expiresOn)
-        XCTAssertEqual(components.day, 1)
-        XCTAssertEqual(components.month, 6)
-        XCTAssertEqual(components.year, 2025)
+        XCTAssertEqual(response.expiresOn, Date(timeIntervalSince1970: 1748784600))
     }
 }

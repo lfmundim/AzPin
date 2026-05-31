@@ -19,7 +19,7 @@ struct AzureTokenResponse: Decodable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case accessToken = "accessToken"
-        case expiresOn = "expiresOn"
+        case expiresOn = "expires_on"
     }
 }
 

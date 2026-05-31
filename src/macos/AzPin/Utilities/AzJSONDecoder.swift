@@ -12,11 +12,7 @@ final class AzJSONDecoder: Sendable {
     
     init() {
         self.decoder = JSONDecoder()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSSSS"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        decoder.dateDecodingStrategy = .formatted(formatter)
+        decoder.dateDecodingStrategy = .secondsSince1970
     }
     
     /// Decode JSON string to a specific type
