@@ -19,6 +19,8 @@ final class BrowseViewModelTests: XCTestCase {
         mockARM = nil
     }
 
+    // MARK: - loadSubscriptions
+
     func testLoadSubscriptions_populatesListAndAutoSelectsFirst() async {
         let subs = [
             AzureSubscription(id: "sub-1", name: "Prod", tenantId: "tenant"),
@@ -68,5 +70,52 @@ final class BrowseViewModelTests: XCTestCase {
 
         XCTAssertNil(vm.errorMessage)
         XCTAssertEqual(vm.subscriptions.count, 1)
+    }
+
+    func testLoadSubscriptions_triggersResourceGroupLoad() async {
+        let subs = [AzureSubscription(id: "sub-1", name: "Prod", tenantId: "tenant")]
+        let rgs = [AzureResourceGroup(id: "/rg-1", name: "rg-prod", location: "eastus")]
+        mockAzCLI.subscriptionsResult = .success(subs)
+        mockARM.resourceGroupsResult = .success(rgs)
+
+        await vm.loadSubscriptions()
+
+        XCTAssertEqual(vm.resourceGroups.count, 1)
+        XCTAssertEqual(vm.resourceGroups.first?.name, "rg-prod")
+    }
+
+    // MARK: - loadResourceGroups
+
+    func testLoadResourceGroups_noopWhenNoSubscriptionSelected() async {
+        await vm.loadResourceGroups()
+
+        XCTAssertTrue(vm.resourceGroups.isEmpty)
+        XCTAssertFalse(vm.isLoadingResourceGroups)
+    }
+
+    func testLoadResourceGroups_populatesList() async {
+        vm.selectedSubscriptionId = "sub-1"
+        let rgs = [
+            AzureResourceGroup(id: "/rg-1", name: "rg-prod", location: "eastus"),
+            AzureResourceGroup(id: "/rg-2", name: "rg-dev", location: "westus")
+        ]
+        mockARM.resourceGroupsResult = .success(rgs)
+
+        await vm.loadResourceGroups()
+
+        XCTAssertEqual(vm.resourceGroups.count, 2)
+        XCTAssertNil(vm.errorMessage)
+        XCTAssertFalse(vm.isLoadingResourceGroups)
+    }
+
+    func testLoadResourceGroups_onError_setsErrorMessage() async {
+        vm.selectedSubscriptionId = "sub-1"
+        mockARM.resourceGroupsResult = .failure(URLError(.badServerResponse))
+
+        await vm.loadResourceGroups()
+
+        XCTAssertNotNil(vm.errorMessage)
+        XCTAssertTrue(vm.resourceGroups.isEmpty)
+        XCTAssertFalse(vm.isLoadingResourceGroups)
     }
 }

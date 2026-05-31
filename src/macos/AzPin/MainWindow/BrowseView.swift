@@ -12,6 +12,10 @@ struct BrowseView: View {
         .task {
             await vm.loadSubscriptions()
         }
+        .onChange(of: vm.selectedSubscriptionId) { _, newValue in
+            guard newValue != nil else { return }
+            Task { await vm.loadResourceGroups() }
+        }
     }
 
     @ViewBuilder
@@ -42,6 +46,17 @@ struct BrowseView: View {
                 systemImage: "list.bullet",
                 description: Text("Ensure your account has access to at least one Azure subscription.")
             )
+        } else if let _ = vm.selectedSubscriptionId {
+            if vm.isLoadingResourceGroups {
+                ProgressView("Loading resource groups...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if vm.resourceGroups.isEmpty {
+                ContentUnavailableView("No resource groups", systemImage: "folder")
+            } else {
+                List(vm.resourceGroups, id: \.id) { rg in
+                    ResourceGroupRow(resourceGroup: rg)
+                }
+            }
         } else {
             ContentUnavailableView("Select a subscription above", systemImage: "arrow.up")
         }
