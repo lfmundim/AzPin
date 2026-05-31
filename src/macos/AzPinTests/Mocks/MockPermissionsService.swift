@@ -2,7 +2,7 @@ import Foundation
 @testable import AzPin
 
 final class MockPermissionsService: PermissionsServiceProtocol {
-    var canManageResult = true
+    let canManageResult = true
 
     func canManage(resource: PinnedResource) async -> Bool {
         canManageResult

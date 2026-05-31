@@ -1,7 +1,7 @@
 import Foundation
 @testable import AzPin
 
-final class MockTokenCache: TokenCacheProtocol {
+final class MockTokenCache: TokenCacheProtocol, @unchecked Sendable {
     var tokenResult: Result<String, Error> = .success("mock-token")
     var invalidateCalled = false
 

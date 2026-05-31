@@ -1,7 +1,7 @@
 import Foundation
 @testable import AzPin
 
-final class MockARMService: ARMServiceProtocol {
+final class MockARMService: ARMServiceProtocol, @unchecked Sendable {
     var resourceGroupsResult: Result<[AzureResourceGroup], Error> = .success([])
     var resourcesResult: Result<[AzureResource], Error> = .success([])
     var appStateResult: Result<AppRunningState, Error> = .success(.running)
