@@ -53,10 +53,14 @@ struct BrowseView: View {
             } else if vm.resourceGroups.isEmpty {
                 ContentUnavailableView("No resource groups", systemImage: "folder")
             } else {
-                List(vm.resourceGroups, id: \.id) { rg in
+                List(Array(vm.resourceGroups.enumerated()), id: \.element.id) { index, rg in
                     VStack(alignment: .leading, spacing: 0) {
-                        ResourceGroupRow(resourceGroup: rg)
-                            .onTapGesture {
+                        ResourceGroupRow(
+                            resourceGroup: rg,
+                            subscriptionId: vm.selectedSubscription?.id ?? "",
+                            displayOrder: index
+                        )
+                        .onTapGesture {
                                 if vm.selectedResourceGroupName == rg.name {
                                     vm.selectedResourceGroupName = nil
                                 } else {

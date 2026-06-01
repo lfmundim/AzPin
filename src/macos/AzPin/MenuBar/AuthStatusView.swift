@@ -10,8 +10,14 @@ struct AuthStatusView: View {
                 .foregroundStyle(.secondary)
 
         case .cliNotInstalled:
-            Label("Azure CLI not installed", systemImage: "exclamationmark.triangle")
-                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 4) {
+                Label("Azure CLI not installed", systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(.orange)
+                Button("Install Azure CLI...") {
+                    NSWorkspace.shared.open(URL(string: "https://aka.ms/installazureclimacos")!)
+                }
+                .font(.caption)
+            }
 
         case .notSignedIn:
             Label("Not signed in — run 'az login'", systemImage: "exclamationmark.triangle")

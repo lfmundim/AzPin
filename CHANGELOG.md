@@ -8,6 +8,32 @@ All notable changes to AzPin are documented in this file.
 
 ## [Unreleased]
 
+- Menubar individually-pinned resources are now plain buttons that open in Portal; no chevron submenu. Unpin is done from the main window only.
+- Menubar RG resource list no longer gets stuck on "Loading..." after pinning a new RG mid-session; reloads whenever the pinned-RG set changes.
+- RG pin button in the main window now toggles: clicking pin.fill unpins the resource group immediately.
+- Resource pin button in the main window now toggles: clicking pin.fill unpins the individual resource.
+- PinnedResourcesView rows now show a pin.fill button for inline unpin, in addition to the existing context menu.
+- Resource rows hide their pin button immediately when their parent RG is pinned, with no reload required (reactive via @Query).
+
+- **Pre-release feature set complete (tasks 3.1–3.11):**
+- First-run onboarding sheet polls every 2s for CLI installed → signed in → subscription accessible; "Get Started" enables when all three pass.
+- Resource groups can now be pinned whole (Pin RG button in BrowseView); pinned RG identity stored in SwiftData, resources fetched live from ARM on each menu open.
+- MenuBarViewModel introduced: coordinates parallel ARM fan-out for pinned RGs, tracks expanded drawer state, running state per resource, and per-resource permissions.
+- Menubar RG drawer: clicking a pinned RG expands an inline list of its live resources; clicking again collapses it.
+- Running state (running/stopped/unknown) shown per runnable resource (App Services, Function Apps, Container Apps, Logic Apps) via ARM property fetch after resource list loads.
+- Permissions checked via ARM checkAccess before showing start/stop/restart buttons; fail-safe defaults to no buttons if check fails or errors.
+- Start/Stop/Restart actions: transitional states (starting/stopping/restarting) show spinner and disable buttons; state reverts optimistically on ARM failure.
+- AppRunningState extended with .starting, .stopping, .restarting transitional cases.
+- Main window sidebar shows pinned RGs; drag-to-reorder persists via SwiftData displayOrder; right-click → Unpin.
+- Detail view now shows Pinned/Browse tabs when a sidebar RG is selected; no-selection placeholder shown otherwise.
+- Pinned Resources tab shows individually-pinned resources for the selected RG, with drag-to-reorder and swipe/context-menu unpin.
+- Account Settings tab shows current az identity (user, tenant, active subscription) with Refresh Token and Re-run setup actions.
+- Error indicators (⚠️ with tooltip) shown for RGs whose ARM resource fetch failed; errors tracked per RG, not globally.
+- RG context menu ("Open in Portal") on menubar RG button; "Install Azure CLI..." button added to .cliNotInstalled state in AuthStatusView.
+- ARM protocol extension added: tenantId-free overloads for fetchResources and fetchResourceGroups (mirrors TokenCacheProtocol pattern); callers without tenantId context use the short form.
+- TokenCacheTests, PermissionsServiceTests, and MenuBarViewModelTests added with in-memory SwiftData and MockURLProtocol stubs.
+- MockURLProtocol introduced for URLSession stubbing in test target.
+
 - Subscription list shows all subscriptions sorted default-first then by tenantId; isDefault field decoded from az account list output.
 - modelContainer now wired into all SwiftUI scenes so @Query and modelContext resolve to the persistent store; fixes pins not surviving window close and not appearing in the menubar.
 - Resource group rows now toggle: tap expands, tap again collapses.

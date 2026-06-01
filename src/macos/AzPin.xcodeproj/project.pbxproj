@@ -7,6 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		86CA09FB9C3C4BF58B1C697C /* AccountSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCB3851936241B68CDF804E /* AccountSettingsView.swift */; };
+		A55FF1D8B530426FA9562239 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069415C853A54986A126F882 /* OnboardingView.swift */; };
+		D760A907637C4920A2A1A222 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2885874A4FC94F98B8F0D0AE /* OnboardingViewModel.swift */; };
+		2324A22C64F14BB38F779907 /* PinnedResourceRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D397E438131046618027321E /* PinnedResourceRow.swift */; };
+		22AC1C37203A4B8CA814F73F /* MenuBarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25CBEB6FD4194254B12E8B66 /* MenuBarViewModel.swift */; };
+		93B9147CD8DB40B78678AB8D /* ResourceActionButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC4168A1D9374F57980DC173 /* ResourceActionButtons.swift */; };
+		97B9EA8DBA18493C91D52FD5 /* MockURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B86870FCB34A1786F7E733 /* MockURLProtocol.swift */; };
+		A823C946351E4AE88F10AED5 /* MenuBarViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B7DC02A9AB4D04AFAE2282 /* MenuBarViewModelTests.swift */; };
+
 		19FB6AF81E5CE58F2B7027B2 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B898338034B769CAAC01018 /* MenuBarView.swift */; };
 		214BFADAD5A98DE52D2543C8 /* AzPinTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A8ED60A6214713CEDB9487 /* AzPinTests.swift */; };
 		3BA43D87D2505A0A399E0110 /* PortalURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6731858DD1D32E08A77EAE95 /* PortalURL.swift */; };
@@ -59,6 +68,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		3CCB3851936241B68CDF804E /* AccountSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSettingsView.swift; sourceTree = "<group>"; };
+		069415C853A54986A126F882 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		2885874A4FC94F98B8F0D0AE /* OnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModel.swift; sourceTree = "<group>"; };
+		D397E438131046618027321E /* PinnedResourceRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedResourceRow.swift; sourceTree = "<group>"; };
+		25CBEB6FD4194254B12E8B66 /* MenuBarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarViewModel.swift; sourceTree = "<group>"; };
+		DC4168A1D9374F57980DC173 /* ResourceActionButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceActionButtons.swift; sourceTree = "<group>"; };
+		13B86870FCB34A1786F7E733 /* MockURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocol.swift; sourceTree = "<group>"; };
+		A5B7DC02A9AB4D04AFAE2282 /* MenuBarViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarViewModelTests.swift; sourceTree = "<group>"; };
+
 		024B95E760522247E58D8861 /* PinnedResourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedResourcesView.swift; sourceTree = "<group>"; };
 		058BC49418DF8FB7AE66C712 /* AzCLIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AzCLIService.swift; sourceTree = "<group>"; };
 		088B66AD957350D17525104B /* TokenCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenCache.swift; sourceTree = "<group>"; };
@@ -105,6 +123,15 @@
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		FCBF97EDA2764C5B9340422B /* MenuBar */ = {
+			isa = PBXGroup;
+			children = (
+				A5B7DC02A9AB4D04AFAE2282 /* MenuBarViewModelTests.swift */,
+			);
+			path = MenuBar;
+			sourceTree = "<group>";
+		};
+
 		221466AB4D0A6779E000D8FB /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
@@ -119,6 +146,7 @@
 		2AEA5CC76F02EE930968E6D2 /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
+				13B86870FCB34A1786F7E733 /* MockURLProtocol.swift */,
 				B649902B6FD5BABE9801644B /* MockARMService.swift */,
 				0A896F79541BFB0543F4C266 /* MockAzCLIService.swift */,
 				BCEC3AEAEE4E9B53F11E03BB /* MockPermissionsService.swift */,
@@ -130,6 +158,8 @@
 		2D9818F76DC0C5F1290855B1 /* MenuBar */ = {
 			isa = PBXGroup;
 			children = (
+				DC4168A1D9374F57980DC173 /* ResourceActionButtons.swift */,
+				25CBEB6FD4194254B12E8B66 /* MenuBarViewModel.swift */,
 				26EFC1364B9438E2377C1804 /* AuthStatusView.swift */,
 				7B898338034B769CAAC01018 /* MenuBarView.swift */,
 				E8F3ADAB904438A648F7311D /* ResourceGroupMenuItem.swift */,
@@ -187,6 +217,7 @@
 		632D166EEFBECC3D2A9B2E99 /* AzPinTests */ = {
 			isa = PBXGroup;
 			children = (
+				FCBF97EDA2764C5B9340422B /* MenuBar */,
 				22A8ED60A6214713CEDB9487 /* AzPinTests.swift */,
 				2AEA5CC76F02EE930968E6D2 /* Mocks */,
 				E1E2E3E4E5E6E7E8E9EAEBEC /* MainWindow */,
@@ -216,6 +247,9 @@
 		9142F47EB4E007BDE7939C35 /* MainWindow */ = {
 			isa = PBXGroup;
 			children = (
+				D397E438131046618027321E /* PinnedResourceRow.swift */,
+				2885874A4FC94F98B8F0D0AE /* OnboardingViewModel.swift */,
+				069415C853A54986A126F882 /* OnboardingView.swift */,
 				95A17A927064412FE45FD659 /* BrowseView.swift */,
 				B1B2B3B4B5B6B7B8B9BABBBC /* BrowseViewModel.swift */,
 				81F848932D8993F17C471DD4 /* DetailView.swift */,
@@ -253,6 +287,7 @@
 		F7B1CBF520B3044025EF3F45 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				3CCB3851936241B68CDF804E /* AccountSettingsView.swift */,
 				9A8D86AEFEE3AE945152DBA0 /* SettingsView.swift */,
 			);
 			path = Settings;
@@ -342,6 +377,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A823C946351E4AE88F10AED5 /* MenuBarViewModelTests.swift in Sources */,
+				97B9EA8DBA18493C91D52FD5 /* MockURLProtocol.swift in Sources */,
 				214BFADAD5A98DE52D2543C8 /* AzPinTests.swift in Sources */,
 				C1C2C3C4C5C6C7C8C9CACBCC /* BrowseViewModelTests.swift in Sources */,
 				E364F498D203021BBC0B8605 /* MockARMService.swift in Sources */,
@@ -360,6 +397,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				86CA09FB9C3C4BF58B1C697C /* AccountSettingsView.swift in Sources */,
+				A55FF1D8B530426FA9562239 /* OnboardingView.swift in Sources */,
+				D760A907637C4920A2A1A222 /* OnboardingViewModel.swift in Sources */,
+				2324A22C64F14BB38F779907 /* PinnedResourceRow.swift in Sources */,
+				22AC1C37203A4B8CA814F73F /* MenuBarViewModel.swift in Sources */,
+				93B9147CD8DB40B78678AB8D /* ResourceActionButtons.swift in Sources */,
 				B9D1E168B195A6EA0524BE04 /* ARMService.swift in Sources */,
 				AFDC16758EEEF76C3B3086F0 /* AuthStatusView.swift in Sources */,
 				8DC948C831AF1A749F97E639 /* AzCLIService.swift in Sources */,
