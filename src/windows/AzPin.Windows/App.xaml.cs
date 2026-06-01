@@ -2,6 +2,7 @@ using AzPin.Windows.Data;
 using AzPin.Windows.Services;
 using AzPin.Windows.TrayIcon;
 using AzPin.Windows.Utilities;
+using AzPin.Windows.ViewModels;
 using H.NotifyIcon;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -45,6 +46,7 @@ public partial class App : Application
             options.UseSqlite($"Data Source={dbPath}"));
         services.AddSingleton<IShellRunner, ShellRunner>();
         services.AddSingleton<IAzCliService, AzCliService>();
+        services.AddSingleton<AuthViewModel>();
         services.AddScoped<ITokenCache, TokenCache>();
         services.AddHttpClient("arm", c => c.BaseAddress = new Uri("https://management.azure.com"));
         services.AddScoped<IArmService, ArmService>();
