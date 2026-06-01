@@ -1,0 +1,39 @@
+<UserControl
+    x:Class="AzPin.Windows.TrayIcon.TrayMenuView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    <Border MinWidth="320" Padding="12">
+        <StackPanel Spacing="10">
+            <StackPanel x:Name="RefreshingRow" Orientation="Horizontal" Spacing="8">
+                <ProgressRing Width="16" Height="16" IsActive="True" />
+                <TextBlock Text="Refreshing authentication status..." VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Name="SignedInRow" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
+                <TextBlock Text="" FontFamily="Segoe Fluent Icons" Foreground="{ThemeResource SystemFillColorSuccessBrush}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Auth.AccountName}" VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Name="NotSignedInRow" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
+                <TextBlock Text="" FontFamily="Segoe Fluent Icons" Foreground="{ThemeResource SystemFillColorCautionBrush}" VerticalAlignment="Center" />
+                <TextBlock Text="Not signed in - run az login" TextWrapping="Wrap" VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Name="CliMissingRow" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
+                <TextBlock Text="" FontFamily="Segoe Fluent Icons" Foreground="{ThemeResource SystemFillColorCriticalBrush}" VerticalAlignment="Center" />
+                <TextBlock Text="Azure CLI not installed" VerticalAlignment="Center" />
+            </StackPanel>
+
+            <Separator />
+
+            <Button Content="Open AzPin..." HorizontalAlignment="Stretch" />
+
+            <Separator />
+
+            <Button Content="Quit AzPin" HorizontalAlignment="Stretch" Command="{Binding QuitCommand}" />
+        </StackPanel>
+    </Border>
+</UserControl>

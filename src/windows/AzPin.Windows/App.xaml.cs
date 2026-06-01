@@ -47,6 +47,7 @@ public partial class App : Application
         services.AddSingleton<IShellRunner, ShellRunner>();
         services.AddSingleton<IAzCliService, AzCliService>();
         services.AddSingleton<AuthViewModel>();
+        services.AddSingleton<TrayMenuViewModel>();
         services.AddScoped<ITokenCache, TokenCache>();
         services.AddHttpClient("arm", c => c.BaseAddress = new Uri("https://management.azure.com"));
         services.AddScoped<IArmService, ArmService>();

@@ -1,7 +1,6 @@
 using H.NotifyIcon;
 using H.NotifyIcon.Core;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AzPin.Windows.TrayIcon;
 
@@ -9,20 +8,17 @@ public static class TrayIconFactory
 {
     public static TaskbarIcon Create()
     {
-        var menu = new MenuFlyout();
-
-        var quitItem = new MenuFlyoutItem
+        var menuView = new TrayMenuView
         {
-            Text = "Quit AzPin"
+            DataContext = App.Services.GetRequiredService<TrayMenuViewModel>()
         };
-        quitItem.Click += (_, _) => Application.Current.Exit();
-        menu.Items.Add(quitItem);
 
         return new TaskbarIcon
         {
             ToolTipText = "AzPin",
             IconSource = new IconFile("Assets/tray.ico"),
-            ContextFlyout = menu
+            PopupActivation = PopupActivationMode.LeftOrRightClick,
+            TrayPopup = menuView
         };
     }
 }
