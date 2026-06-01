@@ -24,10 +24,7 @@ final class AzCLIService: AzCLIServiceProtocol {
     }
 
     func fetchToken(subscriptionId: String, tenantId: String) async throws -> AzureTokenResponse {
-        // --subscription and --tenant are mutually exclusive in az CLI.
-        // Use --tenant when available; it correctly resolves cross-tenant auth.
-        let scopeArg = tenantId.isEmpty ? "--subscription \(subscriptionId)" : "--tenant \(tenantId)"
-        let json = try await shell.run("\(resolveAzPath()) account get-access-token \(scopeArg) --output json")
+        let json = try await shell.run("\(resolveAzPath()) account get-access-token --subscription \(subscriptionId) --output json")
         return try jsonDecoder.decode(AzureTokenResponse.self, from: json)
     }
 
