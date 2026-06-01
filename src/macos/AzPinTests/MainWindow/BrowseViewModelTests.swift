@@ -137,6 +137,18 @@ final class BrowseViewModelTests: XCTestCase {
         XCTAssertEqual(vm.resourceGroups.count, 1)
     }
 
+    func testLoadResourceGroups_discardsResultIfSubscriptionChangedDuringFetch() async {
+        vm.selectedSubscription = sub1
+        mockARM.resourceGroupsResult = .success([AzureResourceGroup(id: "/rg-1", name: "rg-prod", location: "eastus")])
+        mockARM.onFetchResourceGroups = { [weak self] in
+            self?.vm.selectedSubscription = self?.sub2
+        }
+
+        await vm.loadResourceGroups()
+
+        XCTAssertTrue(vm.resourceGroups.isEmpty)
+    }
+
     func testLoadResourceGroups_resetsResourceState() async {
         vm.selectedSubscription = sub1
         vm.selectedResourceGroupName = "old-rg"
@@ -160,6 +172,7 @@ final class BrowseViewModelTests: XCTestCase {
 
     func testLoadResources_populatesList() async {
         vm.selectedSubscription = sub1
+        vm.selectedResourceGroupName = "rg-prod"
         let res = [
             AzureResource(id: "/r1", name: "my-app", type: "Microsoft.Web/sites", location: "eastus"),
             AzureResource(id: "/r2", name: "my-fn", type: "Microsoft.Web/sites/functions", location: "eastus")
@@ -173,8 +186,22 @@ final class BrowseViewModelTests: XCTestCase {
         XCTAssertFalse(vm.isLoadingResources)
     }
 
+    func testLoadResources_discardsResultIfRGChangedDuringFetch() async {
+        vm.selectedSubscription = sub1
+        vm.selectedResourceGroupName = "rg-prod"
+        mockARM.resourcesResult = .success([AzureResource(id: "/r1", name: "my-app", type: "Microsoft.Web/sites", location: "eastus")])
+        mockARM.onFetchResources = { [weak self] in
+            self?.vm.selectedResourceGroupName = "rg-other"
+        }
+
+        await vm.loadResources(in: "rg-prod")
+
+        XCTAssertTrue(vm.resources.isEmpty)
+    }
+
     func testLoadResources_onError_setsErrorMessage() async {
         vm.selectedSubscription = sub1
+        vm.selectedResourceGroupName = "rg-prod"
         mockARM.resourcesResult = .failure(URLError(.badServerResponse))
 
         await vm.loadResources(in: "rg-prod")

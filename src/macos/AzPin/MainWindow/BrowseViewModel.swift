@@ -48,8 +48,11 @@ final class BrowseViewModel {
         isLoadingResourceGroups = true
         defer { isLoadingResourceGroups = false }
         do {
-            resourceGroups = try await arm.fetchResourceGroups(subscriptionId: sub.id, tenantId: sub.tenantId)
+            let groups = try await arm.fetchResourceGroups(subscriptionId: sub.id, tenantId: sub.tenantId)
+            guard selectedSubscription?.id == sub.id else { return }
+            resourceGroups = groups
         } catch {
+            guard selectedSubscription?.id == sub.id else { return }
             errorMessage = error.localizedDescription
         }
     }
@@ -60,8 +63,11 @@ final class BrowseViewModel {
         isLoadingResources = true
         defer { isLoadingResources = false }
         do {
-            resources = try await arm.fetchResources(subscriptionId: sub.id, resourceGroup: rgName, tenantId: sub.tenantId)
+            let res = try await arm.fetchResources(subscriptionId: sub.id, resourceGroup: rgName, tenantId: sub.tenantId)
+            guard selectedResourceGroupName == rgName else { return }
+            resources = res
         } catch {
+            guard selectedResourceGroupName == rgName else { return }
             errorMessage = error.localizedDescription
         }
     }
