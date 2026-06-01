@@ -5,6 +5,15 @@ struct AzureResource: Decodable, Sendable {
     let name: String
     let type: String
     let location: String
+    let tags: [String: String]?
+
+    init(id: String, name: String, type: String, location: String, tags: [String: String]? = nil) {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.location = location
+        self.tags = tags
+    }
 }
 
 struct AzureResourceGroup: Decodable, Sendable {
