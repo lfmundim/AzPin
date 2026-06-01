@@ -8,6 +8,9 @@ All notable changes to AzPin are documented in this file.
 
 ## [Unreleased]
 
+- Resource group expand/collapse in the main window now animates smoothly; switched from List/NSTableView to ScrollView+LazyVStack so SwiftUI controls the height animation end-to-end.
+- Loading spinner while fetching RG resources moved to an inline overlay on the row header, eliminating the layout shift that was interrupting the expand animation.
+
 - Menubar individually-pinned resources are now plain buttons that open in Portal; no chevron submenu. Unpin is done from the main window only.
 - Menubar RG resource list no longer gets stuck on "Loading..." after pinning a new RG mid-session; reloads whenever the pinned-RG set changes.
 - RG pin button in the main window now toggles: clicking pin.fill unpins the resource group immediately.
