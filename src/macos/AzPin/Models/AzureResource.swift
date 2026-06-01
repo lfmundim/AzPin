@@ -75,3 +75,11 @@ struct AppServiceResponse: Decodable, Sendable {
 struct AppServiceProperties: Decodable, Sendable {
     let state: String
 }
+
+struct ContainerAppResponse: Decodable, Sendable {
+    let properties: ContainerAppProperties
+}
+
+struct ContainerAppProperties: Decodable, Sendable {
+    let runningStatus: String
+}
