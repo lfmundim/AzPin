@@ -13,6 +13,7 @@
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* RGBrowseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F2A3B4C5D6E7F8A9B0C1D2 /* RGBrowseView.swift */; };
 		BB11CC22DD33EE44FF55AA77 /* RGBrowseViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF77 /* RGBrowseViewModelTests.swift */; };
 		DD11EE22FF33AA44BB55CC77 /* ARMServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11DD22EE33FF44AA55BB77 /* ARMServiceTests.swift */; };
+		B1C2D3E4F5A6B7C8D9E0F1A2 /* SubscriptionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* SubscriptionSettingsView.swift */; };
 		A55FF1D8B530426FA9562239 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069415C853A54986A126F882 /* OnboardingView.swift */; };
 		D760A907637C4920A2A1A222 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2885874A4FC94F98B8F0D0AE /* OnboardingViewModel.swift */; };
 		2324A22C64F14BB38F779907 /* PinnedResourceRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D397E438131046618027321E /* PinnedResourceRow.swift */; };
@@ -79,6 +80,7 @@
 		E1F2A3B4C5D6E7F8A9B0C1D2 /* RGBrowseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBrowseView.swift; sourceTree = "<group>"; };
 		AA11BB22CC33DD44EE55FF77 /* RGBrowseViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBrowseViewModelTests.swift; sourceTree = "<group>"; };
 		CC11DD22EE33FF44AA55BB77 /* ARMServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARMServiceTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* SubscriptionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionSettingsView.swift; sourceTree = "<group>"; };
 		069415C853A54986A126F882 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		2885874A4FC94F98B8F0D0AE /* OnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModel.swift; sourceTree = "<group>"; };
 		D397E438131046618027321E /* PinnedResourceRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedResourceRow.swift; sourceTree = "<group>"; };
@@ -303,6 +305,7 @@
 			children = (
 				3CCB3851936241B68CDF804E /* AccountSettingsView.swift */,
 				BB22CC33DD44EE55FF6600AA /* PreferencesSettingsView.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* SubscriptionSettingsView.swift */,
 				9A8D86AEFEE3AE945152DBA0 /* SettingsView.swift */,
 			);
 			path = Settings;
@@ -444,6 +447,7 @@
 				ED92C557C42724A321EBF964 /* ResourceTypeMapper.swift in Sources */,
 				FBB406BC6A7823B4DE7AF4F3 /* SettingsView.swift in Sources */,
 				AA11BB22CC33DD44EE55FF66 /* PreferencesSettingsView.swift in Sources */,
+				B1C2D3E4F5A6B7C8D9E0F1A2 /* SubscriptionSettingsView.swift in Sources */,
 				D1E2F3A4B5C6D7E8F9A0B1C2 /* RGBrowseViewModel.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9C0D1E2 /* RGBrowseView.swift in Sources */,
 				E7F42F342FCCCDA2005D884D /* AuthViewModel.swift in Sources */,

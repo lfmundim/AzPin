@@ -10,11 +10,22 @@ final class BrowseViewModel {
     var selectedSubscription: AzureSubscription?
     var isLoadingSubscriptions = false
     var resourceGroups: [AzureResourceGroup] = []
+    var searchText: String = ""
     var isLoadingResourceGroups = false
     var selectedResourceGroupName: String?
     var resources: [AzureResource] = []
     var isLoadingResources = false
     var errorMessage: String?
+
+    static func hiddenSubscriptionIds() -> Set<String> {
+        let raw = UserDefaults.standard.string(forKey: "hiddenSubscriptionIds") ?? ""
+        return Set(raw.split(separator: ",").map(String.init).filter { !$0.isEmpty })
+    }
+
+    var filteredResourceGroups: [AzureResourceGroup] {
+        guard !searchText.isEmpty else { return resourceGroups }
+        return resourceGroups.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    }
 
     init(azCLI: any AzCLIServiceProtocol, arm: any ARMServiceProtocol) {
         self.azCLI = azCLI
@@ -26,7 +37,9 @@ final class BrowseViewModel {
         errorMessage = nil
         defer { isLoadingSubscriptions = false }
         do {
+            let hiddenIds = Self.hiddenSubscriptionIds()
             subscriptions = try await azCLI.listSubscriptions()
+                .filter { !hiddenIds.contains($0.id) }
                 .sorted { lhs, rhs in
                     if lhs.isDefault != rhs.isDefault { return lhs.isDefault }
                     return lhs.tenantId < rhs.tenantId
@@ -50,7 +63,7 @@ final class BrowseViewModel {
         do {
             let groups = try await arm.fetchResourceGroups(subscriptionId: sub.id, tenantId: sub.tenantId)
             guard selectedSubscription?.id == sub.id else { return }
-            resourceGroups = groups
+            resourceGroups = groups.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         } catch {
             guard selectedSubscription?.id == sub.id else { return }
             errorMessage = error.localizedDescription
@@ -65,7 +78,7 @@ final class BrowseViewModel {
         do {
             let res = try await arm.fetchResources(subscriptionId: sub.id, resourceGroup: rgName, tenantId: sub.tenantId)
             guard selectedResourceGroupName == rgName else { return }
-            resources = res
+            resources = res.sorted { $0.type.lowercased() < $1.type.lowercased() }
         } catch {
             guard selectedResourceGroupName == rgName else { return }
             errorMessage = error.localizedDescription
