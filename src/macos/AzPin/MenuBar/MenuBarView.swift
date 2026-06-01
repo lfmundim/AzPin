@@ -51,6 +51,10 @@ struct MenuBarView: View {
         .task {
             await auth.refresh()
             await menuVM.loadResources(for: pinnedGroups)
+            if !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
+                openWindow(id: "main")
+                NSApp.activate(ignoringOtherApps: true)
+            }
         }
         .onChange(of: pinnedGroups.map(\.id)) { _, _ in
             Task { await menuVM.loadResources(for: pinnedGroups) }
