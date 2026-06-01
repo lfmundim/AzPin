@@ -27,6 +27,11 @@ jobs:
             echo "available=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
       - name: Install tooling
         run: |
           brew install xcbeautify create-dmg
