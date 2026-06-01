@@ -53,35 +53,51 @@ struct BrowseView: View {
             } else if vm.resourceGroups.isEmpty {
                 ContentUnavailableView("No resource groups", systemImage: "folder")
             } else {
-                List(vm.resourceGroups, id: \.id) { rg in
-                    VStack(alignment: .leading, spacing: 0) {
-                        ResourceGroupRow(resourceGroup: rg)
-                            .onTapGesture {
-                                if vm.selectedResourceGroupName == rg.name {
-                                    vm.selectedResourceGroupName = nil
-                                } else {
-                                    vm.selectedResourceGroupName = rg.name
-                                    Task { await vm.loadResources(in: rg.name) }
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(vm.resourceGroups.enumerated()), id: \.element.id) { index, rg in
+                            VStack(alignment: .leading, spacing: 0) {
+                                ResourceGroupRow(
+                                    resourceGroup: rg,
+                                    subscriptionId: vm.selectedSubscription?.id ?? "",
+                                    displayOrder: index,
+                                    isExpanded: vm.selectedResourceGroupName == rg.name,
+                                    onToggle: {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            if vm.selectedResourceGroupName == rg.name {
+                                                vm.selectedResourceGroupName = nil
+                                            } else {
+                                                vm.selectedResourceGroupName = rg.name
+                                                Task { await vm.loadResources(in: rg.name) }
+                                            }
+                                        }
+                                    }
+                                )
+                                .overlay(alignment: .trailing) {
+                                    if vm.selectedResourceGroupName == rg.name && vm.isLoadingResources {
+                                        ProgressView()
+                                            .scaleEffect(0.6)
+                                            .padding(.trailing, 32)
+                                    }
                                 }
-                            }
 
-                        if vm.selectedResourceGroupName == rg.name {
-                            if vm.isLoadingResources {
-                                ProgressView()
-                                    .padding(.leading, 24)
-                            } else {
-                                ForEach(Array(vm.resources.enumerated()), id: \.element.id) { index, resource in
-                                    ResourceRow(
-                                        resource: resource,
-                                        subscriptionId: vm.selectedSubscription?.id ?? "",
-                                        resourceGroup: vm.selectedResourceGroupName ?? "",
-                                        displayOrder: index
-                                    )
-                                    .padding(.leading, 24)
+                                if vm.selectedResourceGroupName == rg.name && !vm.isLoadingResources {
+                                    ForEach(Array(vm.resources.enumerated()), id: \.element.id) { index, resource in
+                                        ResourceRow(
+                                            resource: resource,
+                                            subscriptionId: vm.selectedSubscription?.id ?? "",
+                                            resourceGroup: vm.selectedResourceGroupName ?? "",
+                                            displayOrder: index
+                                        )
+                                        .padding(.leading, 24)
+                                    }
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
                                 }
                             }
+                            Divider()
                         }
                     }
+                    .padding(.horizontal, 8)
                 }
             }
         } else {

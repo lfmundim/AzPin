@@ -9,8 +9,18 @@ protocol ARMServiceProtocol: Sendable {
     func restartApp(resource: PinnedResource) async throws
 }
 
+extension ARMServiceProtocol {
+    func fetchResourceGroups(subscriptionId: String) async throws -> [AzureResourceGroup] {
+        try await fetchResourceGroups(subscriptionId: subscriptionId, tenantId: "")
+    }
+
+    func fetchResources(subscriptionId: String, resourceGroup: String) async throws -> [AzureResource] {
+        try await fetchResources(subscriptionId: subscriptionId, resourceGroup: resourceGroup, tenantId: "")
+    }
+}
+
 enum AppRunningState: Sendable {
-    case running, stopped, unknown
+    case running, stopped, unknown, starting, stopping, restarting
 }
 
 @Observable
