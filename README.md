@@ -106,6 +106,7 @@ xcodebuild -scheme AzPin -configuration Release \
 | `CLAUDE.md` | Architecture rules and hard constraints |
 | `AZPIN_SPEC.md` | Full product specification |
 | `CHANGELOG.md` | Release history |
+| `ROADMAP.md` | Planned future features |
 | `RELEASE_PROCESS.md` | How to cut a release |
 
 ---
