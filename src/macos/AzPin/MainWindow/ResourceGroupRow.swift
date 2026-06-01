@@ -5,14 +5,38 @@ struct ResourceGroupRow: View {
     let resourceGroup: AzureResourceGroup
     let subscriptionId: String
     let displayOrder: Int
+    var isExpanded: Bool = false
+    var onToggle: (() -> Void)? = nil
 
     @Environment(\.modelContext) private var modelContext
     @State private var isPinned = false
+    @State private var isHovering = false
 
     var body: some View {
         HStack {
-            Label(resourceGroup.name, systemImage: "folder.fill")
+            Label {
+                Text(resourceGroup.name).underline(isHovering)
+            } icon: {
+                Image(systemName: "folder.fill")
+            }
+            .contentShape(Rectangle())
+            .onHover { hovering in
+                isHovering = hovering
+                if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+            }
+            .onTapGesture {
+                NSWorkspace.shared.open(PortalURL.resourceGroup(subscriptionId: subscriptionId, name: resourceGroup.name))
+            }
             Spacer()
+            Button {
+                onToggle?()
+            } label: {
+                Image(systemName: "chevron.right")
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .animation(.easeInOut(duration: 0.2), value: isExpanded)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
             Button {
                 isPinned ? unpinResourceGroup() : pinResourceGroup()
             } label: {

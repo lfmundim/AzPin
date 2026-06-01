@@ -8,6 +8,10 @@ All notable changes to AzPin are documented in this file.
 
 ## [Unreleased]
 
+- Resource and resource group names in the main window behave as hyperlinks: pointer cursor on hover, underline on hover, click opens in Azure Portal.
+- Resource group rows now show a chevron that rotates to indicate expanded/collapsed state; chevron click toggles the drawer, name click opens the RG in Portal.
+- Fixed two startup warnings ("Set a .modelContext in view's environment to use Query") caused by MenuBarExtra @Query properties firing before scene-level modelContainer propagated.
+
 - Resource group expand/collapse in the main window now animates smoothly; switched from List/NSTableView to ScrollView+LazyVStack so SwiftUI controls the height animation end-to-end.
 - Loading spinner while fetching RG resources moved to an inline overlay on the row header, eliminating the layout shift that was interrupting the expand animation.
 

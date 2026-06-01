@@ -40,6 +40,7 @@ struct AzPinApp: App {
                 .environment(permissions)
                 .environment(authViewModel)
                 .environment(menuBarViewModel)
+                .environment(\.modelContext, container.mainContext)
         }
         .menuBarExtraStyle(.menu)
         .modelContainer(container)

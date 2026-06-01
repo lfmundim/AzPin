@@ -9,6 +9,7 @@ struct ResourceRow: View {
 
     @Environment(\.modelContext) private var modelContext
     @State private var isPinned = false
+    @State private var isHovering = false
     @Query private var pinnedRGs: [PinnedResourceGroup]
 
     init(resource: AzureResource, subscriptionId: String, resourceGroup: String, displayOrder: Int) {
@@ -25,7 +26,19 @@ struct ResourceRow: View {
 
     var body: some View {
         HStack {
-            Label(resource.name, systemImage: ResourceTypeMapper.symbolName(for: resource.type))
+            Label {
+                Text(resource.name).underline(isHovering)
+            } icon: {
+                Image(systemName: ResourceTypeMapper.symbolName(for: resource.type))
+            }
+            .contentShape(Rectangle())
+            .onHover { hovering in
+                isHovering = hovering
+                if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+            }
+            .onTapGesture {
+                NSWorkspace.shared.open(PortalURL.resource(id: resource.id))
+            }
             Spacer()
             if !isRGPinned {
                 Button {

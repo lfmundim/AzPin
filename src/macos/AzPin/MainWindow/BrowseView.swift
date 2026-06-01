@@ -60,23 +60,24 @@ struct BrowseView: View {
                                 ResourceGroupRow(
                                     resourceGroup: rg,
                                     subscriptionId: vm.selectedSubscription?.id ?? "",
-                                    displayOrder: index
+                                    displayOrder: index,
+                                    isExpanded: vm.selectedResourceGroupName == rg.name,
+                                    onToggle: {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            if vm.selectedResourceGroupName == rg.name {
+                                                vm.selectedResourceGroupName = nil
+                                            } else {
+                                                vm.selectedResourceGroupName = rg.name
+                                                Task { await vm.loadResources(in: rg.name) }
+                                            }
+                                        }
+                                    }
                                 )
                                 .overlay(alignment: .trailing) {
                                     if vm.selectedResourceGroupName == rg.name && vm.isLoadingResources {
                                         ProgressView()
                                             .scaleEffect(0.6)
                                             .padding(.trailing, 32)
-                                    }
-                                }
-                                .onTapGesture {
-                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                        if vm.selectedResourceGroupName == rg.name {
-                                            vm.selectedResourceGroupName = nil
-                                        } else {
-                                            vm.selectedResourceGroupName = rg.name
-                                            Task { await vm.loadResources(in: rg.name) }
-                                        }
                                     }
                                 }
 
