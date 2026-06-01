@@ -62,6 +62,18 @@ final class MenuBarViewModelTests: XCTestCase {
         XCTAssertNil(vm.resourcesByRG["rg-id-1"])
     }
 
+    func test_loadResources_clearsStaleError_onSubsequentSuccess() async {
+        mockARM.resourcesResult = .failure(URLError(.badServerResponse))
+        await vm.loadResources(for: [rg])
+        XCTAssertNotNil(vm.loadErrors["rg-id-1"])
+
+        mockARM.resourcesResult = .success([runnableResource])
+        await vm.loadResources(for: [rg])
+
+        XCTAssertNil(vm.loadErrors["rg-id-1"])
+        XCTAssertEqual(vm.resourcesByRG["rg-id-1"]?.count, 1)
+    }
+
     // MARK: - startApp state revert
 
     func test_startApp_setsRunningOnSuccess() async {

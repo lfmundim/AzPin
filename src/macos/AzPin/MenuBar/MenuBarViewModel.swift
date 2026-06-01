@@ -42,7 +42,10 @@ final class MenuBarViewModel {
                 }
             }
             for await (rgId, resources, error) in group {
-                if let resources { resourcesByRG[rgId] = resources }
+                if let resources {
+                    resourcesByRG[rgId] = resources
+                    loadErrors[rgId] = nil
+                }
                 if let error { loadErrors[rgId] = error }
                 if let resources, let rg = rgTuples.first(where: { $0.id == rgId }) {
                     Task {

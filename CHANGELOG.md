@@ -13,6 +13,8 @@ All notable changes to AzPin are documented in this file.
 - Runnable resources (App Services, Function Apps, Container Apps, Logic Apps) now show a native chevron submenu containing Stop/Start, Restart, and Open in Portal with SF Symbol glyphs; non-runnable resources remain plain portal-opening buttons.
 - Fixed action buttons not appearing for Contributor-role users: replaced `checkAccess` POST (requires Owner-level `Microsoft.Authorization/*/read`) with `GET .../providers/Microsoft.Authorization/permissions`, accessible to Contributors. Correctly handles wildcard actions and `notActions` denial.
 - Fixed `.unknown` running state showing a spinner; spinner now only appears during transitional states (starting/stopping/restarting).
+- Fixed stale ARM error persisting in menubar RG drawer after a transient failure: error now clears on the next successful resource fetch for that RG.
+- Fixed permissions check returning false for custom roles that grant actions via wildcard patterns (e.g. `Microsoft.Web/sites/*`, `Microsoft.Web/*`); ARM RBAC wildcard matching now evaluated correctly.
 - Individually-pinned resources are plain buttons that open in Portal; unpin is done from the main window only.
 - RG resource list no longer gets stuck on "Loading..." after pinning a new RG mid-session.
 

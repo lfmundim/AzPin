@@ -116,4 +116,43 @@ final class PermissionsServiceTests: XCTestCase {
 
         XCTAssertFalse(result)
     }
+
+    func test_canManage_returnsTrue_whenSitesWildcardGranted() async {
+        mockCache.tokenResult = .success("token")
+        MockURLProtocol.handler = { _ in
+            let body = #"{"value": [{"actions": ["Microsoft.Web/sites/*"], "notActions": []}]}"#
+            let response = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data(body.utf8))
+        }
+
+        let result = await service.canManage(resource: resource)
+
+        XCTAssertTrue(result)
+    }
+
+    func test_canManage_returnsTrue_whenWebProviderWildcardGranted() async {
+        mockCache.tokenResult = .success("token")
+        MockURLProtocol.handler = { _ in
+            let body = #"{"value": [{"actions": ["Microsoft.Web/*"], "notActions": []}]}"#
+            let response = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data(body.utf8))
+        }
+
+        let result = await service.canManage(resource: resource)
+
+        XCTAssertTrue(result)
+    }
+
+    func test_canManage_returnsFalse_whenWildcardGrantedButDeniedViaWildcardNotAction() async {
+        mockCache.tokenResult = .success("token")
+        MockURLProtocol.handler = { _ in
+            let body = #"{"value": [{"actions": ["Microsoft.Web/sites/*"], "notActions": ["Microsoft.Web/sites/*"]}]}"#
+            let response = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data(body.utf8))
+        }
+
+        let result = await service.canManage(resource: resource)
+
+        XCTAssertFalse(result)
+    }
 }

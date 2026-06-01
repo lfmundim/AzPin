@@ -35,20 +35,32 @@ final class PermissionsService: PermissionsServiceProtocol {
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let value = json["value"] as? [[String: Any]] else { return false }
         // Each entry has "actions" (allowed) and "notActions" (denied). Check that
-        // at least one entry grants a wildcard or explicit start/stop permission.
+        // at least one entry grants start/stop via exact match, trailing wildcard
+        // (e.g. Microsoft.Web/sites/*), or full wildcard — without a matching deny.
         let startAction = "microsoft.web/sites/start/action"
-        let stopAction = "microsoft.web/sites/stop/action"
+        let stopAction  = "microsoft.web/sites/stop/action"
         for entry in value {
             guard let actions = entry["actions"] as? [String] else { continue }
             let notActions = (entry["notActions"] as? [String]) ?? []
-            let normalized = actions.map { $0.lowercased() }
-            let deniedNormalized = notActions.map { $0.lowercased() }
-            let grants = normalized.contains("*") ||
-                         normalized.contains(startAction) ||
-                         normalized.contains(stopAction)
-            let denied = deniedNormalized.contains(startAction) ||
-                         deniedNormalized.contains(stopAction)
+            let grants = actions.contains { Self.armPattern($0, matches: startAction) ||
+                                            Self.armPattern($0, matches: stopAction) }
+            let denied = notActions.contains { Self.armPattern($0, matches: startAction) ||
+                                               Self.armPattern($0, matches: stopAction) }
             if grants && !denied { return true }
+        }
+        return false
+    }
+
+    // Evaluates an ARM RBAC action pattern against a concrete action string.
+    // Handles: exact match, full wildcard "*", and trailing-segment wildcards
+    // such as "Microsoft.Web/sites/*" or "Microsoft.Web/*".
+    private static func armPattern(_ pattern: String, matches action: String) -> Bool {
+        let p = pattern.lowercased()
+        let a = action.lowercased()
+        if p == "*" || p == a { return true }
+        if p.hasSuffix("/*") {
+            let prefix = String(p.dropLast(2))
+            return a.hasPrefix(prefix + "/") || a == prefix
         }
         return false
     }
