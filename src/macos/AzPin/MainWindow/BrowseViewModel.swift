@@ -44,6 +44,7 @@ final class BrowseViewModel {
         guard let sub = selectedSubscription else { return }
         selectedResourceGroupName = nil
         resources = []
+        errorMessage = nil
         isLoadingResourceGroups = true
         defer { isLoadingResourceGroups = false }
         do {
@@ -55,6 +56,7 @@ final class BrowseViewModel {
 
     func loadResources(in rgName: String) async {
         guard let sub = selectedSubscription else { return }
+        errorMessage = nil
         isLoadingResources = true
         defer { isLoadingResources = false }
         do {

@@ -123,6 +123,20 @@ final class BrowseViewModelTests: XCTestCase {
         XCTAssertFalse(vm.isLoadingResourceGroups)
     }
 
+    func testLoadResourceGroups_clearsErrorFromPreviousSubscription() async {
+        vm.selectedSubscription = sub1
+        mockARM.resourceGroupsResult = .failure(URLError(.badServerResponse))
+        await vm.loadResourceGroups()
+        XCTAssertNotNil(vm.errorMessage)
+
+        vm.selectedSubscription = sub2
+        mockARM.resourceGroupsResult = .success([AzureResourceGroup(id: "/rg-1", name: "rg-prod", location: "eastus")])
+        await vm.loadResourceGroups()
+
+        XCTAssertNil(vm.errorMessage)
+        XCTAssertEqual(vm.resourceGroups.count, 1)
+    }
+
     func testLoadResourceGroups_resetsResourceState() async {
         vm.selectedSubscription = sub1
         vm.selectedResourceGroupName = "old-rg"
