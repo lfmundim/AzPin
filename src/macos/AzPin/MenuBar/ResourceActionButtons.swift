@@ -24,8 +24,11 @@ struct ResourceActionButtons: View {
             }
             .buttonStyle(.plain)
 
-        case .starting, .stopping, .restarting, .unknown:
+        case .starting, .stopping, .restarting:
             ProgressView().controlSize(.small)
+
+        case .unknown:
+            EmptyView()
         }
     }
 }

@@ -8,6 +8,9 @@ All notable changes to AzPin are documented in this file.
 
 ## [Unreleased]
 
+- Fixed action buttons (start/stop/restart) not appearing for Contributor-role users: replaced `checkAccess` POST (requires Owner-level `Microsoft.Authorization/*/read`) with `GET .../providers/Microsoft.Authorization/permissions`, which is accessible to Contributors. Correctly handles wildcard actions and `notActions` denial.
+- Fixed `.unknown` running state showing a spinner instead of no indicator; spinner now only appears during transitional states (starting/stopping/restarting).
+
 - Resource and resource group names in the main window behave as hyperlinks: pointer cursor on hover, underline on hover, click opens in Azure Portal.
 - Resource group rows now show a chevron that rotates to indicate expanded/collapsed state; chevron click toggles the drawer, name click opens the RG in Portal.
 - Fixed two startup warnings ("Set a .modelContext in view's environment to use Query") caused by MenuBarExtra @Query properties firing before scene-level modelContainer propagated.

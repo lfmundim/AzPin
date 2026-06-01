@@ -59,7 +59,7 @@ final class MenuBarViewModelTests: XCTestCase {
         await vm.loadResources(for: [rg])
 
         XCTAssertNotNil(vm.loadErrors["rg-id-1"])
-        XCTAssertEqual(vm.resourcesByRG["rg-id-1"]?.count, 0)
+        XCTAssertNil(vm.resourcesByRG["rg-id-1"])
     }
 
     // MARK: - startApp state revert

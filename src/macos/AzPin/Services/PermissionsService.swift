@@ -22,21 +22,35 @@ final class PermissionsService: PermissionsServiceProtocol {
         return result
     }
 
+    // Uses GET .../providers/Microsoft.Authorization/permissions which is accessible
+    // to Contributors. The previous checkAccess POST required Owner-level
+    // Microsoft.Authorization/*/read, causing Contributors to always get false.
     private func checkAccess(resource: PinnedResource) async -> Bool {
         guard let token = try? await tokenCache.token(for: resource.subscriptionId) else { return false }
-        let urlString = "https://management.azure.com\(resource.id)/providers/Microsoft.Authorization/checkAccess?api-version=2022-04-01"
+        let urlString = "https://management.azure.com\(resource.id)/providers/Microsoft.Authorization/permissions?api-version=2022-04-01"
         guard let url = URL(string: urlString) else { return false }
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["actions": ["Microsoft.Web/sites/start/action", "Microsoft.Web/sites/stop/action"]]
-        guard let bodyData = try? JSONSerialization.data(withJSONObject: body) else { return false }
-        request.httpBody = bodyData
         guard let (data, _) = try? await session.data(for: request),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let value = json["value"] as? [[String: Any]] else { return false }
-        return !value.isEmpty
+        // Each entry has "actions" (allowed) and "notActions" (denied). Check that
+        // at least one entry grants a wildcard or explicit start/stop permission.
+        let startAction = "microsoft.web/sites/start/action"
+        let stopAction = "microsoft.web/sites/stop/action"
+        for entry in value {
+            guard let actions = entry["actions"] as? [String] else { continue }
+            let notActions = (entry["notActions"] as? [String]) ?? []
+            let normalized = actions.map { $0.lowercased() }
+            let deniedNormalized = notActions.map { $0.lowercased() }
+            let grants = normalized.contains("*") ||
+                         normalized.contains(startAction) ||
+                         normalized.contains(stopAction)
+            let denied = deniedNormalized.contains(startAction) ||
+                         deniedNormalized.contains(stopAction)
+            if grants && !denied { return true }
+        }
+        return false
     }
 
     private actor Cache {

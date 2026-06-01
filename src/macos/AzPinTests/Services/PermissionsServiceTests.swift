@@ -53,7 +53,7 @@ final class PermissionsServiceTests: XCTestCase {
     func test_canManage_returnsTrue_whenActionsPresent() async {
         mockCache.tokenResult = .success("token")
         MockURLProtocol.handler = { _ in
-            let body = #"{"value": [{"actionName": "Microsoft.Web/sites/start/action", "accessDecision": "Allowed"}]}"#
+            let body = #"{"value": [{"actions": ["Microsoft.Web/sites/start/action", "Microsoft.Web/sites/stop/action"], "notActions": []}]}"#
             let response = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
             return (response, Data(body.utf8))
         }
@@ -63,12 +63,38 @@ final class PermissionsServiceTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
+    func test_canManage_returnsTrue_whenWildcardActionGranted() async {
+        mockCache.tokenResult = .success("token")
+        MockURLProtocol.handler = { _ in
+            let body = #"{"value": [{"actions": ["*"], "notActions": []}]}"#
+            let response = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data(body.utf8))
+        }
+
+        let result = await service.canManage(resource: resource)
+
+        XCTAssertTrue(result)
+    }
+
+    func test_canManage_returnsFalse_whenActionGrantedButDeniedViaNotActions() async {
+        mockCache.tokenResult = .success("token")
+        MockURLProtocol.handler = { _ in
+            let body = #"{"value": [{"actions": ["*"], "notActions": ["Microsoft.Web/sites/start/action"]}]}"#
+            let response = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data(body.utf8))
+        }
+
+        let result = await service.canManage(resource: resource)
+
+        XCTAssertFalse(result)
+    }
+
     func test_permissionsAreCached_withinSameSession() async {
         mockCache.tokenResult = .success("token")
         var callCount = 0
         MockURLProtocol.handler = { _ in
             callCount += 1
-            let body = #"{"value": [{"actionName": "start", "accessDecision": "Allowed"}]}"#
+            let body = #"{"value": [{"actions": ["*"], "notActions": []}]}"#
             let response = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
             return (response, Data(body.utf8))
         }
