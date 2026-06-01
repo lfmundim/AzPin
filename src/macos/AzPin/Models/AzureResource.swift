@@ -38,6 +38,26 @@ struct AzureSubscription: Decodable, Sendable, Hashable {
     let id: String
     let name: String
     let tenantId: String
+    let isDefault: Bool
+
+    init(id: String, name: String, tenantId: String, isDefault: Bool = false) {
+        self.id = id
+        self.name = name
+        self.tenantId = tenantId
+        self.isDefault = isDefault
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        tenantId = try c.decode(String.self, forKey: .tenantId)
+        isDefault = try c.decodeIfPresent(Bool.self, forKey: .isDefault) ?? false
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, tenantId, isDefault
+    }
 }
 
 struct ResourceListResponse: Decodable, Sendable {

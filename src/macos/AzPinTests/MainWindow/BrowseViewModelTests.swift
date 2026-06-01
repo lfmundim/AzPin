@@ -7,8 +7,8 @@ final class BrowseViewModelTests: XCTestCase {
     private var mockARM: MockARMService!
     private var vm: BrowseViewModel!
 
-    private let sub1 = AzureSubscription(id: "sub-1", name: "Prod", tenantId: "tenant-a")
-    private let sub2 = AzureSubscription(id: "sub-2", name: "Dev", tenantId: "tenant-b")
+    private let sub1 = AzureSubscription(id: "sub-1", name: "Prod", tenantId: "tenant-a", isDefault: true)
+    private let sub2 = AzureSubscription(id: "sub-2", name: "Dev", tenantId: "tenant-b", isDefault: true)
 
     override func setUp() {
         mockAzCLI = MockAzCLIService()
@@ -64,6 +64,16 @@ final class BrowseViewModelTests: XCTestCase {
 
         XCTAssertNil(vm.errorMessage)
         XCTAssertEqual(vm.subscriptions.count, 1)
+    }
+
+    func testLoadSubscriptions_filtersToDefaultOnly() async {
+        let nonDefault = AzureSubscription(id: "sub-3", name: "Other", tenantId: "tenant-c", isDefault: false)
+        mockAzCLI.subscriptionsResult = .success([sub1, nonDefault])
+
+        await vm.loadSubscriptions()
+
+        XCTAssertEqual(vm.subscriptions.count, 1)
+        XCTAssertEqual(vm.subscriptions.first?.id, "sub-1")
     }
 
     func testLoadSubscriptions_triggersResourceGroupLoad() async {
