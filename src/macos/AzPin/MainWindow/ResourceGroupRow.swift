@@ -4,6 +4,7 @@ import SwiftData
 struct ResourceGroupRow: View {
     let resourceGroup: AzureResourceGroup
     let subscriptionId: String
+    let subscriptionName: String
     let displayOrder: Int
     var isExpanded: Bool = false
     var onToggle: (() -> Void)? = nil
@@ -55,7 +56,8 @@ struct ResourceGroupRow: View {
             id: resourceGroup.id,
             subscriptionId: subscriptionId,
             name: resourceGroup.name,
-            displayOrder: displayOrder
+            displayOrder: displayOrder,
+            subscriptionDisplayName: subscriptionName.isEmpty ? nil : subscriptionName
         )
         modelContext.insert(pinned)
         isPinned = true
