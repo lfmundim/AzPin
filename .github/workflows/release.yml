@@ -78,7 +78,8 @@ jobs:
       - name: Archive (signed)
         if: steps.signing.outputs.available == 'true'
         run: |
-          xcodebuild -scheme AzPin \
+          xcodebuild -project src/macos/AzPin.xcodeproj \
+            -scheme AzPin \
             -configuration Release \
             -archivePath build/AzPin.xcarchive \
             CODE_SIGN_IDENTITY="${{ secrets.APPLE_DEVELOPER_ID }}" \
@@ -88,7 +89,8 @@ jobs:
       - name: Archive (unsigned)
         if: steps.signing.outputs.available != 'true'
         run: |
-          xcodebuild -scheme AzPin \
+          xcodebuild -project src/macos/AzPin.xcodeproj \
+            -scheme AzPin \
             -configuration Release \
             -archivePath build/AzPin.xcarchive \
             CODE_SIGNING_REQUIRED=NO \
