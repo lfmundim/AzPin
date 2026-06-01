@@ -22,6 +22,10 @@ struct AuthStatusView: View {
         case .notSignedIn:
             Label("Not signed in — run 'az login'", systemImage: "exclamationmark.triangle")
                 .foregroundStyle(.secondary)
+            Button("Open Terminal...") {
+                NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"))
+            }
+            .font(.caption)
 
         case .signedIn(let account):
             Label(account.user.name, systemImage: "checkmark.circle.fill")
