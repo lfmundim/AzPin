@@ -1,0 +1,75 @@
+name: Release Windows
+
+on:
+  push:
+    branches:
+      - 'release/v*'
+    paths:
+      - 'src/windows/**'
+      - '.github/workflows/release.yml'
+      - '.github/workflows/release-windows.yml'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install tooling
+        shell: pwsh
+        run: |
+          dotnet tool install -g nbgv
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\\.dotnet\\tools"
+
+      - name: Compute version
+        id: version
+        shell: pwsh
+        run: |
+          $major = "${env:GITHUB_REF_NAME}" -replace '^release/v', ''
+          $nbgv = nbgv get-version -f json | ConvertFrom-Json
+          $minor = $nbgv.VersionMinor
+          $height = $nbgv.VersionHeight
+          $version = "$major.$minor.$height"
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "tag=v$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Create and push release tag
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          $tag = "${{ steps.version.outputs.tag }}"
+          $tagExists = (git ls-remote --tags origin $tag)
+          if (-not $tagExists) {
+            git tag $tag
+            git push "https://x-access-token:${env:GITHUB_TOKEN}@github.com/${{ github.repository }}" $tag
+          }
+
+      - name: Package Windows artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build | Out-Null
+          Compress-Archive -Path src/windows/* -DestinationPath "build/AzPin-Windows-${{ steps.version.outputs.version }}.zip"
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" `
+            --title "AzPin ${{ steps.version.outputs.version }}" `
+            --generate-notes `
+            --prerelease `
+            "build/AzPin-Windows-${{ steps.version.outputs.version }}.zip"
