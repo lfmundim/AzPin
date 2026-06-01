@@ -96,22 +96,49 @@ struct MenuBarView: View {
         let state = menuVM.appStates[resource.id] ?? .unknown
         let canManage = menuVM.permissions[resource.id] == true
 
-        Button {
-            NSWorkspace.shared.open(PortalURL.resource(id: resource.id))
-        } label: {
-            Label(resource.name, systemImage: ResourceTypeMapper.symbolName(for: resource.type))
-        }
-
         if isRunnable && canManage {
-            switch state {
-            case .running:
-                Button("Stop \(resource.name)") { Task { await menuVM.stopApp(resource: resource, rg: rg) } }
-                Button("Restart \(resource.name)") { Task { await menuVM.restartApp(resource: resource, rg: rg) } }
-            case .stopped:
-                Button("Start \(resource.name)") { Task { await menuVM.startApp(resource: resource, rg: rg) } }
-            case .starting, .stopping, .restarting, .unknown:
-                Text("\(resource.name): updating...")
+            Menu {
+                actionButtons(state: state, resource: resource, rg: rg)
+                Divider()
+                Button {
+                    NSWorkspace.shared.open(PortalURL.resource(id: resource.id))
+                } label: {
+                    Label("Open in Portal", systemImage: "arrow.up.forward")
+                }
+            } label: {
+                Label(resource.name, systemImage: ResourceTypeMapper.symbolName(for: resource.type))
             }
+        } else {
+            Button {
+                NSWorkspace.shared.open(PortalURL.resource(id: resource.id))
+            } label: {
+                Label(resource.name, systemImage: ResourceTypeMapper.symbolName(for: resource.type))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func actionButtons(state: AppRunningState, resource: AzureResource, rg: PinnedResourceGroup) -> some View {
+        switch state {
+        case .running:
+            Button {
+                Task { await menuVM.stopApp(resource: resource, rg: rg) }
+            } label: {
+                Label("Stop", systemImage: "stop.fill")
+            }
+            Button {
+                Task { await menuVM.restartApp(resource: resource, rg: rg) }
+            } label: {
+                Label("Restart", systemImage: "arrow.clockwise")
+            }
+        case .stopped:
+            Button {
+                Task { await menuVM.startApp(resource: resource, rg: rg) }
+            } label: {
+                Label("Start", systemImage: "play.fill")
+            }
+        case .starting, .stopping, .restarting, .unknown:
+            Text("Updating...")
         }
     }
 }

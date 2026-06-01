@@ -8,6 +8,7 @@ All notable changes to AzPin are documented in this file.
 
 ## [Unreleased]
 
+- Runnable resources in the menubar now show a chevron submenu containing Stop/Start, Restart, and Open in Portal items with SF Symbol glyphs; non-runnable resources remain plain buttons.
 - Fixed action buttons (start/stop/restart) not appearing for Contributor-role users: replaced `checkAccess` POST (requires Owner-level `Microsoft.Authorization/*/read`) with `GET .../providers/Microsoft.Authorization/permissions`, which is accessible to Contributors. Correctly handles wildcard actions and `notActions` denial.
 - Fixed `.unknown` running state showing a spinner instead of no indicator; spinner now only appears during transitional states (starting/stopping/restarting).
 
