@@ -20,6 +20,12 @@ All notable changes to AzPin are documented in this file.
 
 ### Main Window
 
+- Fixed: clicking "Settings..." in the menubar now brings the Settings window to front.
+- Fixed: after completing onboarding (e.g. installing az CLI mid-session), the main browse view now reloads automatically instead of staying stuck on the "CLI not found" error.
+- Added "Open at Login" toggle in Settings → Preferences.
+- Search box at the top of the browse panel filters resource groups by name (case-insensitive, clears on subscription change).
+- Resource groups always sorted alphabetically (case-insensitive).
+- Resources within a group always sorted by type name (case-insensitive) for consistent ordering across all RGs.
 - Resource and resource group names behave as hyperlinks: pointer cursor on hover, underline on hover, click opens in Azure Portal.
 - Resource group rows show a rotating chevron for the drawer toggle; chevron click toggles, name click opens Portal.
 - RG expand/collapse animates smoothly (switched from List/NSTableView to ScrollView+LazyVStack).

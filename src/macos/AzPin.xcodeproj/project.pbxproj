@@ -8,6 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		86CA09FB9C3C4BF58B1C697C /* AccountSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCB3851936241B68CDF804E /* AccountSettingsView.swift */; };
+		AA11BB22CC33DD44EE55FF66 /* PreferencesSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF6600AA /* PreferencesSettingsView.swift */; };
+		D1E2F3A4B5C6D7E8F9A0B1C2 /* RGBrowseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B6C7D8E9F0A1B2 /* RGBrowseViewModel.swift */; };
+		F1A2B3C4D5E6F7A8B9C0D1E2 /* RGBrowseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F2A3B4C5D6E7F8A9B0C1D2 /* RGBrowseView.swift */; };
+		BB11CC22DD33EE44FF55AA77 /* RGBrowseViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF77 /* RGBrowseViewModelTests.swift */; };
 		A55FF1D8B530426FA9562239 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069415C853A54986A126F882 /* OnboardingView.swift */; };
 		D760A907637C4920A2A1A222 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2885874A4FC94F98B8F0D0AE /* OnboardingViewModel.swift */; };
 		2324A22C64F14BB38F779907 /* PinnedResourceRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D397E438131046618027321E /* PinnedResourceRow.swift */; };
@@ -69,6 +73,10 @@
 
 /* Begin PBXFileReference section */
 		3CCB3851936241B68CDF804E /* AccountSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSettingsView.swift; sourceTree = "<group>"; };
+		BB22CC33DD44EE55FF6600AA /* PreferencesSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesSettingsView.swift; sourceTree = "<group>"; };
+		C1D2E3F4A5B6C7D8E9F0A1B2 /* RGBrowseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBrowseViewModel.swift; sourceTree = "<group>"; };
+		E1F2A3B4C5D6E7F8A9B0C1D2 /* RGBrowseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBrowseView.swift; sourceTree = "<group>"; };
+		AA11BB22CC33DD44EE55FF77 /* RGBrowseViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBrowseViewModelTests.swift; sourceTree = "<group>"; };
 		069415C853A54986A126F882 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		2885874A4FC94F98B8F0D0AE /* OnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModel.swift; sourceTree = "<group>"; };
 		D397E438131046618027321E /* PinnedResourceRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedResourceRow.swift; sourceTree = "<group>"; };
@@ -231,6 +239,7 @@
 			isa = PBXGroup;
 			children = (
 				D1D2D3D4D5D6D7D8D9DADBDC /* BrowseViewModelTests.swift */,
+				AA11BB22CC33DD44EE55FF77 /* RGBrowseViewModelTests.swift */,
 			);
 			path = MainWindow;
 			sourceTree = "<group>";
@@ -252,6 +261,8 @@
 				069415C853A54986A126F882 /* OnboardingView.swift */,
 				95A17A927064412FE45FD659 /* BrowseView.swift */,
 				B1B2B3B4B5B6B7B8B9BABBBC /* BrowseViewModel.swift */,
+				E1F2A3B4C5D6E7F8A9B0C1D2 /* RGBrowseView.swift */,
+				C1D2E3F4A5B6C7D8E9F0A1B2 /* RGBrowseViewModel.swift */,
 				81F848932D8993F17C471DD4 /* DetailView.swift */,
 				E1E2E3E4E5F6F7F8F9FAFBFC /* ResourceGroupRow.swift */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* ResourceRow.swift */,
@@ -288,6 +299,7 @@
 			isa = PBXGroup;
 			children = (
 				3CCB3851936241B68CDF804E /* AccountSettingsView.swift */,
+				BB22CC33DD44EE55FF6600AA /* PreferencesSettingsView.swift */,
 				9A8D86AEFEE3AE945152DBA0 /* SettingsView.swift */,
 			);
 			path = Settings;
@@ -390,6 +402,7 @@
 				E7F42F322FCCC859005D884D /* AzJSONDecoderTests.swift in Sources */,
 				40B9DAC5AB2675FE0C5B2BDB /* ResourceTypeMapperTests.swift in Sources */,
 				A04872A8517A8D7BA4B2D483 /* TokenCacheTests.swift in Sources */,
+				BB11CC22DD33EE44FF55AA77 /* RGBrowseViewModelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -426,6 +439,9 @@
 				885D4709D2990C1AF8B86D2E /* ResourceMenuItem.swift in Sources */,
 				ED92C557C42724A321EBF964 /* ResourceTypeMapper.swift in Sources */,
 				FBB406BC6A7823B4DE7AF4F3 /* SettingsView.swift in Sources */,
+				AA11BB22CC33DD44EE55FF66 /* PreferencesSettingsView.swift in Sources */,
+				D1E2F3A4B5C6D7E8F9A0B1C2 /* RGBrowseViewModel.swift in Sources */,
+				F1A2B3C4D5E6F7A8B9C0D1E2 /* RGBrowseView.swift in Sources */,
 				E7F42F342FCCCDA2005D884D /* AuthViewModel.swift in Sources */,
 				AAE055A87A8056B36960A004 /* ShellRunner.swift in Sources */,
 				89CF8F2CF4F4E9E5B2B50702 /* SidebarView.swift in Sources */,
