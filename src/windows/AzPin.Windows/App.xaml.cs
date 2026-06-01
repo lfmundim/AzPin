@@ -1,8 +1,9 @@
+using AzPin.Windows.Services;
 using AzPin.Windows.TrayIcon;
+using AzPin.Windows.Utilities;
 using H.NotifyIcon;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using LaunchActivatedEventArgs = Microsoft.UI.Xaml.LaunchActivatedEventArgs;
 
 namespace AzPin.Windows;
@@ -28,6 +29,8 @@ public partial class App : Application
     private static IServiceProvider ConfigureServices()
     {
         var services = new ServiceCollection();
+        services.AddSingleton<IShellRunner, ShellRunner>();
+        services.AddSingleton<IAzCliService, AzCliService>();
         services.AddSingleton<TaskbarIcon>(_ => TrayIconFactory.Create());
         return services.BuildServiceProvider();
     }
