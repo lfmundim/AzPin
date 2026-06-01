@@ -22,10 +22,17 @@ All notable changes to AzPin are documented in this file.
 
 - Fixed: clicking "Settings..." in the menubar now brings the Settings window to front.
 - Fixed: after completing onboarding (e.g. installing az CLI mid-session), the main browse view now reloads automatically instead of staying stuck on the "CLI not found" error.
+- Fixed: Container Apps now use the correct ARM API version (`2023-05-01`) and read `.properties.runningStatus` instead of `.properties.state`. Logic Apps use `2019-05-01` and map "Enabled"/"Disabled" to running/stopped. Container App and Logic App restart is implemented as sequential stop → start (no native restart endpoint exists).
 - Added "Open at Login" toggle in Settings → Preferences.
+- Added Settings → Subscriptions tab: list all accessible subscriptions with visibility toggles; hidden subscriptions are excluded from the Browse picker on the next load.
+- Added "Open Terminal..." button in the menubar when not signed in, so `az login` can be run without searching for a terminal.
+- On first launch, AzPin automatically opens the main window (and shows the onboarding sheet) when the menubar icon is first clicked, without requiring "Open AzPin..." to be found first.
 - Search box at the top of the browse panel filters resource groups by name (case-insensitive, clears on subscription change).
 - Resource groups always sorted alphabetically (case-insensitive).
 - Resources within a group always sorted by type name (case-insensitive) for consistent ordering across all RGs.
+- Browse tab within a selected sidebar RG now shows that RG's live resources (with pin buttons), not the full subscription browser. The subscription browser is shown when no RG is selected.
+- Two pinned RGs sharing the same name across different subscriptions show a subscription disambiguator suffix in the menubar label (e.g. "rg-shared · Production").
+- `AzureResource` now decodes the optional `tags` dictionary from ARM responses (not displayed yet; foundation for future filtering).
 - Resource and resource group names behave as hyperlinks: pointer cursor on hover, underline on hover, click opens in Azure Portal.
 - Resource group rows show a rotating chevron for the drawer toggle; chevron click toggles, name click opens Portal.
 - RG expand/collapse animates smoothly (switched from List/NSTableView to ScrollView+LazyVStack).
