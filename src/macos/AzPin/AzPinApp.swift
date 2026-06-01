@@ -35,6 +35,7 @@ struct AzPinApp: App {
                 .environment(authViewModel)
         }
         .menuBarExtraStyle(.menu)
+        .modelContainer(container)
 
         Window("AzPin", id: "main") {
             MainAppView()
@@ -47,6 +48,7 @@ struct AzPinApp: App {
         }
         .windowStyle(.titleBar)
         .defaultSize(width: 900, height: 600)
+        .modelContainer(container)
 
         Settings {
             SettingsView()
@@ -56,5 +58,6 @@ struct AzPinApp: App {
                 .environment(permissions)
                 .environment(authViewModel)
         }
+        .modelContainer(container)
     }
 }

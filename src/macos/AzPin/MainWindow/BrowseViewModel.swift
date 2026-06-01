@@ -26,7 +26,11 @@ final class BrowseViewModel {
         errorMessage = nil
         defer { isLoadingSubscriptions = false }
         do {
-            subscriptions = try await azCLI.listSubscriptions().filter { $0.isDefault }
+            subscriptions = try await azCLI.listSubscriptions()
+                .sorted { lhs, rhs in
+                    if lhs.isDefault != rhs.isDefault { return lhs.isDefault }
+                    return lhs.tenantId < rhs.tenantId
+                }
             if selectedSubscription == nil {
                 selectedSubscription = subscriptions.first
             }

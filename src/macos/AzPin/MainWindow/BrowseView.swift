@@ -57,8 +57,12 @@ struct BrowseView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         ResourceGroupRow(resourceGroup: rg)
                             .onTapGesture {
-                                vm.selectedResourceGroupName = rg.name
-                                Task { await vm.loadResources(in: rg.name) }
+                                if vm.selectedResourceGroupName == rg.name {
+                                    vm.selectedResourceGroupName = nil
+                                } else {
+                                    vm.selectedResourceGroupName = rg.name
+                                    Task { await vm.loadResources(in: rg.name) }
+                                }
                             }
 
                         if vm.selectedResourceGroupName == rg.name {

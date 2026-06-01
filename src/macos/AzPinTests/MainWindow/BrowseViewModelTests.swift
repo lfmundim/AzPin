@@ -66,14 +66,15 @@ final class BrowseViewModelTests: XCTestCase {
         XCTAssertEqual(vm.subscriptions.count, 1)
     }
 
-    func testLoadSubscriptions_filtersToDefaultOnly() async {
-        let nonDefault = AzureSubscription(id: "sub-3", name: "Other", tenantId: "tenant-c", isDefault: false)
-        mockAzCLI.subscriptionsResult = .success([sub1, nonDefault])
+    func testLoadSubscriptions_sortsDefaultFirstThenByTenantId() async {
+        let nonDefault = AzureSubscription(id: "sub-3", name: "Other", tenantId: "tenant-a", isDefault: false)
+        mockAzCLI.subscriptionsResult = .success([nonDefault, sub1])
 
         await vm.loadSubscriptions()
 
-        XCTAssertEqual(vm.subscriptions.count, 1)
-        XCTAssertEqual(vm.subscriptions.first?.id, "sub-1")
+        XCTAssertEqual(vm.subscriptions.count, 2)
+        XCTAssertEqual(vm.subscriptions[0].id, "sub-1")
+        XCTAssertEqual(vm.subscriptions[1].id, "sub-3")
     }
 
     func testLoadSubscriptions_triggersResourceGroupLoad() async {
