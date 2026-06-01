@@ -11,7 +11,7 @@ final class MockAzCLIService: AzCLIServiceProtocol, @unchecked Sendable {
     var subscriptionsResult: Result<[AzureSubscription], Error> = .success([])
     var installedResult = true
 
-    func fetchToken(subscriptionId: String) async throws -> AzureTokenResponse {
+    func fetchToken(subscriptionId: String, tenantId: String) async throws -> AzureTokenResponse {
         try tokenResult.get()
     }
 

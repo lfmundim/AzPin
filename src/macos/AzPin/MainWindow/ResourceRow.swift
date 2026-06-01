@@ -1,0 +1,53 @@
+import SwiftUI
+import SwiftData
+
+struct ResourceRow: View {
+    let resource: AzureResource
+    let subscriptionId: String
+    let resourceGroup: String
+    let displayOrder: Int
+
+    @Environment(\.modelContext) private var modelContext
+    @State private var isPinned = false
+
+    var body: some View {
+        HStack {
+            Label(resource.name, systemImage: ResourceTypeMapper.symbolName(for: resource.type))
+            Spacer()
+            Button {
+                pinResource()
+            } label: {
+                Image(systemName: isPinned ? "pin.fill" : "pin")
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(isPinned ? Color.accentColor : .secondary)
+            .disabled(isPinned)
+        }
+        .onAppear {
+            isPinned = checkIfPinned()
+        }
+    }
+
+    private func pinResource() {
+        let pinned = PinnedResource(
+            id: resource.id,
+            name: resource.name,
+            type: resource.type,
+            resourceGroup: resourceGroup,
+            subscriptionId: subscriptionId,
+            location: resource.location,
+            displayOrder: displayOrder
+        )
+        modelContext.insert(pinned)
+        isPinned = true
+    }
+
+    private func checkIfPinned() -> Bool {
+        let resourceId = resource.id
+        let descriptor = FetchDescriptor<PinnedResource>(
+            predicate: #Predicate { $0.id == resourceId }
+        )
+        guard let count = try? modelContext.fetchCount(descriptor) else { return false }
+        return count > 0
+    }
+}

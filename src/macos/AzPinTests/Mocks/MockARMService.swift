@@ -8,13 +8,17 @@ final class MockARMService: ARMServiceProtocol, @unchecked Sendable {
     var startAppCalled = false
     var stopAppCalled = false
     var restartAppCalled = false
+    var onFetchResourceGroups: (() -> Void)?
+    var onFetchResources: (() -> Void)?
 
-    func fetchResourceGroups(subscriptionId: String) async throws -> [AzureResourceGroup] {
-        try resourceGroupsResult.get()
+    func fetchResourceGroups(subscriptionId: String, tenantId: String) async throws -> [AzureResourceGroup] {
+        onFetchResourceGroups?()
+        return try resourceGroupsResult.get()
     }
 
-    func fetchResources(subscriptionId: String, resourceGroup: String) async throws -> [AzureResource] {
-        try resourcesResult.get()
+    func fetchResources(subscriptionId: String, resourceGroup: String, tenantId: String) async throws -> [AzureResource] {
+        onFetchResources?()
+        return try resourcesResult.get()
     }
 
     func fetchAppState(resource: PinnedResource) async throws -> AppRunningState {

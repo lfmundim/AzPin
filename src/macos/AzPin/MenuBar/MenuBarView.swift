@@ -1,19 +1,20 @@
 import SwiftUI
+import SwiftData
 
 #if DEBUG
 final class MockAzCLIService: AzCLIServiceProtocol {
-    func fetchToken(subscriptionId: String) async throws -> AzureTokenResponse {
+    func fetchToken(subscriptionId: String, tenantId: String) async throws -> AzureTokenResponse {
         AzureTokenResponse(accessToken: "mock", expiresOn: .distantFuture)
     }
-    
+
     func currentAccount() async throws -> AzureAccount {
         AzureAccount(id: "1", name: "Mock", tenantId: "1", user: AzureAccountUser(name: "mock@example.com"))
     }
-    
+
     func listSubscriptions() async throws -> [AzureSubscription] {
         []
     }
-    
+
     func isInstalled() -> Bool {
         true
     }
@@ -23,21 +24,35 @@ final class MockAzCLIService: AzCLIServiceProtocol {
 struct MenuBarView: View {
     @Environment(AuthViewModel.self) private var auth
     @Environment(\.openWindow) private var openWindow
+    @Query(sort: \PinnedResource.displayOrder) private var pinnedResources: [PinnedResource]
 
     var body: some View {
         Group {
             AuthStatusView()
             Divider()
-            
-            // Pinned resources will go here in MVP/Pre-release
-            
+
+            if !pinnedResources.isEmpty {
+                ForEach(pinnedResources) { resource in
+                    Button {
+                        openInPortal(resource)
+                    } label: {
+                        ResourceMenuItem(
+                            name: resource.name,
+                            symbolName: ResourceTypeMapper.symbolName(for: resource.type)
+                        )
+                    }
+                }
+                Divider()
+            }
+
             Button("Pin Resource Group...") {}
-                .disabled(true)  // Placeholder — implemented in Pre-release
-            
+                .disabled(true)
+
             Divider()
-            
+
             Button("Open AzPin...") {
                 openWindow(id: "main")
+                NSApp.activate(ignoringOtherApps: true)
             }
             Button("Quit AzPin") {
                 NSApplication.shared.terminate(nil)
@@ -47,11 +62,15 @@ struct MenuBarView: View {
             await auth.refresh()
         }
     }
+
+    private func openInPortal(_ resource: PinnedResource) {
+        let url = PortalURL.resource(id: resource.id)
+        NSWorkspace.shared.open(url)
+    }
 }
 
 #Preview("Signed In") {
     let vm = AuthViewModel(azCLI: MockAzCLIService())
-    // To show signedIn state, you'd need MockAzCLIService to return a valid account
     MenuBarView()
         .environment(vm)
 }
