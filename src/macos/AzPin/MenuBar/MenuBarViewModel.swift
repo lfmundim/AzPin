@@ -99,21 +99,23 @@ final class MenuBarViewModel {
     }
 
     func loadOrphanResources(for resources: [PinnedResource]) async {
-        let runnable = resources.filter { ResourceTypeMapper.isRunnable($0.type) }
-        guard !runnable.isEmpty else { return }
+        let snapshots = resources
+            .filter { ResourceTypeMapper.isRunnable($0.type) }
+            .map { snapshotPinnedResource($0) }
+        guard !snapshots.isEmpty else { return }
         await withTaskGroup(of: Void.self) { group in
-            group.addTask { await self.fetchOrphanStates(for: runnable) }
-            group.addTask { await self.checkOrphanPermissions(for: runnable) }
+            group.addTask { await self.fetchOrphanStates(for: snapshots) }
+            group.addTask { await self.checkOrphanPermissions(for: snapshots) }
             await group.waitForAll()
         }
     }
 
-    private func fetchOrphanStates(for resources: [PinnedResource]) async {
+    private func fetchOrphanStates(for snapshots: [PinnedResource]) async {
         await withTaskGroup(of: (String, AppRunningState).self) { group in
-            for resource in resources {
+            for snap in snapshots {
                 group.addTask {
-                    let state = (try? await self.arm.fetchAppState(resource: resource)) ?? .unknown
-                    return (resource.id, state)
+                    let state = (try? await self.arm.fetchAppState(resource: snap)) ?? .unknown
+                    return (snap.id, state)
                 }
             }
             for await (id, state) in group {
@@ -122,12 +124,12 @@ final class MenuBarViewModel {
         }
     }
 
-    private func checkOrphanPermissions(for resources: [PinnedResource]) async {
+    private func checkOrphanPermissions(for snapshots: [PinnedResource]) async {
         await withTaskGroup(of: (String, Bool).self) { group in
-            for resource in resources {
+            for snap in snapshots {
                 group.addTask {
-                    let allowed = await self.permissionsService.canManage(resource: resource)
-                    return (resource.id, allowed)
+                    let allowed = await self.permissionsService.canManage(resource: snap)
+                    return (snap.id, allowed)
                 }
             }
             for await (id, allowed) in group {
@@ -170,32 +172,35 @@ final class MenuBarViewModel {
     }
 
     func startApp(resource: PinnedResource) async {
-        appStates[resource.id] = .starting
+        let snap = snapshotPinnedResource(resource)
+        appStates[snap.id] = .starting
         do {
-            try await arm.startApp(resource: resource)
-            appStates[resource.id] = .running
+            try await arm.startApp(resource: snap)
+            appStates[snap.id] = .running
         } catch {
-            appStates[resource.id] = .stopped
+            appStates[snap.id] = .stopped
         }
     }
 
     func stopApp(resource: PinnedResource) async {
-        appStates[resource.id] = .stopping
+        let snap = snapshotPinnedResource(resource)
+        appStates[snap.id] = .stopping
         do {
-            try await arm.stopApp(resource: resource)
-            appStates[resource.id] = .stopped
+            try await arm.stopApp(resource: snap)
+            appStates[snap.id] = .stopped
         } catch {
-            appStates[resource.id] = .running
+            appStates[snap.id] = .running
         }
     }
 
     func restartApp(resource: PinnedResource) async {
-        appStates[resource.id] = .restarting
+        let snap = snapshotPinnedResource(resource)
+        appStates[snap.id] = .restarting
         do {
-            try await arm.restartApp(resource: resource)
-            appStates[resource.id] = .running
+            try await arm.restartApp(resource: snap)
+            appStates[snap.id] = .running
         } catch {
-            appStates[resource.id] = .running
+            appStates[snap.id] = .running
         }
     }
 
@@ -203,6 +208,15 @@ final class MenuBarViewModel {
         PinnedResource(
             id: resource.id, name: resource.name, type: resource.type,
             resourceGroup: rg.name, subscriptionId: rg.subscriptionId,
+            location: resource.location, displayOrder: 0
+        )
+    }
+
+    // Creates an unmanaged (not SwiftData-context-bound) copy safe to cross actor/task boundaries.
+    private func snapshotPinnedResource(_ resource: PinnedResource) -> PinnedResource {
+        PinnedResource(
+            id: resource.id, name: resource.name, type: resource.type,
+            resourceGroup: resource.resourceGroup, subscriptionId: resource.subscriptionId,
             location: resource.location, displayOrder: 0
         )
     }
