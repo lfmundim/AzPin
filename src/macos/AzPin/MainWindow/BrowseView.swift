@@ -7,6 +7,10 @@ struct BrowseView: View {
         VStack(alignment: .leading, spacing: 0) {
             subscriptionPicker
             Divider()
+            if vm.selectedSubscription != nil && !vm.resourceGroups.isEmpty {
+                searchBox
+                Divider()
+            }
             contentArea
         }
         .task {
@@ -16,6 +20,14 @@ struct BrowseView: View {
             guard newValue != nil else { return }
             Task { await vm.loadResourceGroups() }
         }
+    }
+
+    @ViewBuilder
+    private var searchBox: some View {
+        TextField("Search resource groups", text: Bindable(vm).searchText)
+            .textFieldStyle(.roundedBorder)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
     }
 
     @ViewBuilder
@@ -52,14 +64,17 @@ struct BrowseView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if vm.resourceGroups.isEmpty {
                 ContentUnavailableView("No resource groups", systemImage: "folder")
+            } else if vm.filteredResourceGroups.isEmpty {
+                ContentUnavailableView.search(text: vm.searchText)
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(vm.resourceGroups.enumerated()), id: \.element.id) { index, rg in
+                        ForEach(Array(vm.filteredResourceGroups.enumerated()), id: \.element.id) { index, rg in
                             VStack(alignment: .leading, spacing: 0) {
                                 ResourceGroupRow(
                                     resourceGroup: rg,
                                     subscriptionId: vm.selectedSubscription?.id ?? "",
+                                    subscriptionName: vm.selectedSubscription?.name ?? "",
                                     displayOrder: index,
                                     isExpanded: vm.selectedResourceGroupName == rg.name,
                                     onToggle: {

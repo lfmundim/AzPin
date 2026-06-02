@@ -5,9 +5,9 @@ struct SettingsView: View {
         TabView {
             AccountSettingsView()
                 .tabItem { Label("Account", systemImage: "person.crop.circle") }
-            Text("Subscriptions — coming in v1.1")
+            SubscriptionSettingsView()
                 .tabItem { Label("Subscriptions", systemImage: "list.bullet") }
-            Text("Background polling — off in v1")
+            PreferencesSettingsView()
                 .tabItem { Label("Preferences", systemImage: "gearshape") }
         }
         .frame(width: 480, height: 360)
