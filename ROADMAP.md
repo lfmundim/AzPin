@@ -24,7 +24,9 @@ Integrate [Sparkle](https://sparkle-project.org) (MIT) for in-app update checks 
 
 ---
 
-## v1.1 — Action Completion Notifications
+## v1.1 — Action Notifications + Copy Endpoint
+
+### Action Completion Notifications
 
 After tapping Start, Stop, or Restart in the menubar, AzPin polls ARM until the resource reaches its expected state, then fires a native macOS notification confirming the outcome.
 
@@ -40,6 +42,18 @@ After tapping Start, Stop, or Restart in the menubar, AzPin polls ARM until the 
 - The polling task is cancelled immediately if the user manually triggers another action on the same resource.
 
 **Scope note:** This is per-action polling only — triggered by a user gesture, not a background timer. It does not require a persistent background process or launch agent.
+
+### Copy Endpoint / Hostname
+
+One-click copy of the primary endpoint for runnable resources directly from the menubar.
+
+**Why:** Developers reference App Service URLs and Container App FQDNs constantly. Currently requires opening the portal.
+
+**How it works:**
+- For `Microsoft.Web/sites`: copy `defaultHostName` from ARM properties (`https://{name}.azurewebsites.net`).
+- For `Microsoft.App/containerApps`: copy `configuration.ingress.fqdn` from ARM properties.
+- Button appears in the resource row alongside Open in Portal and action buttons, only when a resolvable endpoint exists.
+- Copies to `NSPasteboard.general` with `https://` prefix. No browser open.
 
 ---
 
