@@ -15,11 +15,14 @@ All notable changes to AzPin are documented in this file.
 - Fixed `.unknown` running state showing a spinner; spinner now only appears during transitional states (starting/stopping/restarting).
 - Fixed stale ARM error persisting in menubar RG drawer after a transient failure: error now clears on the next successful resource fetch for that RG.
 - Fixed permissions check returning false for custom roles that grant actions via wildcard patterns (e.g. `Microsoft.Web/sites/*`, `Microsoft.Web/*`); ARM RBAC wildcard matching now evaluated correctly.
-- Individually-pinned resources are plain buttons that open in Portal; unpin is done from the main window only.
+- Individually-pinned resources (not part of a pinned RG) now show the same submenu as RG resources: runnable+permitted resources get Start/Stop/Restart and Open in Portal; others remain plain portal-open buttons. States and permissions are fetched at startup alongside pinned RG resources.
 - RG resource list no longer gets stuck on "Loading..." after pinning a new RG mid-session.
 
 ### Main Window
 
+- Fixed: browse view no longer shifts layout when the search field appears; subscription picker and search field now share one toolbar row (picker left, search right), so the content area stays anchored to the top at all times.
+- App icon (all macOS sizes 16–1024) added to Assets catalog; AzPin now shows its icon in Finder, the app switcher, and the Dock.
+- Dock presence is now dynamic: the Dock icon appears when the main window opens and disappears when it closes (menubar-only sessions show no Dock icon).
 - Fixed: clicking "Settings..." in the menubar now brings the Settings window to front.
 - Fixed: after completing onboarding (e.g. installing az CLI mid-session), the main browse view now reloads automatically instead of staying stuck on the "CLI not found" error.
 - Fixed: Container Apps now use the correct ARM API version (`2023-05-01`) and read `.properties.runningStatus` instead of `.properties.state`. Logic Apps use `2019-05-01` and map "Enabled"/"Disabled" to running/stopped. Container App and Logic App restart is implemented as sequential stop → start (no native restart endpoint exists).

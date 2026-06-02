@@ -32,32 +32,32 @@ struct MenuBarView: View {
             if !orphans.isEmpty {
                 Divider()
                 ForEach(orphans) { resource in
-                    Button {
-                        NSWorkspace.shared.open(PortalURL.resource(id: resource.id))
-                    } label: {
-                        Label(resource.name, systemImage: ResourceTypeMapper.symbolName(for: resource.type))
-                    }
+                    orphanResourceItems(resource: resource)
                 }
             }
 
             Divider()
             if pinnedGroups.isEmpty {
-                Button("Pin Resource Group...") { openWindow(id: "main"); NSApp.activate(ignoringOtherApps: true) }
+                Button("Pin Resource Group...") { openMainWindow() }
             }
-            Button("Open AzPin...") { openWindow(id: "main"); NSApp.activate(ignoringOtherApps: true) }
+            Button("Open AzPin...") { openMainWindow() }
             Button("Settings...") { openSettings(); NSApp.activate(ignoringOtherApps: true) }
             Button("Quit AzPin") { NSApplication.shared.terminate(nil) }
         }
         .task {
             await auth.refresh()
             await menuVM.loadResources(for: pinnedGroups)
+            await menuVM.loadOrphanResources(for: computeOrphans(resources: pinnedResources, groups: pinnedGroups))
             if !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
-                openWindow(id: "main")
-                NSApp.activate(ignoringOtherApps: true)
+                openMainWindow()
             }
         }
         .onChange(of: pinnedGroups.map(\.id)) { _, _ in
             Task { await menuVM.loadResources(for: pinnedGroups) }
+        }
+        .onChange(of: pinnedResources.map(\.id)) { _, _ in
+            let orphans = computeOrphans(resources: pinnedResources, groups: pinnedGroups)
+            Task { await menuVM.loadOrphanResources(for: orphans) }
         }
     }
 
@@ -147,6 +147,70 @@ struct MenuBarView: View {
         case .stopped:
             Button {
                 Task { await menuVM.startApp(resource: resource, rg: rg) }
+            } label: {
+                Label("Start", systemImage: "play.fill")
+            }
+        case .starting, .stopping, .restarting, .unknown:
+            Text("Updating...")
+        }
+    }
+
+    @ViewBuilder
+    private func orphanResourceItems(resource: PinnedResource) -> some View {
+        let isRunnable = ResourceTypeMapper.isRunnable(resource.type)
+        let state = menuVM.appStates[resource.id] ?? .unknown
+        let canManage = menuVM.permissions[resource.id] == true
+
+        if isRunnable && canManage {
+            Menu {
+                orphanActionButtons(state: state, resource: resource)
+                Divider()
+                Button {
+                    NSWorkspace.shared.open(PortalURL.resource(id: resource.id))
+                } label: {
+                    Label("Open in Portal", systemImage: "arrow.up.forward")
+                }
+            } label: {
+                Label(resource.name, systemImage: ResourceTypeMapper.symbolName(for: resource.type))
+            }
+        } else {
+            Button {
+                NSWorkspace.shared.open(PortalURL.resource(id: resource.id))
+            } label: {
+                Label(resource.name, systemImage: ResourceTypeMapper.symbolName(for: resource.type))
+            }
+        }
+    }
+
+    private func openMainWindow() {
+        NSApplication.shared.setActivationPolicy(.regular)
+        openWindow(id: "main")
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func computeOrphans(resources: [PinnedResource], groups: [PinnedResourceGroup]) -> [PinnedResource] {
+        resources.filter { r in
+            !groups.contains(where: { g in g.name == r.resourceGroup && g.subscriptionId == r.subscriptionId })
+        }
+    }
+
+    @ViewBuilder
+    private func orphanActionButtons(state: AppRunningState, resource: PinnedResource) -> some View {
+        switch state {
+        case .running:
+            Button {
+                Task { await menuVM.stopApp(resource: resource) }
+            } label: {
+                Label("Stop", systemImage: "stop.fill")
+            }
+            Button {
+                Task { await menuVM.restartApp(resource: resource) }
+            } label: {
+                Label("Restart", systemImage: "arrow.clockwise")
+            }
+        case .stopped:
+            Button {
+                Task { await menuVM.startApp(resource: resource) }
             } label: {
                 Label("Start", systemImage: "play.fill")
             }

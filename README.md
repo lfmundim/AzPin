@@ -1,5 +1,9 @@
 # AzPin
 
+<p align="center">
+  <img src="assets/AzPin-v3.iconset/icon_512x512@2x.png" alt="Logo" width="30%" />
+</p>
+
 AzPin is a native macOS menubar app that reads your existing `az` CLI session and gives you fast, pinnable access to Azure resources. Open the menubar, see your pinned resource groups and their live resources, click to open in the portal, or start/stop/restart runnable resources without leaving the desktop.
 
 No Azure SDK. No App Store. No sandbox. Requires macOS 26 Tahoe.
@@ -44,9 +48,15 @@ You only need to do this once.
 
 **Pin an entire resource group** — all current and future resources in that RG appear in the menubar on every open. New resources show up automatically.
 
+![Resource Group pinning](/docs/Pin_RG.png)
+
 **Pin individual resources** — only those specific resources appear, even if their parent RG is not pinned.
 
-Both modes coexist. If a resource is individually pinned and its parent RG is also pinned, it appears once (deduplication by resource ID). Pinned RGs and resources are reorderable by drag in the main window.
+![Individual Resource pinning](/docs/Pin_Resource.png)
+
+Both modes coexist. If a resource is individually pinned and its parent RG is also pinned, it appears once (deduplication by resource ID). Pinned RGs are reorderable by drag in the main window.
+
+![Resource Group reordering](/docs/Pin_Reorder.png)
 
 ---
 
@@ -54,11 +64,13 @@ Both modes coexist. If a resource is individually pinned and its parent RG is al
 
 Click the `☁` icon in the menubar to see:
 
-- Signed-in account and active subscription
-- Pinned resource groups, each expandable to show live resources
-- Runnable resources (App Services, Function Apps, Container Apps, Logic Apps) with a submenu for Start / Stop / Restart
-- Individually-pinned resources not belonging to a pinned RG
-- Quick access to open the main window or quit
+1. Signed-in account and active subscription
+2. Pinned resource groups, each expandable to show live resources
+3. Runnable resources (App Services, Function Apps, Container Apps, Logic Apps) with a submenu for Start / Stop / Restart
+4. Individually-pinned resources not belonging to a pinned RG — runnable ones show the same Start/Stop/Restart submenu as RG resources
+5. Quick access to open the main window or quit
+
+![Menu Bar, pinned RG](/docs/MenuBar_RG.png)
 
 ---
 
@@ -69,7 +81,7 @@ Open via **Open AzPin...** in the menubar or `⌘Space → AzPin`.
 - **Sidebar**: pinned RGs, drag to reorder, right-click to unpin or open in Portal
 - **Pinned tab**: individually-pinned resources for the selected RG, reorderable
 - **Browse tab** (RG selected): live resources within that specific RG, sorted by type, with pin buttons
-- **Browse view** (nothing selected): subscription picker — browse all RGs and resources, pin whole RGs or individual resources
+- **Browse view** (nothing selected): subscription picker and search field share a single toolbar row — browse all RGs and resources, pin whole RGs or individual resources
 - **Settings → Subscriptions**: hide subscriptions you don't want cluttering the Browse picker
 
 ---

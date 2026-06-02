@@ -5,14 +5,11 @@ struct BrowseView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            subscriptionPicker
+            toolbar
             Divider()
-            if vm.selectedSubscription != nil && !vm.resourceGroups.isEmpty {
-                searchBox
-                Divider()
-            }
             contentArea
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .task {
             await vm.loadSubscriptions()
         }
@@ -23,26 +20,26 @@ struct BrowseView: View {
     }
 
     @ViewBuilder
-    private var searchBox: some View {
-        TextField("Search resource groups", text: Bindable(vm).searchText)
-            .textFieldStyle(.roundedBorder)
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-    }
-
-    @ViewBuilder
-    private var subscriptionPicker: some View {
-        if vm.subscriptions.isEmpty && !vm.isLoadingSubscriptions {
-            EmptyView()
-        } else {
-            Picker("Subscription", selection: Bindable(vm).selectedSubscription) {
-                Text("Select...").tag(Optional<AzureSubscription>.none)
-                ForEach(vm.subscriptions, id: \.id) { sub in
-                    Text(sub.name).tag(Optional(sub))
+    private var toolbar: some View {
+        HStack(spacing: 12) {
+            if !vm.subscriptions.isEmpty || vm.isLoadingSubscriptions {
+                Picker("Subscription", selection: Bindable(vm).selectedSubscription) {
+                    Text("Select...").tag(Optional<AzureSubscription>.none)
+                    ForEach(vm.subscriptions, id: \.id) { sub in
+                        Text(sub.name).tag(Optional(sub))
+                    }
                 }
+                .fixedSize()
             }
-            .padding()
+            Spacer()
+            if vm.selectedSubscription != nil && !vm.resourceGroups.isEmpty {
+                TextField("Search resource groups", text: Bindable(vm).searchText)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: 220)
+            }
         }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
     }
 
     @ViewBuilder

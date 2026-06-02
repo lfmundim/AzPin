@@ -98,6 +98,46 @@ final class MenuBarViewModel {
         }
     }
 
+    func loadOrphanResources(for resources: [PinnedResource]) async {
+        let snapshots = resources
+            .filter { ResourceTypeMapper.isRunnable($0.type) }
+            .map { snapshotPinnedResource($0) }
+        guard !snapshots.isEmpty else { return }
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await self.fetchOrphanStates(for: snapshots) }
+            group.addTask { await self.checkOrphanPermissions(for: snapshots) }
+            await group.waitForAll()
+        }
+    }
+
+    private func fetchOrphanStates(for snapshots: [PinnedResource]) async {
+        await withTaskGroup(of: (String, AppRunningState).self) { group in
+            for snap in snapshots {
+                group.addTask {
+                    let state = (try? await self.arm.fetchAppState(resource: snap)) ?? .unknown
+                    return (snap.id, state)
+                }
+            }
+            for await (id, state) in group {
+                appStates[id] = state
+            }
+        }
+    }
+
+    private func checkOrphanPermissions(for snapshots: [PinnedResource]) async {
+        await withTaskGroup(of: (String, Bool).self) { group in
+            for snap in snapshots {
+                group.addTask {
+                    let allowed = await self.permissionsService.canManage(resource: snap)
+                    return (snap.id, allowed)
+                }
+            }
+            for await (id, allowed) in group {
+                permissions[id] = allowed
+            }
+        }
+    }
+
     func startApp(resource: AzureResource, rg: PinnedResourceGroup) async {
         let pinned = makePinnedResource(resource, rg: rg)
         appStates[resource.id] = .starting
@@ -131,10 +171,52 @@ final class MenuBarViewModel {
         }
     }
 
+    func startApp(resource: PinnedResource) async {
+        let snap = snapshotPinnedResource(resource)
+        appStates[snap.id] = .starting
+        do {
+            try await arm.startApp(resource: snap)
+            appStates[snap.id] = .running
+        } catch {
+            appStates[snap.id] = .stopped
+        }
+    }
+
+    func stopApp(resource: PinnedResource) async {
+        let snap = snapshotPinnedResource(resource)
+        appStates[snap.id] = .stopping
+        do {
+            try await arm.stopApp(resource: snap)
+            appStates[snap.id] = .stopped
+        } catch {
+            appStates[snap.id] = .running
+        }
+    }
+
+    func restartApp(resource: PinnedResource) async {
+        let snap = snapshotPinnedResource(resource)
+        appStates[snap.id] = .restarting
+        do {
+            try await arm.restartApp(resource: snap)
+            appStates[snap.id] = .running
+        } catch {
+            appStates[snap.id] = .running
+        }
+    }
+
     private func makePinnedResource(_ resource: AzureResource, rg: PinnedResourceGroup) -> PinnedResource {
         PinnedResource(
             id: resource.id, name: resource.name, type: resource.type,
             resourceGroup: rg.name, subscriptionId: rg.subscriptionId,
+            location: resource.location, displayOrder: 0
+        )
+    }
+
+    // Creates an unmanaged (not SwiftData-context-bound) copy safe to cross actor/task boundaries.
+    private func snapshotPinnedResource(_ resource: PinnedResource) -> PinnedResource {
+        PinnedResource(
+            id: resource.id, name: resource.name, type: resource.type,
+            resourceGroup: resource.resourceGroup, subscriptionId: resource.subscriptionId,
             location: resource.location, displayOrder: 0
         )
     }
