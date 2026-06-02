@@ -13,6 +13,13 @@ struct MainAppView: View {
         } detail: {
             DetailView(selectedGroup: selectedGroup)
         }
+        .onAppear {
+            NSApplication.shared.setActivationPolicy(.regular)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+        .onDisappear {
+            NSApplication.shared.setActivationPolicy(.accessory)
+        }
         .sheet(isPresented: $showOnboarding) {
             OnboardingView()
                 .environment(onboardingVM)
