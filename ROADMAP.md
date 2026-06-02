@@ -1,6 +1,26 @@
 # AzPin Roadmap
 
-Planned features post-v1, ordered by likely release. Nothing here is committed to a timeline.
+Planned features, ordered by likely release. Nothing here is committed to a timeline.
+
+---
+
+## v1.0 — Required Before Release
+
+### Auto-Update (Sparkle)
+
+Integrate [Sparkle](https://sparkle-project.org) (MIT) for in-app update checks and silent background downloads.
+
+**Why:** Direct-distribution app with no App Store delivery mechanism. Users need a reliable way to receive updates without manually checking GitHub.
+
+**How it works:**
+- Add Sparkle via SPM.
+- Wire `SPUStandardUpdaterController` into `AppDelegate` / app entry point.
+- Set `SUFeedURL` in `Info.plist` pointing at appcast hosted on GitHub Releases.
+- Generate EdDSA signing key once with Sparkle's `generate_keys` tool; store private key in secrets, embed public key in app bundle.
+- Release workflow: export `.app` → zip → run `generate_appcast` → push appcast + zip asset to GitHub Release. GitVersioning provides the version string.
+- Update check triggers on launch (with user-configurable interval); Sparkle handles download, verification, and relaunch.
+
+**Scope:** No custom update UI needed — Sparkle's standard sheet is sufficient for v1.0.
 
 ---
 
@@ -59,6 +79,18 @@ var subscriptionDisplayName: String  // resolved once at pin time, stored
 
 ---
 
+## v1.4 — Windows Version
+
+Native WinUI 3 app with feature parity. Task list in `src/windows/tasks/`.
+
+### Auto-Update (Windows)
+
+Use **MSIX + AppInstaller** for update delivery — OS-native, zero extra dependencies, hosts `.appinstaller` file on GitHub Releases same as macOS appcast.
+
+**Velopack note:** [Velopack](https://velopack.io) (MIT) is a cross-platform alternative that would unify macOS + Windows release scripting under one tool. Currently sticking with Sparkle (macOS) + MSIX AppInstaller (Windows) as the more mature path. Revisit Velopack before Windows release work begins — if it has matured significantly, switching both platforms to Velopack may be worth the migration.
+
+---
+
 ## v2 — Multi-Tenant / Multi-Environment
 
 Support multiple Azure tenants (e.g. "Work" and "Personal") each with their own pinned resource groups, selectable from the menubar.
@@ -75,9 +107,6 @@ Support multiple Azure tenants (e.g. "Work" and "Personal") each with their own 
 
 ---
 
-## Backlog (no version assigned)
+## v0.3 — Next Up
 
-- **Search / filter** in BrowseView: filter resource groups and resources by name.
-- **Resource tags display**: show Azure tags as secondary text or tooltip on resource rows.
 - **Copy resource ID**: right-click on a resource → "Copy Resource ID" copies the ARM ID to clipboard.
-- **Windows version**: native WinUI 3 app with feature parity. Task list in `src/windows/tasks/`.
