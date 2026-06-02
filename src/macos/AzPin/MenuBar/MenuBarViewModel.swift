@@ -98,6 +98,44 @@ final class MenuBarViewModel {
         }
     }
 
+    func loadOrphanResources(for resources: [PinnedResource]) async {
+        let runnable = resources.filter { ResourceTypeMapper.isRunnable($0.type) }
+        guard !runnable.isEmpty else { return }
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await self.fetchOrphanStates(for: runnable) }
+            group.addTask { await self.checkOrphanPermissions(for: runnable) }
+            await group.waitForAll()
+        }
+    }
+
+    private func fetchOrphanStates(for resources: [PinnedResource]) async {
+        await withTaskGroup(of: (String, AppRunningState).self) { group in
+            for resource in resources {
+                group.addTask {
+                    let state = (try? await self.arm.fetchAppState(resource: resource)) ?? .unknown
+                    return (resource.id, state)
+                }
+            }
+            for await (id, state) in group {
+                appStates[id] = state
+            }
+        }
+    }
+
+    private func checkOrphanPermissions(for resources: [PinnedResource]) async {
+        await withTaskGroup(of: (String, Bool).self) { group in
+            for resource in resources {
+                group.addTask {
+                    let allowed = await self.permissionsService.canManage(resource: resource)
+                    return (resource.id, allowed)
+                }
+            }
+            for await (id, allowed) in group {
+                permissions[id] = allowed
+            }
+        }
+    }
+
     func startApp(resource: AzureResource, rg: PinnedResourceGroup) async {
         let pinned = makePinnedResource(resource, rg: rg)
         appStates[resource.id] = .starting
@@ -125,6 +163,36 @@ final class MenuBarViewModel {
         appStates[resource.id] = .restarting
         do {
             try await arm.restartApp(resource: pinned)
+            appStates[resource.id] = .running
+        } catch {
+            appStates[resource.id] = .running
+        }
+    }
+
+    func startApp(resource: PinnedResource) async {
+        appStates[resource.id] = .starting
+        do {
+            try await arm.startApp(resource: resource)
+            appStates[resource.id] = .running
+        } catch {
+            appStates[resource.id] = .stopped
+        }
+    }
+
+    func stopApp(resource: PinnedResource) async {
+        appStates[resource.id] = .stopping
+        do {
+            try await arm.stopApp(resource: resource)
+            appStates[resource.id] = .stopped
+        } catch {
+            appStates[resource.id] = .running
+        }
+    }
+
+    func restartApp(resource: PinnedResource) async {
+        appStates[resource.id] = .restarting
+        do {
+            try await arm.restartApp(resource: resource)
             appStates[resource.id] = .running
         } catch {
             appStates[resource.id] = .running
