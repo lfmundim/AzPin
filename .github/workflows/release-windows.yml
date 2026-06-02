@@ -3,11 +3,13 @@ name: Release Windows
 on:
   push:
     branches:
-      - 'release/v*'
+      - 'release/win/v*'
     paths:
       - 'src/windows/**'
+      - '.github/workflows/windows-ci.yml'
       - '.github/workflows/release.yml'
       - '.github/workflows/release-windows.yml'
+  workflow_dispatch:
 
 jobs:
   build-and-release:
@@ -23,7 +25,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '9.0.x'
 
       - name: Install tooling
         shell: pwsh
@@ -31,17 +33,26 @@ jobs:
           dotnet tool install -g nbgv
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\\.dotnet\\tools"
 
+      - name: Restore
+        run: dotnet restore src/windows/AzPin.Windows.sln
+
+      - name: Build release
+        run: dotnet build src/windows/AzPin.Windows.sln --configuration Release --no-restore
+
+      - name: Test debug
+        run: dotnet test src/windows/AzPin.Windows.sln --configuration Debug --verbosity normal
+
       - name: Compute version
         id: version
         shell: pwsh
         run: |
-          $major = "${env:GITHUB_REF_NAME}" -replace '^release/v', ''
+          $major = "${env:GITHUB_REF_NAME}" -replace '^release/win/v', ''
           $nbgv = nbgv get-version -f json | ConvertFrom-Json
           $minor = $nbgv.VersionMinor
           $height = $nbgv.VersionHeight
           $version = "$major.$minor.$height"
           "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "tag=v$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "tag=win-v$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Create and push release tag
         shell: pwsh
@@ -57,19 +68,43 @@ jobs:
             git push "https://x-access-token:${env:GITHUB_TOKEN}@github.com/${{ github.repository }}" $tag
           }
 
+      - name: Publish self-contained x64 bundle
+        shell: pwsh
+        run: |
+          dotnet publish src/windows/AzPin.Windows/AzPin.Windows.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:WindowsAppSDKSelfContained=true `
+            -o build/publish/win-x64
+
       - name: Package Windows artifact
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path build | Out-Null
-          Compress-Archive -Path src/windows/* -DestinationPath "build/AzPin-Windows-${{ steps.version.outputs.version }}.zip"
+          Compress-Archive -Path build/publish/win-x64/* -DestinationPath "build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}.zip"
 
-      - name: Create GitHub release
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AzPin-Windows-win-x64-${{ steps.version.outputs.version }}
+          path: build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}.zip
+          if-no-files-found: error
+
+      - name: Create or update GitHub release
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ steps.version.outputs.tag }}" `
-            --title "AzPin ${{ steps.version.outputs.version }}" `
-            --generate-notes `
-            --prerelease `
-            "build/AzPin-Windows-${{ steps.version.outputs.version }}.zip"
+          $tag = "${{ steps.version.outputs.tag }}"
+          $asset = "build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}.zip"
+
+          if (gh release view $tag *> $null) {
+            gh release upload $tag $asset --clobber
+          } else {
+            gh release create $tag `
+              --title "AzPin Windows ${{ steps.version.outputs.version }}" `
+              --generate-notes `
+              --prerelease `
+              $asset
+          }

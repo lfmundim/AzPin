@@ -1,0 +1,65 @@
+name: Windows CI
+
+on:
+  push:
+    paths:
+      - 'src/windows/**'
+      - '.github/workflows/windows-ci.yml'
+      - '.github/workflows/release-windows.yml'
+  pull_request:
+    branches:
+      - main
+      - 'release/win/v*'
+    paths:
+      - 'src/windows/**'
+      - '.github/workflows/windows-ci.yml'
+      - '.github/workflows/release-windows.yml'
+  workflow_dispatch:
+
+jobs:
+  build-test-publish:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore src/windows/AzPin.Windows.sln
+
+      - name: Build release
+        run: dotnet build src/windows/AzPin.Windows.sln --configuration Release --no-restore
+
+      - name: Test debug
+        run: dotnet test src/windows/AzPin.Windows.sln --configuration Debug --verbosity normal
+
+      - name: Publish self-contained x64 bundle
+        shell: pwsh
+        run: |
+          dotnet publish src/windows/AzPin.Windows/AzPin.Windows.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:WindowsAppSDKSelfContained=true `
+            -o artifacts/publish/win-x64
+
+      - name: Compress published bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          Compress-Archive -Path artifacts/publish/win-x64/* -DestinationPath artifacts/AzPin-Windows-win-x64-ci.zip
+
+      - name: Upload published bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: AzPin-Windows-win-x64-ci
+          path: artifacts/AzPin-Windows-win-x64-ci.zip
+          if-no-files-found: error
