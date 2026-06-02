@@ -13,6 +13,7 @@ struct AzPinApp: App {
     let onboardingViewModel: OnboardingViewModel
     let menuBarViewModel: MenuBarViewModel
     let accountSettingsViewModel: AccountSettingsViewModel
+    let rgBrowseViewModel: RGBrowseViewModel
 
     init() {
         let c = try! ModelContainer(for: PinnedResourceGroup.self, PinnedResource.self, CachedToken.self)
@@ -29,6 +30,7 @@ struct AzPinApp: App {
         onboardingViewModel = OnboardingViewModel(azCLI: az)
         menuBarViewModel = MenuBarViewModel(arm: arm, permissionsService: permissions)
         accountSettingsViewModel = AccountSettingsViewModel(azCLI: az, tokenCache: tc)
+        rgBrowseViewModel = RGBrowseViewModel(arm: arm)
     }
 
     var body: some Scene {
@@ -54,6 +56,7 @@ struct AzPinApp: App {
                 .environment(authViewModel)
                 .environment(browseViewModel)
                 .environment(onboardingViewModel)
+                .environment(rgBrowseViewModel)
         }
         .windowStyle(.titleBar)
         .defaultSize(width: 900, height: 600)

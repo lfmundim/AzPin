@@ -68,7 +68,9 @@ Open via **Open AzPin...** in the menubar or `⌘Space → AzPin`.
 
 - **Sidebar**: pinned RGs, drag to reorder, right-click to unpin or open in Portal
 - **Pinned tab**: individually-pinned resources for the selected RG, reorderable
-- **Browse tab**: live ARM browser — pick a subscription, expand resource groups, pin resources or whole RGs
+- **Browse tab** (RG selected): live resources within that specific RG, sorted by type, with pin buttons
+- **Browse view** (nothing selected): subscription picker — browse all RGs and resources, pin whole RGs or individual resources
+- **Settings → Subscriptions**: hide subscriptions you don't want cluttering the Browse picker
 
 ---
 

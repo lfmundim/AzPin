@@ -15,8 +15,13 @@ struct MenuBarView: View {
             AuthStatusView()
             Divider()
 
+            let duplicateRGNames: Set<String> = {
+                var counts: [String: Int] = [:]
+                for rg in pinnedGroups { counts[rg.name, default: 0] += 1 }
+                return Set(counts.filter { $0.value > 1 }.keys)
+            }()
             ForEach(pinnedGroups) { rg in
-                rgMenu(for: rg)
+                rgMenu(for: rg, showSubscription: duplicateRGNames.contains(rg.name))
             }
 
             let orphans = pinnedResources.filter { resource in
@@ -40,12 +45,16 @@ struct MenuBarView: View {
                 Button("Pin Resource Group...") { openWindow(id: "main"); NSApp.activate(ignoringOtherApps: true) }
             }
             Button("Open AzPin...") { openWindow(id: "main"); NSApp.activate(ignoringOtherApps: true) }
-            Button("Settings...") { openSettings() }
+            Button("Settings...") { openSettings(); NSApp.activate(ignoringOtherApps: true) }
             Button("Quit AzPin") { NSApplication.shared.terminate(nil) }
         }
         .task {
             await auth.refresh()
             await menuVM.loadResources(for: pinnedGroups)
+            if !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
+                openWindow(id: "main")
+                NSApp.activate(ignoringOtherApps: true)
+            }
         }
         .onChange(of: pinnedGroups.map(\.id)) { _, _ in
             Task { await menuVM.loadResources(for: pinnedGroups) }
@@ -53,7 +62,11 @@ struct MenuBarView: View {
     }
 
     @ViewBuilder
-    private func rgMenu(for rg: PinnedResourceGroup) -> some View {
+    private func rgMenu(for rg: PinnedResourceGroup, showSubscription: Bool = false) -> some View {
+        let subName = rg.subscriptionDisplayName ?? ""
+        let label = showSubscription && !subName.isEmpty
+            ? "\(rg.name) · \(subName)"
+            : rg.name
         Menu {
             if let error = menuVM.loadErrors[rg.id] {
                 Label(error, systemImage: "exclamationmark.triangle")
@@ -86,7 +99,7 @@ struct MenuBarView: View {
                 Label("Unpin", systemImage: "pin.slash")
             }
         } label: {
-            Label(rg.name, systemImage: "folder.fill")
+            Label(label, systemImage: "folder.fill")
         }
     }
 

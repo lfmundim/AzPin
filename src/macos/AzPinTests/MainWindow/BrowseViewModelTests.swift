@@ -210,4 +210,106 @@ final class BrowseViewModelTests: XCTestCase {
         XCTAssertTrue(vm.resources.isEmpty)
         XCTAssertFalse(vm.isLoadingResources)
     }
+
+    // MARK: - Sorting
+
+    func testLoadResourceGroups_sortsAlphabetically() async {
+        vm.selectedSubscription = sub1
+        let rgs = [
+            AzureResourceGroup(id: "/rg-z", name: "z-prod", location: "eastus"),
+            AzureResourceGroup(id: "/rg-a", name: "a-dev", location: "westus"),
+            AzureResourceGroup(id: "/rg-m", name: "m-staging", location: "eastus")
+        ]
+        mockARM.resourceGroupsResult = .success(rgs)
+
+        await vm.loadResourceGroups()
+
+        XCTAssertEqual(vm.resourceGroups.map(\.name), ["a-dev", "m-staging", "z-prod"])
+    }
+
+    func testLoadResources_sortsByTypeThenCaseInsensitive() async {
+        vm.selectedSubscription = sub1
+        vm.selectedResourceGroupName = "rg-prod"
+        let res = [
+            AzureResource(id: "/r1", name: "zzz-app", type: "Microsoft.Web/sites", location: "eastus"),
+            AzureResource(id: "/r2", name: "aaa-fn", type: "microsoft.web/sites/functions", location: "eastus"),
+            AzureResource(id: "/r3", name: "mid-db", type: "Microsoft.Sql/servers", location: "eastus")
+        ]
+        mockARM.resourcesResult = .success(res)
+
+        await vm.loadResources(in: "rg-prod")
+
+        XCTAssertEqual(vm.resources.map { $0.type.lowercased() }, [
+            "microsoft.sql/servers",
+            "microsoft.web/sites",
+            "microsoft.web/sites/functions"
+        ])
+    }
+
+    // MARK: - Search / filteredResourceGroups
+
+    func testFilteredResourceGroups_emptySearchReturnsAll() async {
+        vm.selectedSubscription = sub1
+        mockARM.resourceGroupsResult = .success([
+            AzureResourceGroup(id: "/rg-1", name: "alpha", location: "eastus"),
+            AzureResourceGroup(id: "/rg-2", name: "beta", location: "eastus")
+        ])
+        await vm.loadResourceGroups()
+
+        vm.searchText = ""
+
+        XCTAssertEqual(vm.filteredResourceGroups.count, 2)
+    }
+
+    func testFilteredResourceGroups_matchesCaseInsensitive() async {
+        vm.selectedSubscription = sub1
+        mockARM.resourceGroupsResult = .success([
+            AzureResourceGroup(id: "/rg-1", name: "Alpha-Prod", location: "eastus"),
+            AzureResourceGroup(id: "/rg-2", name: "beta-dev", location: "eastus")
+        ])
+        await vm.loadResourceGroups()
+
+        vm.searchText = "alpha"
+
+        XCTAssertEqual(vm.filteredResourceGroups.count, 1)
+        XCTAssertEqual(vm.filteredResourceGroups.first?.name, "Alpha-Prod")
+    }
+
+    // MARK: - Subscription filter
+
+    func testLoadSubscriptions_hiddenSubscriptionsExcluded() async {
+        UserDefaults.standard.set("sub-2", forKey: "hiddenSubscriptionIds")
+        defer { UserDefaults.standard.removeObject(forKey: "hiddenSubscriptionIds") }
+
+        mockAzCLI.subscriptionsResult = .success([sub1, sub2])
+        await vm.loadSubscriptions()
+
+        XCTAssertEqual(vm.subscriptions.count, 1)
+        XCTAssertEqual(vm.subscriptions.first?.id, "sub-1")
+    }
+
+    func testLoadSubscriptions_resetsSelectedWhenHidden() async {
+        mockAzCLI.subscriptionsResult = .success([sub1, sub2])
+        await vm.loadSubscriptions()
+        vm.selectedSubscription = sub2
+
+        UserDefaults.standard.set("sub-2", forKey: "hiddenSubscriptionIds")
+        defer { UserDefaults.standard.removeObject(forKey: "hiddenSubscriptionIds") }
+        mockAzCLI.subscriptionsResult = .success([sub1, sub2])
+        await vm.loadSubscriptions()
+
+        XCTAssertEqual(vm.selectedSubscription?.id, "sub-1")
+    }
+
+    func testFilteredResourceGroups_noMatchReturnsEmpty() async {
+        vm.selectedSubscription = sub1
+        mockARM.resourceGroupsResult = .success([
+            AzureResourceGroup(id: "/rg-1", name: "alpha", location: "eastus")
+        ])
+        await vm.loadResourceGroups()
+
+        vm.searchText = "zzz"
+
+        XCTAssertTrue(vm.filteredResourceGroups.isEmpty)
+    }
 }

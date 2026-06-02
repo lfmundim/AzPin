@@ -8,7 +8,7 @@ struct DetailView: View {
             TabView {
                 PinnedResourcesView(resourceGroup: group)
                     .tabItem { Label("Pinned", systemImage: "pin.fill") }
-                BrowseView()
+                RGBrowseView(resourceGroup: group)
                     .tabItem { Label("Browse", systemImage: "magnifyingglass") }
             }
         } else {
