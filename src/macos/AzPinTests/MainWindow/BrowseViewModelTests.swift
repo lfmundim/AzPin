@@ -288,6 +288,19 @@ final class BrowseViewModelTests: XCTestCase {
         XCTAssertEqual(vm.subscriptions.first?.id, "sub-1")
     }
 
+    func testLoadSubscriptions_resetsSelectedWhenHidden() async {
+        mockAzCLI.subscriptionsResult = .success([sub1, sub2])
+        await vm.loadSubscriptions()
+        vm.selectedSubscription = sub2
+
+        UserDefaults.standard.set("sub-2", forKey: "hiddenSubscriptionIds")
+        defer { UserDefaults.standard.removeObject(forKey: "hiddenSubscriptionIds") }
+        mockAzCLI.subscriptionsResult = .success([sub1, sub2])
+        await vm.loadSubscriptions()
+
+        XCTAssertEqual(vm.selectedSubscription?.id, "sub-1")
+    }
+
     func testFilteredResourceGroups_noMatchReturnsEmpty() async {
         vm.selectedSubscription = sub1
         mockARM.resourceGroupsResult = .success([

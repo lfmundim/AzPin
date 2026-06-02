@@ -44,7 +44,7 @@ final class BrowseViewModel {
                     if lhs.isDefault != rhs.isDefault { return lhs.isDefault }
                     return lhs.tenantId < rhs.tenantId
                 }
-            if selectedSubscription == nil {
+            if selectedSubscription == nil || !subscriptions.contains(where: { $0.id == selectedSubscription?.id }) {
                 selectedSubscription = subscriptions.first
             }
             await loadResourceGroups()

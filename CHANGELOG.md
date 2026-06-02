@@ -25,6 +25,7 @@ All notable changes to AzPin are documented in this file.
 - Fixed: Container Apps now use the correct ARM API version (`2023-05-01`) and read `.properties.runningStatus` instead of `.properties.state`. Logic Apps use `2019-05-01` and map "Enabled"/"Disabled" to running/stopped. Container App and Logic App restart is implemented as sequential stop → start (no native restart endpoint exists).
 - Added "Open at Login" toggle in Settings → Preferences.
 - Added Settings → Subscriptions tab: list all accessible subscriptions with visibility toggles; hidden subscriptions are excluded from the Browse picker on the next load.
+- Fixed: hiding the currently-selected subscription now resets the selection to the first visible subscription on the next reload (previously the hidden subscription remained selected and continued loading resource groups).
 - Added "Open Terminal..." button in the menubar when not signed in, so `az login` can be run without searching for a terminal.
 - On first launch, AzPin automatically opens the main window (and shows the onboarding sheet) when the menubar icon is first clicked, without requiring "Open AzPin..." to be found first.
 - Search box at the top of the browse panel filters resource groups by name (case-insensitive, clears on subscription change).
