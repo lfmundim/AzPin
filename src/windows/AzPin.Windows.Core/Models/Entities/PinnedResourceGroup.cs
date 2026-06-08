@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 
 namespace AzPin.Windows.Models.Entities;
@@ -5,6 +6,7 @@ namespace AzPin.Windows.Models.Entities;
 [Index(nameof(SubscriptionId), nameof(Name), IsUnique = true)]
 public class PinnedResourceGroup
 {
+    [Key]
     public int LocalId { get; set; }
     public string Id { get; set; } = string.Empty;
     public string SubscriptionId { get; set; } = string.Empty;
