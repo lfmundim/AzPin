@@ -46,19 +46,35 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            // async void swallows exceptions by default — make startup failures visible.
-            var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+            // Write crash log first — dialog may fail if XamlRoot is not yet live.
+            var logPath = Path.Combine(Path.GetTempPath(), "azpin-crash.log");
+            try { File.WriteAllText(logPath, $"{DateTime.Now:O}\n{ex}"); } catch { }
+
+            var xamlRoot = _mainWindow?.Content?.XamlRoot;
+            if (xamlRoot is not null)
             {
-                Title = "AzPin failed to start",
-                Content = ex.ToString(),
-                CloseButtonText = "Quit"
-            };
-            if (_mainWindow is not null)
-                dialog.XamlRoot = _mainWindow.Content?.XamlRoot;
-            await dialog.ShowAsync();
+                var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+                {
+                    Title = "AzPin failed to start",
+                    Content = $"{ex.Message}\n\nFull details: {logPath}",
+                    CloseButtonText = "Quit",
+                    XamlRoot = xamlRoot
+                };
+                try { await dialog.ShowAsync(); } catch { }
+            }
+            else
+            {
+                // XamlRoot not available (crash before Activate) — use Win32 MessageBox.
+                MessageBox(IntPtr.Zero,
+                    $"AzPin failed to start.\n\n{ex.Message}\n\nFull details written to:\n{logPath}",
+                    "AzPin", 0x10 /* MB_ICONERROR */);
+            }
             Exit();
         }
     }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern int MessageBox(IntPtr hWnd, string text, string caption, uint type);
 
     private static IServiceProvider ConfigureServices(MainWindow.MainWindow mainWindow)
     {
