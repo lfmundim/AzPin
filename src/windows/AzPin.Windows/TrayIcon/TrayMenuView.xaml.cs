@@ -48,17 +48,38 @@ public sealed partial class TrayMenuView : UserControl
     private void OnAuthPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (sender is AuthViewModel auth &&
-            (e.PropertyName == nameof(AuthViewModel.State) || e.PropertyName == nameof(AuthViewModel.IsRefreshing)))
+            (e.PropertyName == nameof(AuthViewModel.State) ||
+             e.PropertyName == nameof(AuthViewModel.IsRefreshing) ||
+             e.PropertyName == nameof(AuthViewModel.AccountName)))
         {
-            UpdateStatusRows(auth.State, auth.IsRefreshing);
+            UpdateStatus(auth);
         }
     }
 
     private void UpdateStatusRows(AuthState state, bool isRefreshing)
     {
-        RefreshingRow.Visibility = isRefreshing || state == AuthState.Unknown ? Visibility.Visible : Visibility.Collapsed;
-        SignedInRow.Visibility = state == AuthState.SignedIn && !isRefreshing ? Visibility.Visible : Visibility.Collapsed;
-        NotSignedInRow.Visibility = state == AuthState.NotSignedIn && !isRefreshing ? Visibility.Visible : Visibility.Collapsed;
-        CliMissingRow.Visibility = state == AuthState.CliNotInstalled && !isRefreshing ? Visibility.Visible : Visibility.Collapsed;
+        var auth = _boundAuth;
+        RefreshingRing.Visibility = isRefreshing || state == AuthState.Unknown ? Visibility.Visible : Visibility.Collapsed;
+        StatusTextBlock.Text = state switch
+        {
+            AuthState.SignedIn when !string.IsNullOrWhiteSpace(auth?.AccountName) => auth.AccountName!,
+            AuthState.SignedIn => "Signed in",
+            AuthState.NotSignedIn => "Not signed in - run az login",
+            AuthState.CliNotInstalled => "Azure CLI not installed",
+            _ => "Refreshing authentication status..."
+        };
+    }
+
+    private void UpdateStatus(AuthViewModel auth)
+    {
+        UpdateStatusRows(auth.State, auth.IsRefreshing);
+    }
+
+    private void OnQuitClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is TrayMenuViewModel vm)
+        {
+            vm.QuitCommand.Execute(null);
+        }
     }
 }

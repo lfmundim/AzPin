@@ -7,33 +7,10 @@
     mc:Ignorable="d">
     <Border MinWidth="320" Padding="12">
         <StackPanel Spacing="10">
-            <StackPanel x:Name="RefreshingRow" Orientation="Horizontal" Spacing="8">
-                <ProgressRing Width="16" Height="16" IsActive="True" />
-                <TextBlock Text="Refreshing authentication status..." VerticalAlignment="Center" />
-            </StackPanel>
-
-            <StackPanel x:Name="SignedInRow" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
-                <TextBlock Text="" FontFamily="Segoe Fluent Icons" Foreground="{ThemeResource SystemFillColorSuccessBrush}" VerticalAlignment="Center" />
-                <TextBlock Text="{Binding Auth.AccountName}" VerticalAlignment="Center" />
-            </StackPanel>
-
-            <StackPanel x:Name="NotSignedInRow" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
-                <TextBlock Text="" FontFamily="Segoe Fluent Icons" Foreground="{ThemeResource SystemFillColorCautionBrush}" VerticalAlignment="Center" />
-                <TextBlock Text="Not signed in - run az login" TextWrapping="Wrap" VerticalAlignment="Center" />
-            </StackPanel>
-
-            <StackPanel x:Name="CliMissingRow" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
-                <TextBlock Text="" FontFamily="Segoe Fluent Icons" Foreground="{ThemeResource SystemFillColorCriticalBrush}" VerticalAlignment="Center" />
-                <TextBlock Text="Azure CLI not installed" VerticalAlignment="Center" />
-            </StackPanel>
-
-            <Separator />
-
+            <ProgressRing x:Name="RefreshingRing" Width="16" Height="16" IsActive="True" />
+            <TextBlock x:Name="StatusTextBlock" TextWrapping="Wrap" />
             <Button Content="Open AzPin..." HorizontalAlignment="Stretch" />
-
-            <Separator />
-
-            <Button Content="Quit AzPin" HorizontalAlignment="Stretch" Command="{Binding QuitCommand}" />
+            <Button Content="Quit AzPin" HorizontalAlignment="Stretch" Click="OnQuitClick" />
         </StackPanel>
     </Border>
 </UserControl>
