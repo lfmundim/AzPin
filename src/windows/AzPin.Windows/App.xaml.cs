@@ -20,16 +20,10 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
-        UnhandledException += (_, e) =>
-        {
-            var logPath = Path.Combine(Path.GetTempPath(), "azpin-crash.log");
-            try { File.WriteAllText(logPath, $"{DateTime.Now:O}\n{e.Exception}"); } catch { }
-            e.Handled = true;
-            MessageBox(IntPtr.Zero,
-                $"AzPin crashed.\n\n{e.Exception.Message}\n\nFull details:\n{logPath}",
-                "AzPin", 0x10);
-            Exit();
-        };
+        UnhandledException += (_, e) => LogAndExit(e.Exception, ref e.Handled);
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+            LogAndExit(e.ExceptionObject as Exception ?? new Exception(e.ExceptionObject?.ToString()));
+        TaskScheduler.UnobservedTaskException += (_, e) => { e.SetObserved(); LogAndExit(e.Exception); };
     }
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
@@ -81,6 +75,20 @@ public partial class App : Application
             }
             Exit();
         }
+    }
+
+    private static void LogAndExit(Exception? ex, ref bool handled)
+    {
+        handled = true;
+        LogAndExit(ex);
+    }
+
+    private static void LogAndExit(Exception? ex)
+    {
+        var logPath = Path.Combine(Path.GetTempPath(), "azpin-crash.log");
+        try { File.WriteAllText(logPath, $"{DateTime.Now:O}\n{ex}"); } catch { }
+        MessageBox(IntPtr.Zero, $"AzPin crashed.\n\n{ex?.Message}\n\nFull details:\n{logPath}", "AzPin", 0x10);
+        Current.Exit();
     }
 
     [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
