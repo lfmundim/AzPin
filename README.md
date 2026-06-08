@@ -1,7 +1,7 @@
 # AzPin
 
 <p align="center">
-  <img src="assets/AzPin-v3.iconset/icon_512x512@2x.png" alt="Logo" width="30%" />
+  <img src="assets/iconset/original.svg" alt="Logo" width="30%" />
 </p>
 
 AzPin is a native macOS menubar app that reads your existing `az` CLI session and gives you fast, pinnable access to Azure resources. Open the menubar, see your pinned resource groups and their live resources, click to open in the portal, or start/stop/restart runnable resources without leaving the desktop.

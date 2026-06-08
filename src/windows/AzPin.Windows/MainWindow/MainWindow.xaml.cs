@@ -19,12 +19,14 @@ public sealed partial class MainWindow : Window
         AppWindow.Resize(new SizeInt32(960, 640));
         AppWindow.IsShownInSwitchers = false;
 
-        // Close button hides instead of exits so the tray persists
+        // Close button hides instead of exits so the tray persists.
+        // Guard: AppWindow.Hide() requires the window to have been shown at least once.
         AppWindow.Closing += (_, args) =>
         {
             args.Cancel = true;
             AppWindow.IsShownInSwitchers = false;
-            AppWindow.Hide();
+            if (AppWindow.IsVisible)
+                AppWindow.Hide();
         };
     }
 
@@ -37,7 +39,9 @@ public sealed partial class MainWindow : Window
     public void InitializeTrayIcon(TrayMenuViewModel vm)
     {
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "tray.ico");
-        TrayIcon.IconSource = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(iconPath));
+        // Use System.Drawing.Icon directly — more reliable than BitmapImage for .ico
+        // files and avoids any async conversion race before the window is shown.
+        TrayIcon.Icon = new System.Drawing.Icon(iconPath);
         TrayIcon.PopupActivation = Hardcodet.Wpf.TaskbarNotification.PopupActivationMode.LeftOrRightClick;
         TrayIcon.TrayPopup = new TrayMenuView { DataContext = vm };
     }
