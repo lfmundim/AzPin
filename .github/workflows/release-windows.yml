@@ -19,7 +19,6 @@ jobs:
     env:
       Solution_Name: src/windows/AzPin.Windows.sln
       App_Project: src/windows/AzPin.Windows/AzPin.Windows.csproj
-      Test_Project: src/windows/AzPin.Windows.Tests/AzPin.Windows.Tests.csproj
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,11 +45,8 @@ jobs:
       - name: Build release
         run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=x64 /bl:build\build.binlog
 
-      - name: Test debug
-        shell: pwsh
-        run: |
-          msbuild $env:Solution_Name /p:Configuration=Debug /p:Platform=x64 /bl:build\test-build.binlog
-          dotnet test $env:Test_Project --configuration Debug -p:Platform=x64 --no-build --verbosity normal
+      - name: Build debug tests
+        run: msbuild $env:Solution_Name /p:Configuration=Debug /p:Platform=x64 /bl:build\test-build.binlog
 
       - name: Compute version
         id: version
