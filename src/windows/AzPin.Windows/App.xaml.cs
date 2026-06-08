@@ -24,18 +24,40 @@ public partial class App : Application
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
-        _mainWindow = new MainWindow.MainWindow();
-        Services = ConfigureServices(_mainWindow);
-
-        await using (var scope = Services.CreateAsyncScope())
+        try
         {
-            var db = scope.ServiceProvider.GetRequiredService<AzPinDbContext>();
-            await db.Database.EnsureCreatedAsync();
-        }
+            _mainWindow = new MainWindow.MainWindow();
+            Services = ConfigureServices(_mainWindow);
 
-        _mainWindow.InitializeTrayIcon(Services.GetRequiredService<TrayMenuViewModel>());
-        _mainWindow.InitializeContent();
-        // Window is created but NOT activated — tray-only until user clicks "Open AzPin..."
+            await using (var scope = Services.CreateAsyncScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AzPinDbContext>();
+                await db.Database.EnsureCreatedAsync();
+            }
+
+            _mainWindow.InitializeTrayIcon(Services.GetRequiredService<TrayMenuViewModel>());
+            _mainWindow.InitializeContent();
+
+            // Activate once so the visual tree (and TaskbarIcon XamlRoot) is live,
+            // then immediately hide so the app starts tray-only.
+            _mainWindow.Activate();
+            _mainWindow.AppWindow.Hide();
+            _mainWindow.AppWindow.IsShownInSwitchers = false;
+        }
+        catch (Exception ex)
+        {
+            // async void swallows exceptions by default — make startup failures visible.
+            var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+            {
+                Title = "AzPin failed to start",
+                Content = ex.ToString(),
+                CloseButtonText = "Quit"
+            };
+            if (_mainWindow is not null)
+                dialog.XamlRoot = _mainWindow.Content?.XamlRoot;
+            await dialog.ShowAsync();
+            Exit();
+        }
     }
 
     private static IServiceProvider ConfigureServices(MainWindow.MainWindow mainWindow)
@@ -53,8 +75,10 @@ public partial class App : Application
         services.AddSingleton<IShellRunner, ShellRunner>();
         services.AddSingleton<IAzCliService, AzCliService>();
         services.AddHttpClient("arm", c => c.BaseAddress = new Uri("https://management.azure.com"));
-        services.AddScoped<ITokenCache, TokenCache>();
-        services.AddScoped<IArmService, ArmService>();
+        // Transient: these hold per-operation state (token, HttpClient).  Using Scoped
+        // would create captive dependencies inside Singleton view-models.
+        services.AddTransient<ITokenCache, TokenCache>();
+        services.AddTransient<IArmService, ArmService>();
         services.AddSingleton<IPinService, PinService>();
 
         services.AddSingleton<AuthViewModel>();

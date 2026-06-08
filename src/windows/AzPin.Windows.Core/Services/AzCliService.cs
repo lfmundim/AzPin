@@ -67,17 +67,33 @@ public class AzCliService(IShellRunner shellRunner) : IAzCliService
 
     public static string ResolveAzPath()
     {
+        // Check well-known MSI install locations first.
         var candidate1 = @"C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin\az.cmd";
-        if (File.Exists(candidate1))
-        {
-            return candidate1;
-        }
+        if (File.Exists(candidate1)) return candidate1;
 
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var candidate2 = Path.Combine(localAppData, "Programs", "Microsoft SDKs", "Azure", "CLI2", "wbin", "az.cmd");
-        if (File.Exists(candidate2))
+        if (File.Exists(candidate2)) return candidate2;
+
+        // Fall back to PATH-based lookup (covers winget, Chocolatey, custom installs).
+        try
         {
-            return candidate2;
+            using var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "where",
+                Arguments = "az.cmd",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            });
+            var line = proc?.StandardOutput.ReadLine()?.Trim();
+            proc?.WaitForExit(3000);
+            if (!string.IsNullOrEmpty(line) && File.Exists(line))
+                return line;
+        }
+        catch
+        {
+            // 'where' not available or az not on PATH — fall through.
         }
 
         return "az.cmd";

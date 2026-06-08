@@ -8,6 +8,10 @@ All notable changes to AzPin are documented in this file.
 
 ## [Unreleased]
 
+### General
+
+- Refreshed app icon (all sizes 16–1024) and menubar/tray icon across macOS and Windows.
+
 ### Windows
 
 - Extracted service layer (`Services/`, `Utilities/`, `Models/`, `Data/`, `ViewModels/AuthViewModel`) into `AzPin.Windows.Core` class library; test project now references Core only, eliminating WinUI build target transitive dependency that blocked CI test execution.

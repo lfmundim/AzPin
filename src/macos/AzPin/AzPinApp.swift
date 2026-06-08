@@ -34,7 +34,7 @@ struct AzPinApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("AzPin", systemImage: "cloud.fill") {
+        MenuBarExtra("AzPin", image: "MenuIcon") {
             MenuBarView()
                 .environment(azCli)
                 .environment(tokenCache)
