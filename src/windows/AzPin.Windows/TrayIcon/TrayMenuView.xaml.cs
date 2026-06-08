@@ -6,7 +6,7 @@ namespace AzPin.Windows.TrayIcon;
 
 public sealed partial class TrayMenuView : UserControl
 {
-    private AuthViewModel? _boundAuth;
+    private TrayMenuViewModel? _vm;
 
     public TrayMenuView()
     {
@@ -17,69 +17,87 @@ public sealed partial class TrayMenuView : UserControl
 
     private void OnDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
     {
-        if (_boundAuth is not null)
-        {
-            _boundAuth.PropertyChanged -= OnAuthPropertyChanged;
-            _boundAuth = null;
-        }
+        if (_vm is not null)
+            _vm.Auth.PropertyChanged -= OnAuthPropertyChanged;
 
-        if (args.NewValue is TrayMenuViewModel vm)
+        _vm = args.NewValue as TrayMenuViewModel;
+
+        if (_vm is not null)
         {
-            _boundAuth = vm.Auth;
-            vm.Auth.PropertyChanged += OnAuthPropertyChanged;
-            UpdateStatusRows(vm.Auth.State, vm.Auth.IsRefreshing);
+            _vm.Auth.PropertyChanged += OnAuthPropertyChanged;
+            UpdateAuthRow(_vm.Auth.State, _vm.Auth.IsRefreshing);
         }
     }
 
     private async Task RefreshOnOpenAsync()
     {
-        if (Visibility != Visibility.Visible)
-        {
+        if (Visibility != Visibility.Visible || _vm is null)
             return;
-        }
 
-        if (DataContext is TrayMenuViewModel vm)
-        {
-            await vm.OnMenuOpenedAsync();
-            UpdateStatusRows(vm.Auth.State, vm.Auth.IsRefreshing);
-        }
+        await _vm.OnMenuOpenedCommand.ExecuteAsync(null);
+        UpdateAuthRow(_vm.Auth.State, _vm.Auth.IsRefreshing);
+        UpdatePinnedList();
     }
 
     private void OnAuthPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (sender is AuthViewModel auth &&
-            (e.PropertyName == nameof(AuthViewModel.State) ||
-             e.PropertyName == nameof(AuthViewModel.IsRefreshing) ||
-             e.PropertyName == nameof(AuthViewModel.AccountName)))
+        if (_vm is null) return;
+        if (e.PropertyName is nameof(AuthViewModel.State)
+            or nameof(AuthViewModel.IsRefreshing)
+            or nameof(AuthViewModel.AccountName))
         {
-            UpdateStatus(auth);
+            UpdateAuthRow(_vm.Auth.State, _vm.Auth.IsRefreshing);
         }
     }
 
-    private void UpdateStatusRows(AuthState state, bool isRefreshing)
+    private void UpdateAuthRow(AuthState state, bool isRefreshing)
     {
-        var auth = _boundAuth;
-        RefreshingRing.Visibility = isRefreshing || state == AuthState.Unknown ? Visibility.Visible : Visibility.Collapsed;
+        RefreshingRing.Visibility = isRefreshing || state == AuthState.Unknown
+            ? Visibility.Visible : Visibility.Collapsed;
+
         StatusTextBlock.Text = state switch
         {
-            AuthState.SignedIn when !string.IsNullOrWhiteSpace(auth?.AccountName) => auth.AccountName!,
-            AuthState.SignedIn => "Signed in",
-            AuthState.NotSignedIn => "Not signed in - run az login",
-            AuthState.CliNotInstalled => "Azure CLI not installed",
-            _ => "Refreshing authentication status..."
+            AuthState.SignedIn when !string.IsNullOrWhiteSpace(_vm?.Auth.AccountName)
+                => _vm!.Auth.AccountName!,
+            AuthState.SignedIn          => "Signed in",
+            AuthState.NotSignedIn       => "Not signed in — run az login",
+            AuthState.CliNotInstalled   => "Azure CLI not installed",
+            _                           => "Refreshing..."
         };
     }
 
-    private void UpdateStatus(AuthViewModel auth)
+    private void UpdatePinnedList()
     {
-        UpdateStatusRows(auth.State, auth.IsRefreshing);
-    }
+        if (_vm is null) return;
 
-    private void OnQuitClick(object sender, RoutedEventArgs e)
-    {
-        if (DataContext is TrayMenuViewModel vm)
+        var loading = _vm.IsLoadingPinnedResources;
+        var items   = _vm.PinnedResources;
+
+        PinnedLoadingRing.Visibility = loading ? Visibility.Visible : Visibility.Collapsed;
+
+        if (loading)
         {
-            vm.QuitCommand.Execute(null);
+            PinnedList.Visibility    = Visibility.Collapsed;
+            NoPinnedText.Visibility  = Visibility.Collapsed;
+            return;
+        }
+
+        if (items.Count == 0)
+        {
+            PinnedList.Visibility    = Visibility.Collapsed;
+            NoPinnedText.Visibility  = Visibility.Visible;
+        }
+        else
+        {
+            PinnedList.ItemsSource   = items;
+            PinnedList.Visibility    = Visibility.Visible;
+            NoPinnedText.Visibility  = Visibility.Collapsed;
         }
     }
+
+    private void OnOpenClick(object sender, RoutedEventArgs e) =>
+        _vm?.OpenMainWindowCommand.Execute(null);
+
+    private void OnQuitClick(object sender, RoutedEventArgs e) =>
+        _vm?.QuitCommand.Execute(null);
 }

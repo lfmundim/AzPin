@@ -8,6 +8,22 @@ All notable changes to AzPin are documented in this file.
 
 ## [Unreleased]
 
+### Windows
+
+- Extracted service layer (`Services/`, `Utilities/`, `Models/`, `Data/`, `ViewModels/AuthViewModel`) into `AzPin.Windows.Core` class library; test project now references Core only, eliminating WinUI build target transitive dependency that blocked CI test execution.
+- Test CI step re-enabled; `dotnet test` now runs on every push.
+- Added `AzPin.Windows.Core`: `ResourceTypeMapper`, `PortalUrl`, `BrowseViewModel`, `ResourceGroupItemViewModel`, `ResourceItemViewModel`, `PinnedResourceItemViewModel`, `IPinService`/`PinService`.
+- `TrayMenuViewModel` refactored into Core: quit and open-window actions injected as `Action` delegates, removing WinUI type dependency.
+- `ArmResource` now decodes optional `tags` dictionary from ARM responses.
+- Main window redesigned: WinUI 3 `NavigationView` (left pane), Mica backdrop, 960×640 minimum.
+- Window close button hides the window instead of exiting; tray icon persists.
+- BrowsePage: subscription `ComboBox`, live resource group list from ARM, expand/collapse per RG, inline resource list, portal hyperlinks for RGs and resources.
+- Pin button on each resource: saves/removes `PinnedResource` in SQLite; state persists across restarts.
+- Tray popup: shows flat list of individually-pinned resources (sorted by `DisplayOrder`); clicking opens Azure Portal.
+- "Open AzPin..." tray button shows/activates main window (singleton, never recreated).
+- `PinService` uses `IDbContextFactory<AzPinDbContext>` for singleton-safe DB access.
+- Added tests: `BrowseViewModelTests`, `ResourceGroupItemViewModelTests`, `ResourceItemViewModelTests`, `PinServiceTests`, `PortalUrlTests`, `ResourceTypeMapperTests`.
+
 ### Menubar
 
 - Runnable resources (App Services, Function Apps, Container Apps, Logic Apps) now show a native chevron submenu containing Stop/Start, Restart, and Open in Portal with SF Symbol glyphs; non-runnable resources remain plain portal-opening buttons.

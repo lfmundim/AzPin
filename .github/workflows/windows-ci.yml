@@ -24,6 +24,8 @@ jobs:
     env:
       Solution_Name: src/windows/AzPin.Windows.sln
       App_Project: src/windows/AzPin.Windows/AzPin.Windows.csproj
+      Core_Project: src/windows/AzPin.Windows.Core/AzPin.Windows.Core.csproj
+      Test_Project: src/windows/AzPin.Windows.Tests/AzPin.Windows.Tests.csproj
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,16 +38,15 @@ jobs:
           dotnet-version: '10.x'
 
       - name: Restore
-        run: dotnet restore $env:App_Project -p:Platform=x64
+        run: |
+          dotnet restore $env:App_Project -p:Platform=x64
+          dotnet restore $env:Test_Project
 
       - name: Build release
         run: dotnet build $env:App_Project -c Release -p:Platform=x64 --no-restore -bl:artifacts\build.binlog
 
-      # TODO: test build disabled — AzPin.Windows.Tests references the WinUI app project which
-      # pulls in Windows App SDK MrtCore PRI generation targets. Those targets require
-      # VS-installed AppxPackage DLLs that are not present in the dotnet CLI path.
-      # Fix: extract service layer into a separate non-WinUI class library that the test
-      # project can reference without importing WinUI build targets.
+      - name: Test
+        run: dotnet test $env:Test_Project -c Debug --no-restore --verbosity normal
 
       - name: Publish self-contained x64 bundle
         shell: pwsh

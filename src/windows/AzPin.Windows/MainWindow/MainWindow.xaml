@@ -7,6 +7,20 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
     <Grid>
+        <!-- Tray icon — declared here so XamlRoot is available -->
         <tb:TaskbarIcon x:Name="TrayIcon" ToolTipText="AzPin" />
+
+        <NavigationView
+            x:Name="NavView"
+            PaneDisplayMode="Left"
+            IsSettingsVisible="False"
+            IsBackButtonVisible="Collapsed"
+            OpenPaneLength="220"
+            SelectionChanged="OnNavSelectionChanged">
+            <NavigationView.FooterMenuItems>
+                <NavigationViewItem Icon="Setting" Content="Settings" Tag="Settings" />
+            </NavigationView.FooterMenuItems>
+            <Frame x:Name="ContentFrame" />
+        </NavigationView>
     </Grid>
 </Window>
