@@ -40,10 +40,10 @@ jobs:
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\\.dotnet\\tools"
 
       - name: Restore
-        run: msbuild $env:Solution_Name /t:Restore /p:Configuration=Release /bl:build\restore.binlog
+        run: msbuild $env:Solution_Name /t:Restore /p:Configuration=Release /p:Platform="Any CPU" /bl:build\restore.binlog
 
       - name: Build release
-        run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=x64 /bl:build\build.binlog
+        run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU" /bl:build\build.binlog
 
       - name: Test debug
         run: dotnet test $env:Solution_Name --configuration Debug --verbosity normal --no-restore
