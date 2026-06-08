@@ -22,6 +22,15 @@
 - Add changelog entries as the branch evolves.
 - When the branch is ready for release, align the changelog version with the GitVersioning release version.
 - Release tooling/CI should use GitVersioning to stamp the build.
+- macOS release branches use `release/v*`.
+- Windows preview release branches use `release/win/v*`.
+
+## Windows Preview Deployment
+
+- Windows CI runs on GitHub-hosted Windows runners and is the verification path for the WinUI project.
+- Pushing to `release/win/v*` triggers the Windows release workflow.
+- That workflow builds, tests, publishes a self-contained `win-x64` unpackaged bundle, uploads it as a workflow artifact, and attaches the zip to a GitHub pre-release tagged `win-v*`.
+- To verify on a Windows VM, download the release zip, extract it, and run `AzPin.Windows.exe`.
 
 ## Practical Guidance
 

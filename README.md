@@ -1,10 +1,12 @@
 # AzPin
 
 <p align="center">
-  <img src="assets/AzPin-v3.iconset/icon_512x512@2x.png" alt="Logo" width="30%" />
+  <img src="assets/iconset/original.svg" alt="Logo" width="30%" />
 </p>
 
 AzPin is a native macOS menubar app that reads your existing `az` CLI session and gives you fast, pinnable access to Azure resources. Open the menubar, see your pinned resource groups and their live resources, click to open in the portal, or start/stop/restart runnable resources without leaving the desktop.
+
+There is also an in-progress WinUI 3 Windows port under `src/windows/`. Windows builds are currently distributed as pre-release zip bundles from GitHub Releases rather than an installer.
 
 No Azure SDK. No App Store. No sandbox. Requires macOS 26 Tahoe.
 
@@ -30,6 +32,12 @@ brew install --cask azpin
 ### DMG (manual)
 
 Download the latest `.dmg` from [Releases](../../releases), drag `AzPin.app` to `/Applications`.
+
+### Windows Preview (manual)
+
+Download the latest Windows pre-release zip from [Releases](../../releases), extract it on a Windows 11 VM, and run `AzPin.Windows.exe`.
+
+The Windows release workflow publishes a self-contained unpackaged bundle, so no separate Windows App SDK runtime installer should be required for that artifact.
 
 ---
 

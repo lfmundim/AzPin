@@ -67,3 +67,7 @@ secrets.xcconfig
 # Local dev tasks (not source controlled)
 src/macos/tasks/
 src/windows/tasks/
+# .NET
+**/bin/
+**/obj/
+.vs/
