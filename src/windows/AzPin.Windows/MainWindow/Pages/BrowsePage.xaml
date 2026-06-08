@@ -1,0 +1,215 @@
+<Page
+    x:Class="AzPin.Windows.MainWindow.Pages.BrowsePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:AzPin.Windows.MainWindow.Pages"
+    xmlns:vm="using:AzPin.Windows.ViewModels"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <local:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <local:InvertBoolToVisibilityConverter x:Key="NotBoolToVis" />
+        <local:NullToVisibilityConverter x:Key="NullToVis" />
+        <local:PinGlyphConverter x:Key="PinGlyph" />
+        <local:PinForegroundConverter x:Key="PinForeground" />
+        <local:ChevronGlyphConverter x:Key="ChevronGlyph" />
+
+        <Style x:Key="IconButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Padding" Value="4" />
+        </Style>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <Grid Grid.Row="0" Padding="12,8" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <ComboBox Grid.Column="0"
+                      ItemsSource="{x:Bind ViewModel.Subscriptions, Mode=OneWay}"
+                      SelectedItem="{x:Bind ViewModel.SelectedSubscription, Mode=TwoWay}"
+                      DisplayMemberPath="Name"
+                      PlaceholderText="Select subscription"
+                      MinWidth="200"
+                      Visibility="{x:Bind ViewModel.IsLoadingSubscriptions, Mode=OneWay, Converter={StaticResource NotBoolToVis}}" />
+
+            <TextBox Grid.Column="2"
+                     Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     PlaceholderText="Search resource groups"
+                     Width="220"
+                     Visibility="{x:Bind ViewModel.ShowRgArea, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+        </Grid>
+
+        <!-- States (row 1) -->
+
+        <!-- Loading subscriptions -->
+        <ProgressRing Grid.Row="1"
+                      IsActive="True"
+                      Width="32" Height="32"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Visibility="{x:Bind ViewModel.IsLoadingSubscriptions, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+
+        <!-- Error -->
+        <InfoBar Grid.Row="1"
+                 IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
+                 Severity="Error"
+                 Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                 IsClosable="False"
+                 VerticalAlignment="Top"
+                 Margin="12,8" />
+
+        <!-- No subscriptions -->
+        <StackPanel Grid.Row="1"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
+                    Visibility="{x:Bind ViewModel.ShowNoSubscriptions, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+            <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE8A1;" FontSize="48"
+                      Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <TextBlock Text="No subscriptions found" Style="{StaticResource SubtitleTextBlockStyle}"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="Ensure your account has access to at least one Azure subscription."
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
+        </StackPanel>
+
+        <!-- No subscription selected -->
+        <StackPanel Grid.Row="1"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
+                    Visibility="{x:Bind ViewModel.ShowSelectPrompt, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+            <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE74A;" FontSize="48"
+                      Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <TextBlock Text="Select a subscription above"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        </StackPanel>
+
+        <!-- RG content area -->
+        <Grid Grid.Row="1"
+              Visibility="{x:Bind ViewModel.ShowRgArea, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+
+            <!-- Loading RGs -->
+            <ProgressRing IsActive="True" Width="32" Height="32"
+                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                          Visibility="{x:Bind ViewModel.IsLoadingResourceGroups, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+
+            <!-- No RGs -->
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
+                        Visibility="{x:Bind ViewModel.ShowNoRgs, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xED25;" FontSize="48"
+                          Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock Text="No resource groups" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+
+            <!-- No search results -->
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
+                        Visibility="{x:Bind ViewModel.ShowNoSearchResults, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE721;" FontSize="48"
+                          Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock Text="No results" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+
+            <!-- RG list -->
+            <ScrollViewer Visibility="{x:Bind ViewModel.ShowRgList, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.FilteredResourceGroups, Mode=OneWay}"
+                               Margin="8,4">
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ResourceGroupItemViewModel">
+                            <StackPanel>
+                                <!-- RG header row -->
+                                <Grid Padding="4,6" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <FontIcon Grid.Column="0"
+                                              FontFamily="Segoe Fluent Icons" Glyph="&#xED25;"
+                                              FontSize="16" VerticalAlignment="Center" />
+
+                                    <HyperlinkButton Grid.Column="1"
+                                                     Content="{x:Bind ResourceGroup.Name}"
+                                                     NavigateUri="{x:Bind PortalUri}"
+                                                     Padding="0" VerticalAlignment="Center"
+                                                     HorizontalAlignment="Left" />
+
+                                    <ProgressRing Grid.Column="2"
+                                                  Width="16" Height="16" IsActive="True"
+                                                  Visibility="{x:Bind IsLoadingResources, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+
+                                    <Button Grid.Column="3"
+                                            Command="{x:Bind ToggleCommand}"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Padding="4">
+                                        <FontIcon FontFamily="Segoe Fluent Icons"
+                                                  Glyph="{x:Bind IsExpanded, Mode=OneWay, Converter={StaticResource ChevronGlyph}}"
+                                                  FontSize="12" />
+                                    </Button>
+                                </Grid>
+
+                                <!-- Resource error -->
+                                <TextBlock Text="{x:Bind ResourceError, Mode=OneWay}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           Margin="28,0,0,4"
+                                           Visibility="{x:Bind ResourceError, Mode=OneWay, Converter={StaticResource NullToVis}}" />
+
+                                <!-- Expanded resource list -->
+                                <ItemsRepeater ItemsSource="{x:Bind Resources, Mode=OneWay}"
+                                              Margin="24,0,0,4"
+                                              Visibility="{x:Bind IsExpanded, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:ResourceItemViewModel">
+                                            <Grid Padding="4,4" ColumnSpacing="8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{x:Bind GlyphCode}"
+                                                           FontFamily="Segoe Fluent Icons"
+                                                           FontSize="16" VerticalAlignment="Center" />
+
+                                                <HyperlinkButton Grid.Column="1"
+                                                                 Content="{x:Bind Name}"
+                                                                 NavigateUri="{x:Bind PortalUri}"
+                                                                 Padding="0" VerticalAlignment="Center"
+                                                                 HorizontalAlignment="Left" />
+
+                                                <Button Grid.Column="2"
+                                                        Command="{x:Bind TogglePinCommand}"
+                                                        Style="{StaticResource IconButtonStyle}"
+                                                        Visibility="{x:Bind ShowPinButton, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                                                    <FontIcon FontFamily="Segoe Fluent Icons"
+                                                              Glyph="{x:Bind IsPinned, Mode=OneWay, Converter={StaticResource PinGlyph}}"
+                                                              FontSize="14"
+                                                              Foreground="{x:Bind IsPinned, Mode=OneWay, Converter={StaticResource PinForeground}}" />
+                                                </Button>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+
+                                <Border Height="1"
+                                        Background="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                        Margin="0,2" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Page>
