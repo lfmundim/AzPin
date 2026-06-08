@@ -1,7 +1,10 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace AzPin.Windows.Models.Entities;
 
 public class PinnedResource
 {
+    [Key]
     public int LocalId { get; set; }
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

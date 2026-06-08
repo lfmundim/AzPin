@@ -2,15 +2,65 @@
     x:Class="AzPin.Windows.TrayIcon.TrayMenuView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:AzPin.Windows.ViewModels"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
+
     <Border MinWidth="320" Padding="12">
-        <StackPanel Spacing="10">
-            <ProgressRing x:Name="RefreshingRing" Width="16" Height="16" IsActive="True" />
-            <TextBlock x:Name="StatusTextBlock" TextWrapping="Wrap" />
-            <Button Content="Open AzPin..." HorizontalAlignment="Stretch" />
-            <Button Content="Quit AzPin" HorizontalAlignment="Stretch" Click="OnQuitClick" />
+        <StackPanel Spacing="4">
+
+            <!-- Auth status -->
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
+                <ProgressRing x:Name="RefreshingRing" Width="16" Height="16" IsActive="True" />
+                <TextBlock x:Name="StatusTextBlock" TextWrapping="Wrap" VerticalAlignment="Center" />
+            </StackPanel>
+
+            <Border Height="1" Background="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,4" />
+
+            <!-- Loading pinned resources -->
+            <ProgressRing x:Name="PinnedLoadingRing"
+                          Width="20" Height="20"
+                          IsActive="True"
+                          HorizontalAlignment="Center"
+                          Visibility="Collapsed" />
+
+            <!-- No pinned resources -->
+            <TextBlock x:Name="NoPinnedText"
+                       Text="No pinned resources. Open AzPin to pin one."
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       Visibility="Collapsed" />
+
+            <!-- Pinned resources list -->
+            <ItemsRepeater x:Name="PinnedList">
+                <ItemsRepeater.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PinnedResourceItemViewModel">
+                        <HyperlinkButton NavigateUri="{x:Bind PortalUri}"
+                                         HorizontalAlignment="Stretch"
+                                         HorizontalContentAlignment="Left"
+                                         Padding="4,4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{x:Bind GlyphCode}"
+                                           FontFamily="Segoe Fluent Icons"
+                                           FontSize="16"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </HyperlinkButton>
+                    </DataTemplate>
+                </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
+
+            <Border Height="1" Background="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,4" />
+
+            <Button x:Name="OpenButton"
+                    Content="Open AzPin..."
+                    HorizontalAlignment="Stretch"
+                    Click="OnOpenClick" />
+            <Button Content="Quit AzPin"
+                    HorizontalAlignment="Stretch"
+                    Click="OnQuitClick" />
         </StackPanel>
     </Border>
 </UserControl>

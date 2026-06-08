@@ -22,7 +22,8 @@ public record ArmResource(
     [property: JsonPropertyName("id")] string Id,
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("type")] string Type,
-    [property: JsonPropertyName("location")] string Location
+    [property: JsonPropertyName("location")] string Location,
+    [property: JsonPropertyName("tags")] Dictionary<string, string>? Tags = null
 );
 
 public record ArmSiteProperties(
