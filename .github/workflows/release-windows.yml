@@ -77,6 +77,7 @@ jobs:
       - name: Publish self-contained x64 bundle
         shell: pwsh
         run: |
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE 'build\publish\win-x64\'
           msbuild $env:App_Project `
             /t:Publish `
             /p:Configuration=Release `
@@ -84,7 +85,7 @@ jobs:
             /p:RuntimeIdentifier=win-x64 `
             /p:WindowsAppSDKSelfContained=true `
             /p:SelfContained=true `
-            /p:PublishDir=build\publish\win-x64\ `
+            /p:PublishDir="$publishDir" `
             /bl:build\publish.binlog
 
       - name: Package Windows artifact
