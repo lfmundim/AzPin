@@ -1,0 +1,120 @@
+name: Release Windows
+
+on:
+  push:
+    branches:
+      - 'release/win/v*'
+    paths:
+      - 'src/windows/**'
+      - '.github/workflows/windows-ci.yml'
+      - '.github/workflows/release.yml'
+      - '.github/workflows/release-windows.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    env:
+      Solution_Name: src/windows/AzPin.Windows.sln
+      App_Project: src/windows/AzPin.Windows/AzPin.Windows.csproj
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.314'
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Install tooling
+        shell: pwsh
+        run: |
+          dotnet tool install -g nbgv
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\\.dotnet\\tools"
+
+      - name: Restore
+        run: msbuild $env:Solution_Name /t:Restore /p:Configuration=Release /p:Platform=x64 /bl:build\restore.binlog
+
+      - name: Build release
+        run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=x64 /bl:build\build.binlog
+
+      - name: Build debug tests
+        run: msbuild $env:Solution_Name /p:Configuration=Debug /p:Platform=x64 /bl:build\test-build.binlog
+
+      - name: Compute version
+        id: version
+        shell: pwsh
+        run: |
+          $major = "${env:GITHUB_REF_NAME}" -replace '^release/win/v', ''
+          $nbgv = nbgv get-version -f json | ConvertFrom-Json
+          $minor = $nbgv.VersionMinor
+          $height = $nbgv.VersionHeight
+          $version = "$major.$minor.$height"
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "tag=win-v$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Create and push release tag
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          $tag = "${{ steps.version.outputs.tag }}"
+          $tagExists = (git ls-remote --tags origin $tag)
+          if (-not $tagExists) {
+            git tag $tag
+            git push "https://x-access-token:${env:GITHUB_TOKEN}@github.com/${{ github.repository }}" $tag
+          }
+
+      - name: Publish self-contained x64 bundle
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE 'build\publish\win-x64\'
+          msbuild $env:App_Project `
+            /t:Publish `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /p:RuntimeIdentifier=win-x64 `
+            /p:WindowsAppSDKSelfContained=true `
+            /p:SelfContained=true `
+            /p:PublishDir="$publishDir" `
+            /bl:build\publish.binlog
+
+      - name: Package Windows artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build | Out-Null
+          Compress-Archive -Path build/publish/win-x64/* -DestinationPath "build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}.zip"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AzPin-Windows-win-x64-${{ steps.version.outputs.version }}
+          path: build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}.zip
+          if-no-files-found: error
+
+      - name: Create or update GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ steps.version.outputs.tag }}"
+          $asset = "build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}.zip"
+
+          if (gh release view $tag *> $null) {
+            gh release upload $tag $asset --clobber
+          } else {
+            gh release create $tag `
+              --title "AzPin Windows ${{ steps.version.outputs.version }}" `
+              --generate-notes `
+              --prerelease `
+              $asset
+          }

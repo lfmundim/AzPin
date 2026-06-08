@@ -1,0 +1,83 @@
+name: Windows CI
+
+on:
+  push:
+    paths:
+      - 'src/windows/**'
+      - '.github/workflows/windows-ci.yml'
+      - '.github/workflows/release-windows.yml'
+  pull_request:
+    branches:
+      - main
+      - 'release/win/v*'
+    paths:
+      - 'src/windows/**'
+      - '.github/workflows/windows-ci.yml'
+      - '.github/workflows/release-windows.yml'
+  workflow_dispatch:
+
+jobs:
+  build-test-publish:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      Solution_Name: src/windows/AzPin.Windows.sln
+      App_Project: src/windows/AzPin.Windows/AzPin.Windows.csproj
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.314'
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore
+        run: msbuild $env:Solution_Name /t:Restore /p:Configuration=Release /p:Platform=x64 /bl:artifacts\restore.binlog
+
+      - name: Build release
+        run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=x64 /bl:artifacts\build.binlog
+
+      - name: Build debug tests
+        run: msbuild $env:Solution_Name /p:Configuration=Debug /p:Platform=x64 /bl:artifacts\test-build.binlog
+
+      - name: Publish self-contained x64 bundle
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE 'artifacts\publish\win-x64\'
+          msbuild $env:App_Project `
+            /t:Publish `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /p:RuntimeIdentifier=win-x64 `
+            /p:WindowsAppSDKSelfContained=true `
+            /p:SelfContained=true `
+            /p:PublishDir="$publishDir" `
+            /bl:artifacts\publish.binlog
+
+      - name: Compress published bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          Compress-Archive -Path artifacts/publish/win-x64/* -DestinationPath artifacts/AzPin-Windows-win-x64-ci.zip
+
+      - name: Upload binlogs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-ci-binlogs
+          path: artifacts/*.binlog
+          if-no-files-found: ignore
+
+      - name: Upload published bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: AzPin-Windows-win-x64-ci
+          path: artifacts/AzPin-Windows-win-x64-ci.zip
+          if-no-files-found: error

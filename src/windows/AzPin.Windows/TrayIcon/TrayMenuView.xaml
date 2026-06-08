@@ -1,0 +1,16 @@
+<UserControl
+    x:Class="AzPin.Windows.TrayIcon.TrayMenuView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    <Border MinWidth="320" Padding="12">
+        <StackPanel Spacing="10">
+            <ProgressRing x:Name="RefreshingRing" Width="16" Height="16" IsActive="True" />
+            <TextBlock x:Name="StatusTextBlock" TextWrapping="Wrap" />
+            <Button Content="Open AzPin..." HorizontalAlignment="Stretch" />
+            <Button Content="Quit AzPin" HorizontalAlignment="Stretch" Click="OnQuitClick" />
+        </StackPanel>
+    </Border>
+</UserControl>

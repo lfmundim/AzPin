@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - 'release/v*'
+    paths:
+      - 'src/macos/**'
+      - '.github/workflows/release.yml'
+      - '.github/workflows/release-windows.yml'
 
 jobs:
   build-and-release:
