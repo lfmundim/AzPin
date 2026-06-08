@@ -22,7 +22,7 @@ All notable changes to AzPin are documented in this file.
 - Tray popup: shows flat list of individually-pinned resources (sorted by `DisplayOrder`); clicking opens Azure Portal.
 - "Open AzPin..." tray button shows/activates main window (singleton, never recreated).
 - `PinService` uses `IDbContextFactory<AzPinDbContext>` for singleton-safe DB access.
-- Added tests: `BrowseViewModelTests`, `ResourceGroupItemViewModelTests`, `ResourceItemViewModelTests`, `PinServiceTests`, `PortalUrlTests`, `ResourceTypeMapperTests`.
+- Added tests: `BrowseViewModelTests`, `ResourceGroupItemViewModelTests`, `ResourceItemViewModelTests`, `PinServiceTests`, `PortalUrlTests`, `ResourceTypeMapperTests`, `TrayMenuViewModelTests`.
 
 ### Menubar
 

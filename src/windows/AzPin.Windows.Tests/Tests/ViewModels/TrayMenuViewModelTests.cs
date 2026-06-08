@@ -1,0 +1,120 @@
+using AzPin.Windows.Models.Arm;
+using AzPin.Windows.Tests.Mocks;
+using AzPin.Windows.TrayIcon;
+using AzPin.Windows.ViewModels;
+
+namespace AzPin.Windows.Tests.Tests.ViewModels;
+
+public class TrayMenuViewModelTests
+{
+    private static (TrayMenuViewModel vm, FakePinService pins) Make(FakeAzCliService? az = null)
+    {
+        az ??= new FakeAzCliService();
+        var auth = new AuthViewModel(az);
+        var pins = new FakePinService();
+        var vm = new TrayMenuViewModel(auth, pins, quit: static () => { }, openMainWindow: static () => { });
+        return (vm, pins);
+    }
+
+    [Fact]
+    public async Task LoadPinnedResourcesAsync_PopulatesSortedByDisplayOrder()
+    {
+        var (vm, pins) = Make();
+        await pins.PinResourceAsync(
+            new ArmResource("/sub/s/rg/r/providers/Microsoft.Web/sites/app-b", "app-b", "Microsoft.Web/sites", "eastus"),
+            "s", "r", displayOrder: 2);
+        await pins.PinResourceAsync(
+            new ArmResource("/sub/s/rg/r/providers/Microsoft.Web/sites/app-a", "app-a", "Microsoft.Web/sites", "eastus"),
+            "s", "r", displayOrder: 1);
+
+        await vm.OnMenuOpenedAsync();
+
+        Assert.Equal(2, vm.PinnedResources.Count);
+        Assert.Equal("app-a", vm.PinnedResources[0].Name);
+        Assert.Equal("app-b", vm.PinnedResources[1].Name);
+    }
+
+    [Fact]
+    public async Task LoadPinnedResourcesAsync_EmptyList_WhenNoPins()
+    {
+        var (vm, _) = Make();
+
+        await vm.OnMenuOpenedAsync();
+
+        Assert.Empty(vm.PinnedResources);
+    }
+
+    [Fact]
+    public async Task IsLoadingPinnedResources_TrueWhileLoading_FalseAfter()
+    {
+        var gate = new TaskCompletionSource();
+        var auth = new AuthViewModel(new FakeAzCliService());
+        var pins = new FakePinService { DelayBeforeGet = gate.Task };
+        var vm = new TrayMenuViewModel(auth, pins, quit: static () => { }, openMainWindow: static () => { });
+
+        var task = vm.OnMenuOpenedAsync();
+        await Task.Delay(20);
+        Assert.True(vm.IsLoadingPinnedResources);
+
+        gate.SetResult();
+        await task;
+        Assert.False(vm.IsLoadingPinnedResources);
+    }
+
+    [Fact]
+    public async Task PinnedResourceItemViewModel_GlyphCode_MapsKnownType()
+    {
+        var (vm, pins) = Make();
+        await pins.PinResourceAsync(
+            new ArmResource("/sub/s/rg/r/providers/Microsoft.Web/sites/myapp", "myapp", "Microsoft.Web/sites", "eastus"),
+            "s", "r", displayOrder: 0);
+
+        await vm.OnMenuOpenedAsync();
+
+        var item = vm.PinnedResources[0];
+        Assert.NotNull(item.GlyphCode);
+        Assert.NotEmpty(item.GlyphCode);
+    }
+
+    [Fact]
+    public async Task PinnedResourceItemViewModel_PortalUri_ContainsResourceId()
+    {
+        var (vm, pins) = Make();
+        const string resourceId = "/subscriptions/sub1/resourceGroups/rg1/providers/Microsoft.Web/sites/myapp";
+        await pins.PinResourceAsync(
+            new ArmResource(resourceId, "myapp", "Microsoft.Web/sites", "eastus"),
+            "sub1", "rg1", displayOrder: 0);
+
+        await vm.OnMenuOpenedAsync();
+
+        var uri = vm.PinnedResources[0].PortalUri.ToString();
+        Assert.Contains(resourceId, uri);
+        Assert.StartsWith("https://portal.azure.com", uri);
+    }
+
+    [Fact]
+    public void QuitCommand_InvokesQuitAction()
+    {
+        var auth = new AuthViewModel(new FakeAzCliService());
+        var pins = new FakePinService();
+        var quitCalled = false;
+        var vm = new TrayMenuViewModel(auth, pins, quit: () => quitCalled = true, openMainWindow: static () => { });
+
+        vm.QuitCommand.Execute(null);
+
+        Assert.True(quitCalled);
+    }
+
+    [Fact]
+    public void OpenMainWindowCommand_InvokesOpenAction()
+    {
+        var auth = new AuthViewModel(new FakeAzCliService());
+        var pins = new FakePinService();
+        var openCalled = false;
+        var vm = new TrayMenuViewModel(auth, pins, quit: static () => { }, openMainWindow: () => openCalled = true);
+
+        vm.OpenMainWindowCommand.Execute(null);
+
+        Assert.True(openCalled);
+    }
+}

@@ -54,8 +54,13 @@ internal sealed class FakePinService : IPinService
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyList<PinnedResource>> GetPinnedResourcesAsync(CancellationToken ct = default)
-        => Task.FromResult<IReadOnlyList<PinnedResource>>(_resources.OrderBy(r => r.DisplayOrder).ToList());
+    public Task DelayBeforeGet { get; set; } = Task.CompletedTask;
+
+    public async Task<IReadOnlyList<PinnedResource>> GetPinnedResourcesAsync(CancellationToken ct = default)
+    {
+        await DelayBeforeGet;
+        return _resources.OrderBy(r => r.DisplayOrder).ToList();
+    }
 
     public Task<IReadOnlyList<PinnedResourceGroup>> GetPinnedResourceGroupsAsync(CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<PinnedResourceGroup>>(_resourceGroups.OrderBy(rg => rg.DisplayOrder).ToList());
