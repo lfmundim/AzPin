@@ -17,19 +17,19 @@ public partial class AuthViewModel(IAzCliService azCli) : ObservableObject
     private readonly IAzCliService _azCli = azCli;
 
     [ObservableProperty]
-    private AuthState _state = AuthState.Unknown;
+    public partial AuthState State { get; set; } = AuthState.Unknown;
 
     [ObservableProperty]
-    private string? _accountName;
+    public partial string? AccountName { get; set; }
 
     [ObservableProperty]
-    private string? _tenantId;
+    public partial string? TenantId { get; set; }
 
     [ObservableProperty]
-    private string? _activeSubscriptionName;
+    public partial string? ActiveSubscriptionName { get; set; }
 
     [ObservableProperty]
-    private bool _isRefreshing;
+    public partial bool IsRefreshing { get; set; }
 
     [RelayCommand]
     public async Task RefreshAsync(CancellationToken ct = default)
