@@ -9,6 +9,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        Title = "AzPin";
         ExtendsContentIntoTitleBar = true;
         AppWindow.Resize(new SizeInt32(900, 600));
         AppWindow.IsShownInSwitchers = false;
