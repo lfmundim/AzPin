@@ -45,7 +45,7 @@ jobs:
         run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=x64 /bl:artifacts\build.binlog
 
       - name: Test debug
-        run: dotnet test $env:Solution_Name --configuration Debug -p:Platform=x64 --verbosity normal --no-restore
+        run: msbuild $env:Solution_Name /t:VSTest /p:Configuration=Debug /p:Platform=x64 /bl:artifacts\test.binlog
 
       - name: Publish self-contained x64 bundle
         shell: pwsh

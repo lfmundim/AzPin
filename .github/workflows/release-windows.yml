@@ -46,7 +46,7 @@ jobs:
         run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=x64 /bl:build\build.binlog
 
       - name: Test debug
-        run: dotnet test $env:Solution_Name --configuration Debug -p:Platform=x64 --verbosity normal --no-restore
+        run: msbuild $env:Solution_Name /t:VSTest /p:Configuration=Debug /p:Platform=x64 /bl:build\test.binlog
 
       - name: Compute version
         id: version
