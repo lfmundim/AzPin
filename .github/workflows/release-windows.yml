@@ -37,10 +37,10 @@ jobs:
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\\.dotnet\\tools"
 
       - name: Restore
-        run: dotnet restore $env:Solution_Name -p:Platform=x64
+        run: dotnet restore $env:App_Project -p:Platform=x64
 
       - name: Build release
-        run: dotnet build $env:Solution_Name -c Release -p:Platform=x64 --no-restore -bl:build\build.binlog
+        run: dotnet build $env:App_Project -c Release -p:Platform=x64 --no-restore -bl:build\build.binlog
 
       # TODO: test build disabled — same WinUI/MrtCore PRI gen issue as windows-ci.yml
 
