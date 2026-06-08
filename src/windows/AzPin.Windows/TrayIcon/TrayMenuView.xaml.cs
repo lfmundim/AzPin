@@ -34,7 +34,7 @@ public sealed partial class TrayMenuView : UserControl
         if (Visibility != Visibility.Visible || _vm is null)
             return;
 
-        await _vm.OnMenuOpenedCommand.ExecuteAsync(null);
+        await _vm.OnMenuOpenedAsync();
         UpdateAuthRow(_vm.Auth.State, _vm.Auth.IsRefreshing);
         UpdatePinnedList();
     }
