@@ -3,7 +3,7 @@ using AzPin.Windows.Services;
 using AzPin.Windows.TrayIcon;
 using AzPin.Windows.Utilities;
 using AzPin.Windows.ViewModels;
-using H.NotifyIcon;
+using Hardcodet.Wpf.TaskbarNotification;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Xaml;
