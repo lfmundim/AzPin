@@ -31,7 +31,6 @@ public partial class App : Application
             await db.Database.EnsureCreatedAsync();
         }
         _trayIcon = Services.GetRequiredService<TaskbarIcon>();
-        _trayIcon.ForceCreate();
     }
 
     private static IServiceProvider ConfigureServices()

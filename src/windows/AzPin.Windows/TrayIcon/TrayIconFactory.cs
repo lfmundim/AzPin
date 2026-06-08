@@ -1,5 +1,6 @@
 using Hardcodet.Wpf.TaskbarNotification;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace AzPin.Windows.TrayIcon;
 
@@ -15,7 +16,7 @@ public static class TrayIconFactory
         return new TaskbarIcon
         {
             ToolTipText = "AzPin",
-            IconSource = "Assets/tray.ico",
+            IconSource = new BitmapImage(new Uri("ms-appx:///Assets/tray.ico")),
             PopupActivation = PopupActivationMode.LeftOrRightClick,
             TrayPopup = menuView
         };
