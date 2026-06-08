@@ -39,13 +39,13 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Restore
-        run: msbuild $env:Solution_Name /t:Restore /p:Configuration=Release /p:Platform="Any CPU" /bl:artifacts\restore.binlog
+        run: msbuild $env:Solution_Name /t:Restore /p:Configuration=Release /p:Platform=x64 /bl:artifacts\restore.binlog
 
       - name: Build release
-        run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU" /bl:artifacts\build.binlog
+        run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=x64 /bl:artifacts\build.binlog
 
       - name: Test debug
-        run: dotnet test $env:Solution_Name --configuration Debug --verbosity normal --no-restore
+        run: dotnet test $env:Solution_Name --configuration Debug -p:Platform=x64 --verbosity normal --no-restore
 
       - name: Publish self-contained x64 bundle
         shell: pwsh
