@@ -1,9 +1,8 @@
 using AzPin.Windows.Data;
+using AzPin.Windows.MainWindow;
 using AzPin.Windows.Services;
-using AzPin.Windows.TrayIcon;
 using AzPin.Windows.Utilities;
 using AzPin.Windows.ViewModels;
-using Hardcodet.Wpf.TaskbarNotification;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Xaml;
@@ -15,7 +14,7 @@ public partial class App : Application
 {
     public static IServiceProvider Services { get; private set; } = null!;
 
-    private TaskbarIcon? _trayIcon;
+    private MainWindow.MainWindow? _mainWindow;
 
     public App()
     {
@@ -30,7 +29,9 @@ public partial class App : Application
             var db = scope.ServiceProvider.GetRequiredService<AzPinDbContext>();
             await db.Database.EnsureCreatedAsync();
         }
-        _trayIcon = Services.GetRequiredService<TaskbarIcon>();
+
+        _mainWindow = new MainWindow.MainWindow();
+        _mainWindow.Activate();
     }
 
     private static IServiceProvider ConfigureServices()
@@ -50,7 +51,6 @@ public partial class App : Application
         services.AddScoped<ITokenCache, TokenCache>();
         services.AddHttpClient("arm", c => c.BaseAddress = new Uri("https://management.azure.com"));
         services.AddScoped<IArmService, ArmService>();
-        services.AddSingleton<TaskbarIcon>(_ => TrayIconFactory.Create());
         return services.BuildServiceProvider();
     }
 }
