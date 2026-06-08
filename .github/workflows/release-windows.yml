@@ -16,6 +16,9 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write
+    env:
+      Solution_Name: src/windows/AzPin.Windows.sln
+      App_Project: src/windows/AzPin.Windows/AzPin.Windows.csproj
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,6 +30,9 @@ jobs:
         with:
           dotnet-version: '9.0.314'
 
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
       - name: Install tooling
         shell: pwsh
         run: |
@@ -34,13 +40,13 @@ jobs:
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\\.dotnet\\tools"
 
       - name: Restore
-        run: dotnet restore src/windows/AzPin.Windows.sln
+        run: msbuild $env:Solution_Name /t:Restore /p:Configuration=Release /bl:build\restore.binlog
 
       - name: Build release
-        run: dotnet build src/windows/AzPin.Windows.sln --configuration Release --no-restore
+        run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=x64 /bl:build\build.binlog
 
       - name: Test debug
-        run: dotnet test src/windows/AzPin.Windows.sln --configuration Debug --verbosity normal
+        run: dotnet test $env:Solution_Name --configuration Debug --verbosity normal --no-restore
 
       - name: Compute version
         id: version
@@ -71,12 +77,15 @@ jobs:
       - name: Publish self-contained x64 bundle
         shell: pwsh
         run: |
-          dotnet publish src/windows/AzPin.Windows/AzPin.Windows.csproj `
-            --configuration Release `
-            --runtime win-x64 `
-            --self-contained true `
-            -p:WindowsAppSDKSelfContained=true `
-            -o build/publish/win-x64
+          msbuild $env:App_Project `
+            /t:Publish `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /p:RuntimeIdentifier=win-x64 `
+            /p:WindowsAppSDKSelfContained=true `
+            /p:SelfContained=true `
+            /p:PublishDir=build\publish\win-x64\ `
+            /bl:build\publish.binlog
 
       - name: Package Windows artifact
         shell: pwsh

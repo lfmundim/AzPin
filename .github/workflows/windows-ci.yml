@@ -21,6 +21,9 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: read
+    env:
+      Solution_Name: src/windows/AzPin.Windows.sln
+      App_Project: src/windows/AzPin.Windows/AzPin.Windows.csproj
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,30 +35,44 @@ jobs:
         with:
           dotnet-version: '9.0.314'
 
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
       - name: Restore
-        run: dotnet restore src/windows/AzPin.Windows.sln
+        run: msbuild $env:Solution_Name /t:Restore /p:Configuration=Release /bl:artifacts\restore.binlog
 
       - name: Build release
-        run: dotnet build src/windows/AzPin.Windows.sln --configuration Release --no-restore
+        run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=x64 /bl:artifacts\build.binlog
 
       - name: Test debug
-        run: dotnet test src/windows/AzPin.Windows.sln --configuration Debug --verbosity normal
+        run: dotnet test $env:Solution_Name --configuration Debug --verbosity normal --no-restore
 
       - name: Publish self-contained x64 bundle
         shell: pwsh
         run: |
-          dotnet publish src/windows/AzPin.Windows/AzPin.Windows.csproj `
-            --configuration Release `
-            --runtime win-x64 `
-            --self-contained true `
-            -p:WindowsAppSDKSelfContained=true `
-            -o artifacts/publish/win-x64
+          msbuild $env:App_Project `
+            /t:Publish `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /p:RuntimeIdentifier=win-x64 `
+            /p:WindowsAppSDKSelfContained=true `
+            /p:SelfContained=true `
+            /p:PublishDir=artifacts\publish\win-x64\ `
+            /bl:artifacts\publish.binlog
 
       - name: Compress published bundle
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path artifacts | Out-Null
           Compress-Archive -Path artifacts/publish/win-x64/* -DestinationPath artifacts/AzPin-Windows-win-x64-ci.zip
+
+      - name: Upload binlogs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-ci-binlogs
+          path: artifacts/*.binlog
+          if-no-files-found: ignore
 
       - name: Upload published bundle
         uses: actions/upload-artifact@v4
