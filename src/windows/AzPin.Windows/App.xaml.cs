@@ -1,6 +1,7 @@
 using AzPin.Windows.Data;
 using AzPin.Windows.MainWindow;
 using AzPin.Windows.Services;
+using AzPin.Windows.TrayIcon;
 using AzPin.Windows.Utilities;
 using AzPin.Windows.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
