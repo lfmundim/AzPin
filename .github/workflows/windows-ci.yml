@@ -35,31 +35,27 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
       - name: Restore
-        run: msbuild $env:Solution_Name /t:Restore /p:Configuration=Release /p:Platform=x64 /bl:artifacts\restore.binlog
+        run: dotnet restore $env:Solution_Name -p:Platform=x64
 
       - name: Build release
-        run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=x64 /bl:artifacts\build.binlog
+        run: dotnet build $env:Solution_Name -c Release -p:Platform=x64 --no-restore -bl:artifacts\build.binlog
 
       - name: Build debug tests
-        run: msbuild $env:Solution_Name /p:Configuration=Debug /p:Platform=x64 /bl:artifacts\test-build.binlog
+        run: dotnet build $env:Solution_Name -c Debug -p:Platform=x64 --no-restore -bl:artifacts\test-build.binlog
 
       - name: Publish self-contained x64 bundle
         shell: pwsh
         run: |
-          $publishDir = Join-Path $env:GITHUB_WORKSPACE 'artifacts\publish\win-x64\'
-          msbuild $env:App_Project `
-            /t:Publish `
-            /p:Configuration=Release `
-            /p:Platform=x64 `
-            /p:RuntimeIdentifier=win-x64 `
-            /p:WindowsAppSDKSelfContained=true `
-            /p:SelfContained=true `
-            /p:PublishDir="$publishDir" `
-            /bl:artifacts\publish.binlog
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE 'artifacts\publish\win-x64'
+          dotnet publish $env:App_Project `
+            -c Release `
+            -r win-x64 `
+            -p:Platform=x64 `
+            -p:WindowsAppSDKSelfContained=true `
+            --self-contained true `
+            -o "$publishDir" `
+            -bl:artifacts\publish.binlog
 
       - name: Compress published bundle
         shell: pwsh

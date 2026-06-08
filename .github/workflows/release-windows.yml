@@ -30,9 +30,6 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
       - name: Install tooling
         shell: pwsh
         run: |
@@ -40,13 +37,13 @@ jobs:
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\\.dotnet\\tools"
 
       - name: Restore
-        run: msbuild $env:Solution_Name /t:Restore /p:Configuration=Release /p:Platform=x64 /bl:build\restore.binlog
+        run: dotnet restore $env:Solution_Name -p:Platform=x64
 
       - name: Build release
-        run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=x64 /bl:build\build.binlog
+        run: dotnet build $env:Solution_Name -c Release -p:Platform=x64 --no-restore -bl:build\build.binlog
 
       - name: Build debug tests
-        run: msbuild $env:Solution_Name /p:Configuration=Debug /p:Platform=x64 /bl:build\test-build.binlog
+        run: dotnet build $env:Solution_Name -c Debug -p:Platform=x64 --no-restore -bl:build\test-build.binlog
 
       - name: Compute version
         id: version
@@ -77,16 +74,15 @@ jobs:
       - name: Publish self-contained x64 bundle
         shell: pwsh
         run: |
-          $publishDir = Join-Path $env:GITHUB_WORKSPACE 'build\publish\win-x64\'
-          msbuild $env:App_Project `
-            /t:Publish `
-            /p:Configuration=Release `
-            /p:Platform=x64 `
-            /p:RuntimeIdentifier=win-x64 `
-            /p:WindowsAppSDKSelfContained=true `
-            /p:SelfContained=true `
-            /p:PublishDir="$publishDir" `
-            /bl:build\publish.binlog
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE 'build\publish\win-x64'
+          dotnet publish $env:App_Project `
+            -c Release `
+            -r win-x64 `
+            -p:Platform=x64 `
+            -p:WindowsAppSDKSelfContained=true `
+            --self-contained true `
+            -o "$publishDir" `
+            -bl:build\publish.binlog
 
       - name: Package Windows artifact
         shell: pwsh
