@@ -20,6 +20,16 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
+        UnhandledException += (_, e) =>
+        {
+            var logPath = Path.Combine(Path.GetTempPath(), "azpin-crash.log");
+            try { File.WriteAllText(logPath, $"{DateTime.Now:O}\n{e.Exception}"); } catch { }
+            e.Handled = true;
+            MessageBox(IntPtr.Zero,
+                $"AzPin crashed.\n\n{e.Exception.Message}\n\nFull details:\n{logPath}",
+                "AzPin", 0x10);
+            Exit();
+        };
     }
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
