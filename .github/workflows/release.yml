@@ -329,8 +329,10 @@ jobs:
         run: |
           $pfxPath = Join-Path $env:RUNNER_TEMP 'azpin.pfx'
           [System.IO.File]::WriteAllBytes($pfxPath, [System.Convert]::FromBase64String($env:WINDOWS_PFX_BASE64))
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" |
+            Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
           $msi = "build\AzPin-Setup-x64-${{ steps.version.outputs.version }}.msi"
-          signtool sign /f $pfxPath /p $env:WINDOWS_PFX_PASSWORD /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 $msi
+          & $signtool sign /f $pfxPath /p $env:WINDOWS_PFX_PASSWORD /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 $msi
           Remove-Item $pfxPath -Force
 
       - name: Package Windows artifact
