@@ -36,9 +36,12 @@ public sealed partial class MainWindow : Window
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "tray.ico");
         TrayIcon.Icon = new System.Drawing.Icon(iconPath);
         TrayIcon.ToolTipText = "AzPin";
+        TrayIcon.LeftClickCommand = vm.OpenMainWindowCommand;
 
-        TrayIcon.TrayLeftMouseClick += (_, _) => vm.OpenMainWindowCommand.Execute(null);
-        TrayIcon.PreviewTrayContextMenuOpen += (_, _) => RebuildContextMenu(vm);
+        RebuildContextMenu(vm);
+
+        vm.PropertyChanged += (_, _) => RebuildContextMenu(vm);
+        vm.Auth.PropertyChanged += (_, _) => RebuildContextMenu(vm);
 
         _ = vm.OnMenuOpenedAsync();
     }
@@ -75,7 +78,7 @@ public sealed partial class MainWindow : Window
                     }
                 };
                 var uri = r.PortalUri;
-                item.Click += async (_, _) => await Windows.System.Launcher.LaunchUriAsync(uri);
+                item.Click += async (_, _) => await global::Windows.System.Launcher.LaunchUriAsync(uri);
                 TrayFlyout.Items.Add(item);
             }
         }
