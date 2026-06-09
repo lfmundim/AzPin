@@ -16,20 +16,12 @@
   </Package>
 
   <Fragment>
-    <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="ProgramFiles64Folder">
-        <Directory Id="INSTALLFOLDER" Name="AzPin" />
-      </Directory>
-      <Directory Id="ProgramMenuFolder">
-        <Directory Id="AzPinMenuFolder" Name="AzPin" />
-      </Directory>
-    </Directory>
-  </Fragment>
-
-  <Fragment>
-    <ComponentGroup Id="AzPinFiles" Directory="INSTALLFOLDER">
-      <Files Include="$(var.PublishDir)\**" />
-    </ComponentGroup>
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="AzPin" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AzPinMenuFolder" Name="AzPin" />
+    </StandardDirectory>
   </Fragment>
 
   <Fragment>

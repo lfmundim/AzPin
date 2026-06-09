@@ -303,15 +303,21 @@ jobs:
             -o "$publishDir" `
             -bl:build\publish.binlog
 
+      - name: Generate file components
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE 'build\publish\win-x64'
+          $outputPath = Join-Path $env:GITHUB_WORKSPACE 'build\AzPinFiles.wxs'
+          & src\windows\installer\Generate-FileComponents.ps1 -PublishDir $publishDir -OutputPath $outputPath
+
       - name: Build MSI installer
         shell: pwsh
         run: |
           $version = "${{ steps.version.outputs.version }}"
-          $publishDir = Join-Path $env:GITHUB_WORKSPACE 'build\publish\win-x64'
           wix build `
             src\windows\installer\AzPin.wxs `
+            build\AzPinFiles.wxs `
             -d Version=$version `
-            -d PublishDir=$publishDir `
             -arch x64 `
             -o "build\AzPin-Setup-x64-$version.msi"
 
