@@ -9,20 +9,27 @@ public class UpdateCheckService(IHttpClientFactory httpClientFactory) : IUpdateC
     private readonly HttpClient _http = httpClientFactory.CreateClient("github");
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
+    // Windows releases are pre-releases tagged win-v*, not returned by /releases/latest.
+    private const string WinTagPrefix = "win-v";
+
     public async Task<UpdateCheckResult> CheckForUpdatesAsync(CancellationToken ct = default)
     {
         var current = GetCurrentVersion();
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, "/repos/lfmundim/AzPin/releases/latest");
+            using var request = new HttpRequestMessage(HttpMethod.Get, "/repos/lfmundim/AzPin/releases?per_page=20");
             using var response = await _http.SendAsync(request, ct);
             response.EnsureSuccessStatusCode();
 
             var body = await response.Content.ReadAsStringAsync(ct);
-            var release = JsonSerializer.Deserialize<GitHubRelease>(body, JsonOptions)
-                ?? throw new InvalidOperationException("Empty response from GitHub API.");
+            var releases = JsonSerializer.Deserialize<GitHubRelease[]>(body, JsonOptions)
+                ?? [];
 
-            var latest = release.TagName.TrimStart('v', 'V');
+            var release = releases.FirstOrDefault(r => r.TagName.StartsWith(WinTagPrefix, StringComparison.OrdinalIgnoreCase));
+            if (release is null)
+                return new UpdateCheckResult(UpdateCheckState.UpToDate, current);
+
+            var latest = release.TagName[WinTagPrefix.Length..];
 
             if (IsNewer(latest, current))
                 return new UpdateCheckResult(UpdateCheckState.UpdateAvailable, current, latest, release.HtmlUrl);

@@ -82,6 +82,7 @@ public partial class OnboardingViewModel : ObservableObject
             : null;
 
         CanGetStarted = SubscriptionState == StepState.Pass;
+        if (CanGetStarted) StopPolling();
     }
 
     [RelayCommand]

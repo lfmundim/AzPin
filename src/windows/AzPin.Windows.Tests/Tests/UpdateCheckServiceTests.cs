@@ -37,23 +37,52 @@ public class UpdateCheckServiceTests
     [Fact]
     public async Task CheckForUpdatesAsync_UpdateAvailable_ReturnsUpdateAvailableState()
     {
-        var service = CreateService("""{"tag_name":"v99.9.9","html_url":"https://github.com/lfmundim/AzPin/releases/tag/v99.9.9"}""");
+        // Windows releases are pre-releases tagged win-v*
+        var service = CreateService("""[{"tag_name":"win-v99.9.9","html_url":"https://github.com/lfmundim/AzPin/releases/tag/win-v99.9.9"}]""");
 
         var result = await service.CheckForUpdatesAsync();
 
         Assert.Equal(UpdateCheckState.UpdateAvailable, result.State);
         Assert.Equal("99.9.9", result.LatestVersion);
-        Assert.Equal("https://github.com/lfmundim/AzPin/releases/tag/v99.9.9", result.ReleaseUrl);
+        Assert.Equal("https://github.com/lfmundim/AzPin/releases/tag/win-v99.9.9", result.ReleaseUrl);
     }
 
     [Fact]
     public async Task CheckForUpdatesAsync_UpToDate_ReturnsUpToDateState()
     {
-        var service = CreateService("""{"tag_name":"v0.0.1","html_url":"https://github.com/lfmundim/AzPin/releases/tag/v0.0.1"}""");
+        var service = CreateService("""[{"tag_name":"win-v0.0.1","html_url":"https://github.com/lfmundim/AzPin/releases/tag/win-v0.0.1"}]""");
 
         var result = await service.CheckForUpdatesAsync();
 
         Assert.Equal(UpdateCheckState.UpToDate, result.State);
+    }
+
+    [Fact]
+    public async Task CheckForUpdatesAsync_NoWinRelease_ReturnsUpToDateState()
+    {
+        // Only macOS non-prerelease tags — no win-v* release, treat as up to date
+        var service = CreateService("""[{"tag_name":"v1.0.0","html_url":"https://github.com/lfmundim/AzPin/releases/tag/v1.0.0"}]""");
+
+        var result = await service.CheckForUpdatesAsync();
+
+        Assert.Equal(UpdateCheckState.UpToDate, result.State);
+    }
+
+    [Fact]
+    public async Task CheckForUpdatesAsync_PicksFirstWinRelease_IgnoresMacRelease()
+    {
+        // List has a macOS release first, then a Windows one
+        var service = CreateService("""
+            [
+              {"tag_name":"v2.0.0","html_url":"https://github.com/lfmundim/AzPin/releases/tag/v2.0.0"},
+              {"tag_name":"win-v99.9.9","html_url":"https://github.com/lfmundim/AzPin/releases/tag/win-v99.9.9"}
+            ]
+            """);
+
+        var result = await service.CheckForUpdatesAsync();
+
+        Assert.Equal(UpdateCheckState.UpdateAvailable, result.State);
+        Assert.Equal("99.9.9", result.LatestVersion);
     }
 
     [Fact]
@@ -96,13 +125,14 @@ public class UpdateCheckServiceTests
     }
 
     [Fact]
-    public async Task CheckForUpdatesAsync_StripsVPrefix()
+    public async Task CheckForUpdatesAsync_StripsWinVPrefix()
     {
-        var service = CreateService("""{"tag_name":"v2.0.0","html_url":"https://github.com"}""");
+        var service = CreateService("""[{"tag_name":"win-v2.0.0","html_url":"https://github.com"}]""");
 
         var result = await service.CheckForUpdatesAsync();
 
-        // Whether update or up-to-date depends on the test assembly version, but the parsed version should be stripped
+        // win-v prefix must be stripped — LatestVersion is a bare semver string
+        Assert.DoesNotContain("win", result.LatestVersion ?? string.Empty);
         Assert.DoesNotContain("v", result.LatestVersion ?? string.Empty);
     }
 
@@ -113,7 +143,7 @@ public class UpdateCheckServiceTests
         {
             Handler = _ => new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("""{"tag_name":"v0.0.1","html_url":"https://github.com"}""")
+                Content = new StringContent("""[{"tag_name":"win-v0.0.1","html_url":"https://github.com"}]""")
             }
         };
         var service = CreateService(handler);
