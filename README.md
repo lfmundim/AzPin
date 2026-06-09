@@ -14,22 +14,22 @@ No Azure SDK. No App Store. No sandbox. Requires macOS 26 Tahoe.
 
 ## Prerequisites
 
-- **macOS 26 Tahoe** or later
-- **Azure CLI** installed ([aka.ms/installazureclimacos](https://aka.ms/installazureclimacos))
+- **macOS 26 Tahoe** or later | **Windows 11** or later
+- **[Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)** installed
 - Signed in: `az login`
 
 ---
 
 ## Install
 
-### Homebrew (recommended)
+### macOS - Homebrew (recommended)
 
 ```bash
 brew tap lfmundim/tap
 brew install --cask azpin
 ```
 
-### DMG (manual)
+### macOS - DMG (manual)
 
 Download the latest `.dmg` from [Releases](../../releases), drag `AzPin.app` to `/Applications`.
 
