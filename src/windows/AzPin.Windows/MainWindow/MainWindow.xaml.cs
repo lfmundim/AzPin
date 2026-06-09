@@ -25,7 +25,7 @@ public sealed partial class MainWindow : Window
         {
             args.Cancel = true;
             AppWindow.IsShownInSwitchers = false;
-            AppWindow.Resize(new Windows.Graphics.SizeInt32(1, 1));
+            AppWindow.Resize(new SizeInt32(1, 1));
         };
     }
 

@@ -49,7 +49,7 @@ public partial class App : Application
             _mainWindow.InitializeTrayIcon(Services.GetRequiredService<TrayMenuViewModel>());
             // Keep window alive (XamlRoot must stay valid for tray popup) but make it invisible:
             // collapse to 1×1 at origin rather than AppWindow.Hide() which can break H.NotifyIcon.
-            _mainWindow.AppWindow.Resize(new Windows.Graphics.SizeInt32(1, 1));
+            _mainWindow.AppWindow.Resize(new SizeInt32(1, 1));
         }
         catch (Exception ex)
         {
@@ -120,7 +120,7 @@ public partial class App : Application
             quit: () => Current.Exit(),
             openMainWindow: () =>
             {
-                mainWindow.AppWindow.Resize(new Windows.Graphics.SizeInt32(960, 640));
+                mainWindow.AppWindow.Resize(new SizeInt32(960, 640));
                 mainWindow.AppWindow.IsShownInSwitchers = true;
                 mainWindow.Activate();
             }));
