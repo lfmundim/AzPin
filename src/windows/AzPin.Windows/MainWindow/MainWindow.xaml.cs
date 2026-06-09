@@ -1,5 +1,6 @@
 using AzPin.Windows.MainWindow.Pages;
 using AzPin.Windows.TrayIcon;
+using AzPin.Windows.Utilities;
 using AzPin.Windows.ViewModels;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml;
@@ -38,12 +39,17 @@ public sealed partial class MainWindow : Window
         TrayIcon.ToolTipText = "AzPin";
         TrayIcon.LeftClickCommand = vm.OpenMainWindowCommand;
 
+        // Set app window icon (taskbar / app switcher)
+        AppWindow.SetIcon(iconPath);
+
         // PopupMenu mode (the default) reads ContextFlyout.Items fresh on every right-click,
         // so reactive rebuilds work. SecondWindow copies items once at setup and ignores updates.
+        // PropertyChanged may fire on a background thread after async pin ops — always dispatch
+        // to UI thread before touching MenuFlyout.Items.
 
         RebuildContextMenu(vm);
-        vm.PropertyChanged += (_, _) => RebuildContextMenu(vm);
-        vm.Auth.PropertyChanged += (_, _) => RebuildContextMenu(vm);
+        vm.PropertyChanged += (_, _) => DispatcherQueue.TryEnqueue(() => RebuildContextMenu(vm));
+        vm.Auth.PropertyChanged += (_, _) => DispatcherQueue.TryEnqueue(() => RebuildContextMenu(vm));
 
         _ = vm.OnMenuOpenedAsync();
     }
@@ -66,31 +72,43 @@ public sealed partial class MainWindow : Window
         });
         TrayFlyout.Items.Add(new MenuFlyoutSeparator());
 
+        bool hasAny = vm.PinnedResourceGroups.Count > 0 || vm.PinnedResources.Count > 0;
+
+        if (vm.PinnedResourceGroups.Count > 0)
+        {
+            foreach (var rg in vm.PinnedResourceGroups)
+            {
+                var uri = PortalUrl.ForResourceGroup(rg.SubscriptionId, rg.Name);
+                TrayFlyout.Items.Add(new MenuFlyoutItem
+                {
+                    Text = rg.Name,
+                    Icon = new FontIcon { FontFamily = new FontFamily("Segoe Fluent Icons"), Glyph = "" },
+                    Command = new RelayCommand(() => { _ = global::Windows.System.Launcher.LaunchUriAsync(uri); })
+                });
+            }
+        }
+
         if (vm.PinnedResources.Count > 0)
         {
+            if (vm.PinnedResourceGroups.Count > 0)
+                TrayFlyout.Items.Add(new MenuFlyoutSeparator());
+
             foreach (var r in vm.PinnedResources)
             {
                 var uri = r.PortalUri;
                 TrayFlyout.Items.Add(new MenuFlyoutItem
                 {
                     Text = r.Name,
-                    Icon = new FontIcon
-                    {
-                        FontFamily = new FontFamily("Segoe Fluent Icons"),
-                        Glyph = r.GlyphCode
-                    },
-                    // PopupMenu mode fires Command, not Click — must use Command here
+                    Icon = new FontIcon { FontFamily = new FontFamily("Segoe Fluent Icons"), Glyph = r.GlyphCode },
                     Command = new RelayCommand(() => { _ = global::Windows.System.Launcher.LaunchUriAsync(uri); })
                 });
             }
         }
-        else
-        {
+
+        if (!hasAny)
             TrayFlyout.Items.Add(new MenuFlyoutItem { Text = "No pinned resources", IsEnabled = false });
-        }
 
         TrayFlyout.Items.Add(new MenuFlyoutSeparator());
-
         TrayFlyout.Items.Add(new MenuFlyoutItem { Text = "Open AzPin", Command = vm.OpenMainWindowCommand });
         TrayFlyout.Items.Add(new MenuFlyoutItem { Text = "Quit AzPin",  Command = vm.QuitCommand });
     }

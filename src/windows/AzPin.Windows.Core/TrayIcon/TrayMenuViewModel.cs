@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using AzPin.Windows.Models.Entities;
 using AzPin.Windows.Services;
 using AzPin.Windows.ViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -17,6 +18,9 @@ public partial class TrayMenuViewModel : ObservableObject
 
     [ObservableProperty]
     public partial ObservableCollection<PinnedResourceItemViewModel> PinnedResources { get; set; } = [];
+
+    [ObservableProperty]
+    public partial ObservableCollection<PinnedResourceGroup> PinnedResourceGroups { get; set; } = [];
 
     [ObservableProperty]
     public partial bool IsLoadingPinnedResources { get; set; }
@@ -46,6 +50,10 @@ public partial class TrayMenuViewModel : ObservableObject
             PinnedResources = new ObservableCollection<PinnedResourceItemViewModel>(
                 pinned.OrderBy(p => p.DisplayOrder)
                       .Select(p => new PinnedResourceItemViewModel(p)));
+
+            var pinnedRgs = await _pinService.GetPinnedResourceGroupsAsync();
+            PinnedResourceGroups = new ObservableCollection<PinnedResourceGroup>(
+                pinnedRgs.OrderBy(rg => rg.DisplayOrder));
         }
         finally
         {

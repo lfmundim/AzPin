@@ -37,6 +37,9 @@ All notable changes to AzPin are documented in this file.
 - Fixed: BrowsePage toolbar (subscription picker + search box) was overlapped by system caption buttons — removed `ExtendsContentIntoTitleBar` so the window uses a standard title bar.
 - Fixed: Settings navigation item did nothing — added `SettingsPage` and wired up the nav handler.
 - Fixed: tray icon showed the default Windows app icon — regenerated `tray.ico` from the app's branded PNG assets (16×16, 32×32, 256×256).
+- Fixed: tray context menu showed no pinned items after pin/unpin — `PropertyChanged` fired on a background thread; context menu rebuild now dispatched to UI thread via `DispatcherQueue.TryEnqueue`.
+- Fixed: pinned resource groups were not shown in the tray context menu — `TrayMenuViewModel` now loads both pinned RGs and individual resources; RGs appear above resources in the menu as portal links.
+- Fixed: app window and taskbar icon showed the default Windows icon — `AppWindow.SetIcon` now called on startup with the branded `tray.ico`.
 
 ### Menubar
 
