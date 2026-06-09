@@ -1,9 +1,10 @@
 using System.Collections.ObjectModel;
+using System.Reflection;
 using AzPin.Windows.Services;
+using AzPin.Windows.Utilities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
-using Windows.Storage;
 
 namespace AzPin.Windows.ViewModels;
 
@@ -12,6 +13,7 @@ public partial class SettingsViewModel : ObservableObject
     private readonly AuthViewModel _auth;
     private readonly IAzCliService _azCli;
     private readonly ISubscriptionSettingsService _subscriptionSettings;
+    private readonly IUpdateCheckService _updateCheck;
 
     public event Action? ReRunSetupRequested;
 
@@ -20,6 +22,8 @@ public partial class SettingsViewModel : ObservableObject
     private bool _suppressOpenAtLoginChange;
 
     public AuthViewModel Auth => _auth;
+
+    public string CurrentVersion { get; } = GetCurrentVersion();
 
     [ObservableProperty]
     public partial ObservableCollection<SubscriptionItemViewModel> Subscriptions { get; set; } = [];
@@ -30,11 +34,41 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     public partial bool OpenAtLogin { get; set; }
 
-    public SettingsViewModel(AuthViewModel auth, IAzCliService azCli, ISubscriptionSettingsService subscriptionSettings)
+    [ObservableProperty]
+    public partial UpdateCheckState UpdateState { get; set; } = UpdateCheckState.Idle;
+
+    [ObservableProperty]
+    public partial string? LatestVersion { get; set; }
+
+    [ObservableProperty]
+    public partial string? ReleaseUrl { get; set; }
+
+    [ObservableProperty]
+    public partial string? UpdateErrorMessage { get; set; }
+
+    public bool IsUpdateIdle => UpdateState == UpdateCheckState.Idle;
+    public bool IsUpdateChecking => UpdateState == UpdateCheckState.Checking;
+    public bool IsUpdateUpToDate => UpdateState == UpdateCheckState.UpToDate;
+    public bool IsUpdateAvailable => UpdateState == UpdateCheckState.UpdateAvailable;
+    public bool IsUpdateFailed => UpdateState == UpdateCheckState.Failed;
+    public bool IsUpdateNotIdle => UpdateState != UpdateCheckState.Idle;
+
+    partial void OnUpdateStateChanged(UpdateCheckState value)
+    {
+        OnPropertyChanged(nameof(IsUpdateIdle));
+        OnPropertyChanged(nameof(IsUpdateChecking));
+        OnPropertyChanged(nameof(IsUpdateUpToDate));
+        OnPropertyChanged(nameof(IsUpdateAvailable));
+        OnPropertyChanged(nameof(IsUpdateFailed));
+        OnPropertyChanged(nameof(IsUpdateNotIdle));
+    }
+
+    public SettingsViewModel(AuthViewModel auth, IAzCliService azCli, ISubscriptionSettingsService subscriptionSettings, IUpdateCheckService updateCheck)
     {
         _auth = auth;
         _azCli = azCli;
         _subscriptionSettings = subscriptionSettings;
+        _updateCheck = updateCheck;
         LoadOpenAtLogin();
     }
 
@@ -74,7 +108,7 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     public void ReRunSetup()
     {
-        ApplicationData.Current.LocalSettings.Values["HasCompletedOnboarding"] = false;
+        AppSettings.SetOnboardingCompleted(false);
         ReRunSetupRequested?.Invoke();
     }
 
@@ -93,5 +127,24 @@ public partial class SettingsViewModel : ObservableObject
         }
         catch { }
         finally { IsLoading = false; }
+    }
+
+    [RelayCommand]
+    public async Task CheckForUpdatesAsync(CancellationToken ct = default)
+    {
+        if (UpdateState == UpdateCheckState.Checking) return;
+        UpdateState = UpdateCheckState.Checking;
+        var result = await _updateCheck.CheckForUpdatesAsync(ct);
+        LatestVersion = result.LatestVersion;
+        ReleaseUrl = result.ReleaseUrl;
+        UpdateErrorMessage = result.ErrorMessage;
+        UpdateState = result.State;
+    }
+
+    private static string GetCurrentVersion()
+    {
+        var v = Assembly.GetEntryAssembly()?.GetName().Version;
+        if (v is null) return "0.0.0";
+        return $"{v.Major}.{v.Minor}.{v.Build}";
     }
 }

@@ -10,6 +10,23 @@ All notable changes to AzPin are documented in this file.
 
 ### General
 
+- Added update checker: "Check for Updates" queries the GitHub Releases API (`api.github.com/repos/lfmundim/AzPin/releases/latest`), compares the latest tag against the running version, and shows platform-specific upgrade instructions (`brew upgrade azpin` on macOS, `winget upgrade lfmundim.AzPin` on Windows) with a direct link to the release page.
+
+### macOS
+
+- `UpdateCheckService` (new): `@Observable` service that hits the GitHub Releases API and exposes `.idle / .checking / .upToDate / .updateAvailable / .failed` state.
+- Preferences Settings tab: shows current version, "Check for Updates" button, and inline result (up-to-date indicator, update banner with `brew upgrade azpin` command and GitHub release link, or error message with retry).
+- Menubar: shows "Update Available: v{latest}" item (opens release URL) whenever `UpdateCheckService.state` is `.updateAvailable`.
+
+### Windows
+
+- `IUpdateCheckService` / `UpdateCheckService` (new): queries GitHub Releases API via named `HttpClient("github")`; returns `UpdateCheckResult` with state, versions, and release URL.
+- `SettingsViewModel`: injected with `IUpdateCheckService`; exposes `CheckForUpdatesCommand`, observable update state properties, and current version from the running assembly.
+- Settings → Preferences tab: current version row, "Check for Updates" button, inline result panel (up-to-date, update available with `winget upgrade lfmundim.AzPin` and GitHub link, or error).
+- Tray menu: "Check for Updates" button; shows result inline (winget command + GitHub link when update available).
+
+### General
+
 - Refreshed app icon (all sizes 16–1024) and menubar/tray icon across macOS and Windows.
 
 ### Windows

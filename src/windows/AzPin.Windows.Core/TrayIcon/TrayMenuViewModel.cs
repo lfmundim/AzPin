@@ -13,6 +13,7 @@ public partial class TrayMenuViewModel : ObservableObject
     private readonly IPinService _pinService;
     private readonly IArmService _arm;
     private readonly IPermissionsService _permissions;
+    private readonly IUpdateCheckService _updateCheck;
     private readonly Action _quit;
     private readonly Action _openMainWindow;
 
@@ -27,15 +28,36 @@ public partial class TrayMenuViewModel : ObservableObject
     [ObservableProperty]
     public partial bool IsLoadingPinnedResources { get; set; }
 
-    public TrayMenuViewModel(AuthViewModel auth, IPinService pinService, IArmService arm, IPermissionsService permissions, Action quit, Action openMainWindow)
+    [ObservableProperty]
+    public partial UpdateCheckState UpdateState { get; set; } = UpdateCheckState.Idle;
+
+    [ObservableProperty]
+    public partial string? UpdateLatestVersion { get; set; }
+
+    [ObservableProperty]
+    public partial string? UpdateReleaseUrl { get; set; }
+
+    public TrayMenuViewModel(AuthViewModel auth, IPinService pinService, IArmService arm, IPermissionsService permissions, IUpdateCheckService updateCheck, Action quit, Action openMainWindow)
     {
         _auth = auth;
         _pinService = pinService;
         _arm = arm;
         _permissions = permissions;
+        _updateCheck = updateCheck;
         _quit = quit;
         _openMainWindow = openMainWindow;
         pinService.PinsChanged += () => _ = LoadPinnedResourcesAsync();
+    }
+
+    [RelayCommand]
+    public async Task CheckForUpdatesAsync()
+    {
+        if (UpdateState == UpdateCheckState.Checking) return;
+        UpdateState = UpdateCheckState.Checking;
+        var result = await _updateCheck.CheckForUpdatesAsync();
+        UpdateLatestVersion = result.LatestVersion;
+        UpdateReleaseUrl = result.ReleaseUrl;
+        UpdateState = result.State;
     }
 
     [RelayCommand]

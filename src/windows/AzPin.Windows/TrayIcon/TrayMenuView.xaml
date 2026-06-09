@@ -65,6 +65,21 @@
                     Content="Open AzPin..."
                     HorizontalAlignment="Stretch"
                     Click="OnOpenClick" />
+            <Button x:Name="CheckUpdatesButton"
+                    Content="Check for Updates"
+                    HorizontalAlignment="Stretch"
+                    Click="OnCheckUpdatesClick" />
+            <TextBlock x:Name="UpdateStatusText"
+                       TextWrapping="Wrap"
+                       FontSize="12"
+                       Margin="0,2,0,0"
+                       Visibility="Collapsed" />
+            <HyperlinkButton x:Name="UpdateReleaseLink"
+                             NavigateUri=""
+                             Padding="0,2"
+                             Visibility="Collapsed">
+                <TextBlock Text="View release on GitHub" FontSize="12" />
+            </HyperlinkButton>
             <Button Content="Quit AzPin"
                     HorizontalAlignment="Stretch"
                     Click="OnQuitClick" />

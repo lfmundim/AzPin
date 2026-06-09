@@ -9,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Windows.Graphics;
-using Windows.Storage;
 using LaunchActivatedEventArgs = Microsoft.UI.Xaml.LaunchActivatedEventArgs;
 
 namespace AzPin.Windows;
@@ -51,6 +50,15 @@ public partial class App : Application
 
             _mainWindow.InitializeContent();
 
+            // Wire up re-run setup here — MainWindow is not in DI so SettingsPage can't resolve it.
+            Services.GetRequiredService<SettingsViewModel>().ReRunSetupRequested += async () =>
+            {
+                var onboardingVm = Services.GetRequiredService<OnboardingViewModel>();
+                _mainWindow.AppWindow.IsShownInSwitchers = true;
+                await _mainWindow.ShowOnboardingAsync(onboardingVm);
+                _mainWindow.AppWindow.IsShownInSwitchers = false;
+            };
+
             // Position off-screen before activating so the window is never visible on startup.
             // Activate() is required to fire FrameworkElement.Loaded so the TaskbarIcon registers
             // its tray icon with the shell. After that, the window can be hidden/shown freely.
@@ -59,8 +67,7 @@ public partial class App : Application
 
             _mainWindow.InitializeTrayIcon(Services.GetRequiredService<TrayMenuViewModel>());
 
-            bool completed = ApplicationData.Current.LocalSettings.Values
-                .TryGetValue("HasCompletedOnboarding", out var val) && val is true;
+            bool completed = AppSettings.IsOnboardingCompleted();
 
             if (!completed)
             {
@@ -131,11 +138,18 @@ public partial class App : Application
         services.AddSingleton<IShellRunner, ShellRunner>();
         services.AddSingleton<IAzCliService, AzCliService>();
         services.AddHttpClient("arm", c => c.BaseAddress = new Uri("https://management.azure.com"));
+        services.AddHttpClient("github", c =>
+        {
+            c.BaseAddress = new Uri("https://api.github.com");
+            c.DefaultRequestHeaders.UserAgent.ParseAdd("AzPin");
+            c.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+        });
         services.AddTransient<ITokenCache, TokenCache>();
         services.AddTransient<IArmService, ArmService>();
         services.AddTransient<IPermissionsService, PermissionsService>();
         services.AddSingleton<IPinService, PinService>();
         services.AddSingleton<ISubscriptionSettingsService, SubscriptionSettingsService>();
+        services.AddSingleton<IUpdateCheckService, UpdateCheckService>();
 
         services.AddSingleton<AuthViewModel>();
         services.AddSingleton<BrowseViewModel>();
@@ -149,6 +163,7 @@ public partial class App : Application
             sp.GetRequiredService<IPinService>(),
             sp.GetRequiredService<IArmService>(),
             sp.GetRequiredService<IPermissionsService>(),
+            sp.GetRequiredService<IUpdateCheckService>(),
             quit: () => Current.Exit(),
             openMainWindow: () =>
             {
