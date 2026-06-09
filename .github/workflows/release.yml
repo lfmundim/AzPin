@@ -321,6 +321,18 @@ jobs:
             -arch x64 `
             -o "build\AzPin-Setup-x64-$version.msi"
 
+      - name: Sign MSI
+        shell: pwsh
+        env:
+          WINDOWS_PFX_BASE64: ${{ secrets.WINDOWS_PFX_BASE64 }}
+          WINDOWS_PFX_PASSWORD: ${{ secrets.WINDOWS_PFX_PASSWORD }}
+        run: |
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'azpin.pfx'
+          [System.IO.File]::WriteAllBytes($pfxPath, [System.Convert]::FromBase64String($env:WINDOWS_PFX_BASE64))
+          $msi = "build\AzPin-Setup-x64-${{ steps.version.outputs.version }}.msi"
+          signtool sign /f $pfxPath /p $env:WINDOWS_PFX_PASSWORD /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 $msi
+          Remove-Item $pfxPath -Force
+
       - name: Package Windows artifact
         shell: pwsh
         run: |
@@ -355,3 +367,17 @@ jobs:
               $zip `
               $msi
           }
+
+      - name: Submit winget manifest
+        shell: pwsh
+        env:
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $msiUrl = "https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/AzPin-Setup-x64-$version.msi"
+          Invoke-WebRequest -Uri https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+          .\wingetcreate.exe update KimDim.AzPin `
+            --version $version `
+            --urls $msiUrl `
+            --token $env:WINGET_TOKEN `
+            --submit
