@@ -56,7 +56,7 @@ public sealed partial class MainWindow : Window
         vm.Auth.PropertyChanged += (_, _) => DispatcherQueue.TryEnqueue(() => RebuildContextMenu(vm));
 
         // Show flyout manually so it anchors to this window's XamlRoot, not H.NotifyIcon's.
-        TrayIcon.TrayRightMouseUp += (_, _) => DispatcherQueue.TryEnqueue(ShowTrayFlyout);
+        TrayIcon.RightClickCommand = new RelayCommand(() => DispatcherQueue.TryEnqueue(ShowTrayFlyout));
 
         _ = vm.OnMenuOpenedAsync();
     }
