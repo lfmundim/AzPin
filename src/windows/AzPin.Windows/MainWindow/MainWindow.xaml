@@ -8,12 +8,7 @@
     mc:Ignorable="d">
     <Grid>
         <tb:TaskbarIcon x:Name="TrayIcon"
-                        NoLeftClickDelay="True">
-            <tb:TaskbarIcon.ContextFlyout>
-                <MenuFlyout x:Name="TrayFlyout"
-                            AreOpenCloseAnimationsEnabled="False" />
-            </tb:TaskbarIcon.ContextFlyout>
-        </tb:TaskbarIcon>
+                        NoLeftClickDelay="True" />
         <NavigationView
             x:Name="NavView"
             PaneDisplayMode="Left"

@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Runtime.InteropServices;
 using AzPin.Windows.MainWindow.Pages;
 using AzPin.Windows.Models;
 using AzPin.Windows.TrayIcon;
@@ -7,12 +8,21 @@ using AzPin.Windows.ViewModels;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Windows.Foundation;
 using Windows.Graphics;
 
 namespace AzPin.Windows.MainWindow;
 
 public sealed partial class MainWindow : Window
 {
+    // Created in code so ShowAt uses this window's XamlRoot (not H.NotifyIcon's internal popup).
+    // H.NotifyIcon's popup window has no WinUI control templates loaded, so SymbolIcon renders blank.
+    private readonly MenuFlyout TrayFlyout = new() { AreOpenCloseAnimationsEnabled = false };
+
+    [DllImport("user32.dll")]
+    private static extern bool GetCursorPos(out System.Drawing.Point lpPoint);
+
     public MainWindow()
     {
         InitializeComponent();
@@ -39,19 +49,31 @@ public sealed partial class MainWindow : Window
         TrayIcon.Icon = new System.Drawing.Icon(iconPath);
         TrayIcon.ToolTipText = "AzPin";
         TrayIcon.LeftClickCommand = vm.OpenMainWindowCommand;
-
-        // Set app window icon (taskbar / app switcher)
         AppWindow.SetIcon(iconPath);
-
-        // XamlRoot must match the window so WinUI control templates (SymbolIcon etc.) resolve.
-        // Without this, icon elements render blank in H.NotifyIcon's popup window context.
-        TrayFlyout.XamlRoot = ((FrameworkElement)Content).XamlRoot;
 
         RebuildContextMenu(vm);
         vm.PropertyChanged += (_, _) => DispatcherQueue.TryEnqueue(() => RebuildContextMenu(vm));
         vm.Auth.PropertyChanged += (_, _) => DispatcherQueue.TryEnqueue(() => RebuildContextMenu(vm));
 
+        // Show flyout manually so it anchors to this window's XamlRoot, not H.NotifyIcon's.
+        TrayIcon.TrayRightMouseUp += (_, _) => DispatcherQueue.TryEnqueue(ShowTrayFlyout);
+
         _ = vm.OnMenuOpenedAsync();
+    }
+
+    private void ShowTrayFlyout()
+    {
+        GetCursorPos(out var screenPt);
+        var winPos = AppWindow.Position;
+        double scale = ((FrameworkElement)Content).XamlRoot.RasterizationScale;
+        double x = (screenPt.X - winPos.X) / scale;
+        double y = (screenPt.Y - winPos.Y) / scale;
+        TrayFlyout.ShowAt((FrameworkElement)Content, new FlyoutShowOptions
+        {
+            Position = new Point(x, y),
+            Placement = FlyoutPlacementMode.TopEdgeAlignedLeft,
+            ShowMode = FlyoutShowMode.Transient
+        });
     }
 
     private void RebuildContextMenu(TrayMenuViewModel vm)
@@ -168,7 +190,7 @@ public sealed partial class MainWindow : Window
         return item;
     }
 
-    private static SymbolIcon SymbolIconFor(string type) => new(type.ToLowerInvariant() switch
+    private static SymbolIcon SymbolIconFor(string? type) => new((type?.ToLowerInvariant() ?? "") switch
     {
         "microsoft.web/sites" or "microsoft.web/sites/slots" => Symbol.Globe,
         "microsoft.keyvault/vaults"                          => Symbol.Permissions,
