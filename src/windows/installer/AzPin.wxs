@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="AzPin"
+           Manufacturer="Lucas Mundim"
+           Version="$(var.Version)"
+           UpgradeCode="3F8A1B2C-4D5E-6F7A-8B9C-0D1E2F3A4B5C"
+           Scope="perMachine">
+    <SummaryInformation Description="Fast, pinnable access to Azure resources from the Windows tray." />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of AzPin is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="Main" Level="1">
+      <ComponentGroupRef Id="AzPinFiles" />
+      <ComponentRef Id="ApplicationShortcut" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLFOLDER" Name="AzPin" />
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="AzPinMenuFolder" Name="AzPin" />
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <DirectoryRef Id="AzPinMenuFolder">
+      <Component Id="ApplicationShortcut" Guid="7E9F0A1B-2C3D-4E5F-6A7B-8C9D0E1F2A3B">
+        <Shortcut Id="AzPinShortcut"
+                  Name="AzPin"
+                  Description="Fast access to Azure resources"
+                  Target="[INSTALLFOLDER]AzPin.Windows.exe"
+                  WorkingDirectory="INSTALLFOLDER" />
+        <RemoveFolder Id="CleanupMenu" Directory="AzPinMenuFolder" On="uninstall" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\AzPin"
+                       Name="Installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+</Wix>
