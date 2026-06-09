@@ -17,7 +17,7 @@ public class BrowseViewModelTests
                 new AzSubscription("s1", "Alpha", "t1", true)
             ]
         };
-        var vm = new BrowseViewModel(az, new FakeArmService(), new FakePinService());
+        var vm = new BrowseViewModel(az, new FakeArmService(), new FakePinService(), new FakeSubscriptionSettingsService());
 
         await vm.LoadSubscriptionsAsync();
 
@@ -33,7 +33,7 @@ public class BrowseViewModelTests
         {
             ThrowOnListSubscriptions = new InvalidOperationException("forced failure")
         };
-        var vm = new BrowseViewModel(az, new FakeArmService(), new FakePinService());
+        var vm = new BrowseViewModel(az, new FakeArmService(), new FakePinService(), new FakeSubscriptionSettingsService());
 
         await vm.LoadSubscriptionsAsync();
 
@@ -50,7 +50,7 @@ public class BrowseViewModelTests
             Subscriptions = [new AzSubscription("s1", "Sub", "t1", true)],
             DelayBeforeList = gate.Task
         };
-        var vm = new BrowseViewModel(az, new FakeArmService(), new FakePinService());
+        var vm = new BrowseViewModel(az, new FakeArmService(), new FakePinService(), new FakeSubscriptionSettingsService());
 
         var task = vm.LoadSubscriptionsAsync();
         await Task.Delay(20);
@@ -75,7 +75,7 @@ public class BrowseViewModelTests
                 new ArmResourceGroup("id-a", "alpha-rg", "westus")
             ]
         };
-        var vm = new BrowseViewModel(az, arm, new FakePinService());
+        var vm = new BrowseViewModel(az, arm, new FakePinService(), new FakeSubscriptionSettingsService());
         await vm.LoadSubscriptionsAsync();
 
         Assert.Equal(2, vm.ResourceGroups.Count);
@@ -94,7 +94,7 @@ public class BrowseViewModelTests
         {
             ResourceGroups = [new ArmResourceGroup("id1", "rg-one", "eus"), new ArmResourceGroup("id2", "rg-two", "wus")]
         };
-        var vm = new BrowseViewModel(az, arm, new FakePinService());
+        var vm = new BrowseViewModel(az, arm, new FakePinService(), new FakeSubscriptionSettingsService());
         await vm.LoadSubscriptionsAsync();
 
         Assert.Equal(2, vm.FilteredResourceGroups.Count());
@@ -114,7 +114,7 @@ public class BrowseViewModelTests
                 new ArmResourceGroup("id2", "dev-resources", "wus")
             ]
         };
-        var vm = new BrowseViewModel(az, arm, new FakePinService());
+        var vm = new BrowseViewModel(az, arm, new FakePinService(), new FakeSubscriptionSettingsService());
         await vm.LoadSubscriptionsAsync();
 
         vm.SearchText = "PROD";
@@ -135,7 +135,7 @@ public class BrowseViewModelTests
         {
             ResourceGroups = [new ArmResourceGroup("id1", "my-rg", "eus")]
         };
-        var vm = new BrowseViewModel(az, arm, new FakePinService());
+        var vm = new BrowseViewModel(az, arm, new FakePinService(), new FakeSubscriptionSettingsService());
         await vm.LoadSubscriptionsAsync();
 
         vm.SearchText = "zzznomatch";

@@ -8,4 +8,5 @@ public class AzPinDbContext(DbContextOptions<AzPinDbContext> options) : DbContex
     public DbSet<PinnedResourceGroup> PinnedResourceGroups => Set<PinnedResourceGroup>();
     public DbSet<PinnedResource> PinnedResources => Set<PinnedResource>();
     public DbSet<CachedToken> CachedTokens => Set<CachedToken>();
+    public DbSet<HiddenSubscription> HiddenSubscriptions => Set<HiddenSubscription>();
 }

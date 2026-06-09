@@ -29,6 +29,9 @@ public partial class AuthViewModel(IAzCliService azCli) : ObservableObject
     public partial string? ActiveSubscriptionName { get; set; }
 
     [ObservableProperty]
+    public partial string? ActiveSubscriptionId { get; set; }
+
+    [ObservableProperty]
     public partial bool IsRefreshing { get; set; }
 
     [RelayCommand]
@@ -43,6 +46,7 @@ public partial class AuthViewModel(IAzCliService azCli) : ObservableObject
                 AccountName = null;
                 TenantId = null;
                 ActiveSubscriptionName = null;
+                ActiveSubscriptionId = null;
                 return;
             }
 
@@ -53,14 +57,16 @@ public partial class AuthViewModel(IAzCliService azCli) : ObservableObject
                 AccountName = null;
                 TenantId = null;
                 ActiveSubscriptionName = null;
+                ActiveSubscriptionId = null;
                 return;
             }
 
             var subs = await _azCli.ListSubscriptionsAsync(ct);
+            var defaultSub = subs.FirstOrDefault(s => s.IsDefault) ?? subs.FirstOrDefault();
             AccountName = account.User?.Name;
             TenantId = account.TenantId;
-            ActiveSubscriptionName = subs.FirstOrDefault(s => s.IsDefault)?.Name
-                                     ?? subs.FirstOrDefault()?.Name;
+            ActiveSubscriptionName = defaultSub?.Name;
+            ActiveSubscriptionId = defaultSub?.Id;
             State = AuthState.SignedIn;
         }
         catch
@@ -69,6 +75,7 @@ public partial class AuthViewModel(IAzCliService azCli) : ObservableObject
             AccountName = null;
             TenantId = null;
             ActiveSubscriptionName = null;
+            ActiveSubscriptionId = null;
         }
         finally
         {

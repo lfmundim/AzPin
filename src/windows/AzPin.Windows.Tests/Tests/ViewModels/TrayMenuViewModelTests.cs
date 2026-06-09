@@ -12,7 +12,8 @@ public class TrayMenuViewModelTests
         az ??= new FakeAzCliService();
         var auth = new AuthViewModel(az);
         var pins = new FakePinService();
-        var vm = new TrayMenuViewModel(auth, pins, quit: static () => { }, openMainWindow: static () => { });
+        var arm = new FakeArmService();
+        var vm = new TrayMenuViewModel(auth, pins, arm, quit: static () => { }, openMainWindow: static () => { });
         return (vm, pins);
     }
 
@@ -50,7 +51,7 @@ public class TrayMenuViewModelTests
         var gate = new TaskCompletionSource();
         var auth = new AuthViewModel(new FakeAzCliService());
         var pins = new FakePinService { DelayBeforeGet = gate.Task };
-        var vm = new TrayMenuViewModel(auth, pins, quit: static () => { }, openMainWindow: static () => { });
+        var vm = new TrayMenuViewModel(auth, pins, new FakeArmService(), quit: static () => { }, openMainWindow: static () => { });
 
         var task = vm.OnMenuOpenedAsync();
         await Task.Delay(20);
@@ -98,7 +99,7 @@ public class TrayMenuViewModelTests
         var auth = new AuthViewModel(new FakeAzCliService());
         var pins = new FakePinService();
         var quitCalled = false;
-        var vm = new TrayMenuViewModel(auth, pins, quit: () => quitCalled = true, openMainWindow: static () => { });
+        var vm = new TrayMenuViewModel(auth, pins, new FakeArmService(), quit: () => quitCalled = true, openMainWindow: static () => { });
 
         vm.QuitCommand.Execute(null);
 
@@ -111,7 +112,7 @@ public class TrayMenuViewModelTests
         var auth = new AuthViewModel(new FakeAzCliService());
         var pins = new FakePinService();
         var openCalled = false;
-        var vm = new TrayMenuViewModel(auth, pins, quit: static () => { }, openMainWindow: () => openCalled = true);
+        var vm = new TrayMenuViewModel(auth, pins, new FakeArmService(), quit: static () => { }, openMainWindow: () => openCalled = true);
 
         vm.OpenMainWindowCommand.Execute(null);
 

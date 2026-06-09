@@ -9,6 +9,8 @@ internal sealed class FakePinService : IPinService
     private readonly List<PinnedResource> _resources = [];
     private readonly List<PinnedResourceGroup> _resourceGroups = [];
 
+    public event Action? PinsChanged;
+
     public int PinResourceCalls { get; private set; }
     public int UnpinResourceCalls { get; private set; }
 
