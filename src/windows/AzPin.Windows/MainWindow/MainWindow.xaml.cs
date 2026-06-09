@@ -42,7 +42,7 @@ public sealed partial class MainWindow : Window
         // Use System.Drawing.Icon directly — more reliable than BitmapImage for .ico
         // files and avoids any async conversion race before the window is shown.
         TrayIcon.Icon = new System.Drawing.Icon(iconPath);
-        TrayIcon.PopupActivation = Hardcodet.Wpf.TaskbarNotification.PopupActivationMode.LeftOrRightClick;
+        TrayIcon.PopupActivation = H.NotifyIcon.PopupActivationMode.LeftOrRightClick;
         TrayIcon.TrayPopup = new TrayMenuView { DataContext = vm };
     }
 
