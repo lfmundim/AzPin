@@ -3,6 +3,7 @@ using AzPin.Windows.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using Windows.Storage;
 
 namespace AzPin.Windows.ViewModels;
 
@@ -11,6 +12,8 @@ public partial class SettingsViewModel : ObservableObject
     private readonly AuthViewModel _auth;
     private readonly IAzCliService _azCli;
     private readonly ISubscriptionSettingsService _subscriptionSettings;
+
+    public event Action? ReRunSetupRequested;
 
     private const string StartupRegKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string StartupValueName = "AzPin";
@@ -66,6 +69,13 @@ public partial class SettingsViewModel : ObservableObject
             }
         }
         catch { /* registry write failed */ }
+    }
+
+    [RelayCommand]
+    public void ReRunSetup()
+    {
+        ApplicationData.Current.LocalSettings.Values["HasCompletedOnboarding"] = false;
+        ReRunSetupRequested?.Invoke();
     }
 
     [RelayCommand]

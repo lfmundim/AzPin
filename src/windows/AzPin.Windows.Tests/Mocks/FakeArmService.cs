@@ -1,3 +1,4 @@
+using AzPin.Windows.Models;
 using AzPin.Windows.Models.Arm;
 using AzPin.Windows.Services;
 
@@ -28,15 +29,29 @@ internal sealed class FakeArmService : IArmService
         return Task.FromResult(Resources);
     }
 
-    public Task<string?> FetchRunningStateAsync(string subscriptionId, string tenantId, ArmResource resource, CancellationToken ct = default)
-        => Task.FromResult<string?>(null);
+    public AppRunningState RunningState { get; set; } = AppRunningState.Unknown;
+    public Exception? ThrowOnStart { get; set; }
+    public Exception? ThrowOnStop { get; set; }
+    public Exception? ThrowOnRestart { get; set; }
+
+    public Task<AppRunningState> FetchRunningStateAsync(string subscriptionId, string tenantId, ArmResource resource, CancellationToken ct = default)
+        => Task.FromResult(RunningState);
 
     public Task StartResourceAsync(string subscriptionId, string tenantId, ArmResource resource, CancellationToken ct = default)
-        => Task.CompletedTask;
+    {
+        if (ThrowOnStart is not null) throw ThrowOnStart;
+        return Task.CompletedTask;
+    }
 
     public Task StopResourceAsync(string subscriptionId, string tenantId, ArmResource resource, CancellationToken ct = default)
-        => Task.CompletedTask;
+    {
+        if (ThrowOnStop is not null) throw ThrowOnStop;
+        return Task.CompletedTask;
+    }
 
     public Task RestartResourceAsync(string subscriptionId, string tenantId, ArmResource resource, CancellationToken ct = default)
-        => Task.CompletedTask;
+    {
+        if (ThrowOnRestart is not null) throw ThrowOnRestart;
+        return Task.CompletedTask;
+    }
 }

@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
+using AzPin.Windows.Models;
 using AzPin.Windows.Models.Arm;
 
 namespace AzPin.Windows.Services;
@@ -44,22 +45,30 @@ public class ArmService(ITokenCache tokenCache, IHttpClientFactory httpClientFac
         return response.Value;
     }
 
-    public async Task<string?> FetchRunningStateAsync(string subscriptionId, string tenantId, ArmResource resource, CancellationToken ct = default)
+    public async Task<AppRunningState> FetchRunningStateAsync(string subscriptionId, string tenantId, ArmResource resource, CancellationToken ct = default)
     {
         if (!RunnableTypes.Contains(resource.Type))
-        {
-            return null;
-        }
+            return AppRunningState.Unknown;
 
         try
         {
-            var path = $"{resource.Id}?api-version=2023-01-01";
-            var response = await GetAsync<ArmSiteResponse>(path, subscriptionId, tenantId, ct);
-            return response.Properties?.State;
+            var (apiVersion, useRunningStatus, runningValue, stoppedValue) = StateConfig(resource.Type);
+            var path = $"{resource.Id}?api-version={apiVersion}";
+            var response = await GetAsync<ArmResourceStateResponse>(path, subscriptionId, tenantId, ct);
+
+            var rawState = useRunningStatus
+                ? response.Properties?.RunningStatus
+                : response.Properties?.State;
+
+            return rawState?.ToLowerInvariant() == runningValue
+                ? AppRunningState.Running
+                : rawState?.ToLowerInvariant() == stoppedValue
+                    ? AppRunningState.Stopped
+                    : AppRunningState.Unknown;
         }
         catch (ArmException)
         {
-            return null;
+            return AppRunningState.Unknown;
         }
     }
 
@@ -69,8 +78,55 @@ public class ArmService(ITokenCache tokenCache, IHttpClientFactory httpClientFac
     public Task StopResourceAsync(string subscriptionId, string tenantId, ArmResource resource, CancellationToken ct = default)
         => PostActionAsync(subscriptionId, tenantId, resource, "stop", ct);
 
-    public Task RestartResourceAsync(string subscriptionId, string tenantId, ArmResource resource, CancellationToken ct = default)
-        => PostActionAsync(subscriptionId, tenantId, resource, "restart", ct);
+    public async Task RestartResourceAsync(string subscriptionId, string tenantId, ArmResource resource, CancellationToken ct = default)
+    {
+        bool needsStopStart = resource.Type.ToLowerInvariant() is
+            "microsoft.app/containerapps" or "microsoft.logic/workflows";
+        if (needsStopStart)
+        {
+            await PostActionAsync(subscriptionId, tenantId, resource, "stop", ct);
+            await PostActionAsync(subscriptionId, tenantId, resource, "start", ct);
+        }
+        else
+        {
+            await PostActionAsync(subscriptionId, tenantId, resource, "restart", ct);
+        }
+    }
+
+    // Returns (apiVersion, useRunningStatusField, runningValue, stoppedValue) all lowercased for comparison
+    internal static (string ApiVersion, bool UseRunningStatus, string RunningValue, string StoppedValue) StateConfig(string resourceType) =>
+        resourceType.ToLowerInvariant() switch
+        {
+            "microsoft.app/containerapps" => ("2023-05-01", true,  "running", "stopped"),
+            "microsoft.logic/workflows"   => ("2019-05-01", false, "enabled", "disabled"),
+            _                             => ("2023-01-01", false, "running", "stopped")
+        };
+
+    internal static string ApiVersion(string resourceType) => resourceType.ToLowerInvariant() switch
+    {
+        "microsoft.app/containerapps" => "2023-05-01",
+        "microsoft.logic/workflows"   => "2019-05-01",
+        _                             => "2023-01-01"
+    };
+
+    internal static string MapAction(string action, string resourceType) =>
+        resourceType.ToLowerInvariant() == "microsoft.logic/workflows"
+            ? action switch { "start" => "enable", "stop" => "disable", _ => action }
+            : action;
+
+    private async Task PostActionAsync(string subscriptionId, string tenantId, ArmResource resource, string action, CancellationToken ct)
+    {
+        var mappedAction = MapAction(action, resource.Type);
+        var apiVersion = ApiVersion(resource.Type);
+        var path = $"{resource.Id}/{mappedAction}?api-version={apiVersion}";
+        using var request = await CreateRequestAsync(HttpMethod.Post, path, subscriptionId, tenantId, ct);
+        request.Content = new StringContent(string.Empty);
+
+        using var response = await _httpClient.SendAsync(request, ct);
+        var body = await response.Content.ReadAsStringAsync(ct);
+        if (!response.IsSuccessStatusCode)
+            throw new ArmException($"ARM {action} failed for {resource.Id}", (int)response.StatusCode, body);
+    }
 
     private async Task<T> GetAsync<T>(string path, string subscriptionId, string tenantId, CancellationToken ct)
     {
@@ -79,26 +135,10 @@ public class ArmService(ITokenCache tokenCache, IHttpClientFactory httpClientFac
         var body = await response.Content.ReadAsStringAsync(ct);
 
         if (!response.IsSuccessStatusCode)
-        {
             throw new ArmException($"ARM GET failed for {path}", (int)response.StatusCode, body);
-        }
 
         var value = JsonSerializer.Deserialize<T>(body, JsonOptions);
         return value ?? throw new ArmException($"Failed to deserialize ARM response for {path}", (int)response.StatusCode, body);
-    }
-
-    private async Task PostActionAsync(string subscriptionId, string tenantId, ArmResource resource, string action, CancellationToken ct)
-    {
-        var path = $"{resource.Id}/{action}?api-version=2023-01-01";
-        using var request = await CreateRequestAsync(HttpMethod.Post, path, subscriptionId, tenantId, ct);
-        request.Content = new StringContent(string.Empty);
-
-        using var response = await _httpClient.SendAsync(request, ct);
-        var body = await response.Content.ReadAsStringAsync(ct);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new ArmException($"ARM {action} failed for {resource.Id}", (int)response.StatusCode, body);
-        }
     }
 
     private async Task<HttpRequestMessage> CreateRequestAsync(HttpMethod method, string path, string subscriptionId, string tenantId, CancellationToken ct)
@@ -109,9 +149,7 @@ public class ArmService(ITokenCache tokenCache, IHttpClientFactory httpClientFac
 
         var request = new HttpRequestMessage(method, path);
         if (!string.IsNullOrEmpty(token))
-        {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        }
 
         return request;
     }

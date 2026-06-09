@@ -63,7 +63,7 @@ public class ArmServiceTests
     }
 
     [Fact]
-    public async Task FetchRunningStateAsync_ReturnsNull_ForNonRunnableType_WithoutHttpCall()
+    public async Task FetchRunningStateAsync_ReturnsUnknown_ForNonRunnableType_WithoutHttpCall()
     {
         var handler = new FakeHttpMessageHandler();
         var service = CreateService(handler);
@@ -71,7 +71,7 @@ public class ArmServiceTests
 
         var state = await service.FetchRunningStateAsync("sub", "tenant", resource);
 
-        Assert.Null(state);
+        Assert.Equal(AzPin.Windows.Models.AppRunningState.Unknown, state);
         Assert.Equal(0, handler.Calls);
     }
 

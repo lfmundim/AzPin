@@ -19,7 +19,37 @@ public partial class TrayResourceViewModel : ObservableObject
     public bool IsRunnable => ResourceTypeMapper.IsRunnable(Resource.Type);
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowStartButton))]
+    [NotifyPropertyChangedFor(nameof(ShowStopButton))]
+    [NotifyPropertyChangedFor(nameof(ShowRestartButton))]
+    [NotifyPropertyChangedFor(nameof(IsTransitional))]
+    [NotifyCanExecuteChangedFor(nameof(StartCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StopCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RestartCommand))]
     public partial AppRunningState RunningState { get; set; } = AppRunningState.Unknown;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowStartButton))]
+    [NotifyPropertyChangedFor(nameof(ShowStopButton))]
+    [NotifyPropertyChangedFor(nameof(ShowRestartButton))]
+    [NotifyCanExecuteChangedFor(nameof(StartCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StopCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RestartCommand))]
+    public partial ResourcePermissions? Permissions { get; set; }
+
+    [ObservableProperty]
+    public partial string? ActionError { get; set; }
+
+    public bool ShowStartButton =>
+        IsRunnable && RunningState == AppRunningState.Stopped && (Permissions?.CanStart ?? false);
+    public bool ShowStopButton =>
+        IsRunnable && RunningState == AppRunningState.Running && (Permissions?.CanStop ?? false);
+    public bool ShowRestartButton =>
+        IsRunnable && RunningState == AppRunningState.Running && (Permissions?.CanRestart ?? false);
+
+    public bool IsTransitional => RunningState is
+        AppRunningState.Fetching or AppRunningState.Starting or
+        AppRunningState.Stopping or AppRunningState.Restarting;
 
     public TrayResourceViewModel(ArmResource resource, string subscriptionId, IArmService arm)
     {
@@ -28,7 +58,7 @@ public partial class TrayResourceViewModel : ObservableObject
         _arm = arm;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(ShowStartButton))]
     public async Task StartAsync(CancellationToken ct = default)
     {
         var prev = RunningState;
@@ -41,10 +71,11 @@ public partial class TrayResourceViewModel : ObservableObject
         catch
         {
             RunningState = prev;
+            ShowActionError("Start failed. Check Azure Portal.");
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(ShowStopButton))]
     public async Task StopAsync(CancellationToken ct = default)
     {
         var prev = RunningState;
@@ -57,10 +88,11 @@ public partial class TrayResourceViewModel : ObservableObject
         catch
         {
             RunningState = prev;
+            ShowActionError("Stop failed. Check Azure Portal.");
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(ShowRestartButton))]
     public async Task RestartAsync(CancellationToken ct = default)
     {
         var prev = RunningState;
@@ -73,6 +105,14 @@ public partial class TrayResourceViewModel : ObservableObject
         catch
         {
             RunningState = prev;
+            ShowActionError("Restart failed. Check Azure Portal.");
         }
+    }
+
+    private async void ShowActionError(string message)
+    {
+        ActionError = message;
+        await Task.Delay(4000);
+        ActionError = null;
     }
 }

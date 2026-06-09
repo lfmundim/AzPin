@@ -15,44 +15,65 @@ public partial class TrayRgViewModel : ObservableObject
 
     public PinnedResourceGroup ResourceGroup { get; }
     public string Name => ResourceGroup.Name;
+    public string DisplayLabel { get; set; }
     public Uri PortalUri => PortalUrl.ForResourceGroup(ResourceGroup.SubscriptionId, ResourceGroup.Name);
 
     [ObservableProperty]
     public partial ObservableCollection<TrayResourceViewModel> Resources { get; set; } = [];
+
+    [ObservableProperty]
+    public partial bool HasError { get; set; }
+
+    [ObservableProperty]
+    public partial string? ErrorMessage { get; set; }
 
     public TrayRgViewModel(PinnedResourceGroup rg, IArmService arm, IPinService pinService)
     {
         ResourceGroup = rg;
         _arm = arm;
         _pinService = pinService;
+        DisplayLabel = rg.Name;
     }
 
     public async Task LoadResourcesAsync(CancellationToken ct = default)
     {
+        HasError = false;
+        ErrorMessage = null;
         try
         {
             var raw = await _arm.FetchResourcesAsync(ResourceGroup.SubscriptionId, string.Empty, ResourceGroup.Name, ct);
             var vms = raw.OrderBy(r => r.Type.ToLowerInvariant())
                          .Select(r => new TrayResourceViewModel(r, ResourceGroup.SubscriptionId, _arm))
                          .ToList();
-
-            await Task.WhenAll(vms.Where(v => v.IsRunnable).Select(async v =>
-            {
-                var state = await _arm.FetchRunningStateAsync(ResourceGroup.SubscriptionId, string.Empty, v.Resource, ct);
-                v.RunningState = state?.ToLowerInvariant() switch
-                {
-                    "running" => AppRunningState.Running,
-                    "stopped" => AppRunningState.Stopped,
-                    _ => AppRunningState.Unknown
-                };
-            }));
-
             Resources = new ObservableCollection<TrayResourceViewModel>(vms);
         }
-        catch
+        catch (Exception ex)
         {
+            HasError = true;
+            ErrorMessage = ex.Message;
             Resources = [];
         }
+    }
+
+    public async Task FetchRunningStatesAsync(CancellationToken ct = default)
+    {
+        var runnables = Resources.Where(v => v.IsRunnable).ToList();
+        await Task.WhenAll(runnables.Select(async v =>
+        {
+            v.RunningState = AppRunningState.Fetching;
+            v.RunningState = await _arm.FetchRunningStateAsync(ResourceGroup.SubscriptionId, string.Empty, v.Resource, ct);
+        }));
+    }
+
+    public async Task CheckPermissionsAsync(IPermissionsService permissions, CancellationToken ct = default)
+    {
+        var runnables = Resources.Where(v => v.IsRunnable).ToList();
+        await Task.WhenAll(runnables.Select(async v =>
+        {
+            v.Permissions = await permissions.CheckAccessAsync(
+                ResourceGroup.SubscriptionId, string.Empty,
+                v.Resource.Id, v.Resource.Type, ct);
+        }));
     }
 
     [RelayCommand]

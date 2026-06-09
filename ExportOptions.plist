@@ -5,9 +5,11 @@
     <key>method</key>
     <string>developer-id</string>
     <key>teamID</key>
-    <string>$(APPLE_TEAM_ID)</string>
+    <string>Q26X5F4788</string>
     <key>signingStyle</key>
-    <string>automatic</string>
+    <string>manual</string>
+    <key>signingCertificate</key>
+    <string>Developer ID Application</string>
     <key>stripSwiftSymbols</key>
     <true/>
     <key>destination</key>

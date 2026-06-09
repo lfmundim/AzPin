@@ -14,4 +14,5 @@ public interface IPinService
     Task UnpinResourceGroupAsync(string subscriptionId, string rgName, CancellationToken ct = default);
     Task<IReadOnlyList<PinnedResource>> GetPinnedResourcesAsync(CancellationToken ct = default);
     Task<IReadOnlyList<PinnedResourceGroup>> GetPinnedResourceGroupsAsync(CancellationToken ct = default);
+    Task UpdateDisplayOrderAsync(IEnumerable<(int LocalId, int DisplayOrder)> updates, CancellationToken ct = default);
 }
