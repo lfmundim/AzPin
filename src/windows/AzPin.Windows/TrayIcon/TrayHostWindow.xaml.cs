@@ -20,6 +20,5 @@ public sealed partial class TrayHostWindow : Window
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "tray.ico");
         TrayIcon.Icon = new System.Drawing.Icon(iconPath);
         TrayIcon.TrayPopup = new TrayMenuView { DataContext = vm };
-        TrayIcon.ForceCreate();
     }
 }
