@@ -253,7 +253,7 @@ jobs:
         shell: pwsh
         run: |
           dotnet tool install -g nbgv
-          dotnet tool install -g wix
+          dotnet tool install -g wix --version "4.*"
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\\.dotnet\\tools"
 
       - name: Restore
