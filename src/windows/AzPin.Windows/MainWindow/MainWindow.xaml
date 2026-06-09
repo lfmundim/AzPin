@@ -8,7 +8,6 @@
     mc:Ignorable="d">
     <Grid>
         <tb:TaskbarIcon x:Name="TrayIcon"
-                        ContextMenuMode="SecondWindow"
                         NoLeftClickDelay="True">
             <tb:TaskbarIcon.ContextFlyout>
                 <MenuFlyout x:Name="TrayFlyout"

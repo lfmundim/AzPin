@@ -1,6 +1,7 @@
 using AzPin.Windows.MainWindow.Pages;
 using AzPin.Windows.TrayIcon;
 using AzPin.Windows.ViewModels;
+using H.NotifyIcon;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -37,6 +38,9 @@ public sealed partial class MainWindow : Window
         TrayIcon.Icon = new System.Drawing.Icon(iconPath);
         TrayIcon.ToolTipText = "AzPin";
         TrayIcon.LeftClickCommand = vm.OpenMainWindowCommand;
+        // ContextMenuMode must be set in code-behind AFTER InitializeComponent so that
+        // ContextFlyout is already populated when PrepareContextMenuWindow() is called.
+        TrayIcon.ContextMenuMode = ContextMenuMode.SecondWindow;
 
         RebuildContextMenu(vm);
 
