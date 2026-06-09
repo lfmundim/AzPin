@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Windows.Graphics;
+using Windows.Storage;
 using LaunchActivatedEventArgs = Microsoft.UI.Xaml.LaunchActivatedEventArgs;
 
 namespace AzPin.Windows;
@@ -57,6 +58,23 @@ public partial class App : Application
             _mainWindow.Activate();
 
             _mainWindow.InitializeTrayIcon(Services.GetRequiredService<TrayMenuViewModel>());
+
+            bool completed = ApplicationData.Current.LocalSettings.Values
+                .TryGetValue("HasCompletedOnboarding", out var val) && val is true;
+
+            if (!completed)
+            {
+                _mainWindow.AppWindow.IsShownInSwitchers = true;
+                var workArea = DisplayArea.GetFromWindowId(
+                    _mainWindow.AppWindow.Id,
+                    DisplayAreaFallback.Nearest).WorkArea;
+                int cx = workArea.X + (workArea.Width - 960) / 2;
+                int cy = workArea.Y + (workArea.Height - 640) / 2;
+                _mainWindow.AppWindow.MoveAndResize(new RectInt32(cx, cy, 960, 640));
+
+                var onboardingVm = Services.GetRequiredService<OnboardingViewModel>();
+                await _mainWindow.ShowOnboardingAsync(onboardingVm);
+            }
 
             _mainWindow.AppWindow.IsShownInSwitchers = false;
         }
@@ -115,16 +133,22 @@ public partial class App : Application
         services.AddHttpClient("arm", c => c.BaseAddress = new Uri("https://management.azure.com"));
         services.AddTransient<ITokenCache, TokenCache>();
         services.AddTransient<IArmService, ArmService>();
+        services.AddTransient<IPermissionsService, PermissionsService>();
         services.AddSingleton<IPinService, PinService>();
         services.AddSingleton<ISubscriptionSettingsService, SubscriptionSettingsService>();
 
         services.AddSingleton<AuthViewModel>();
         services.AddSingleton<BrowseViewModel>();
         services.AddSingleton<SettingsViewModel>();
+        services.AddSingleton<OnboardingViewModel>();
+        services.AddSingleton<MainWindowViewModel>();
+        services.AddTransient<RgBrowseViewModel>();
+        services.AddTransient<PinnedResourcesViewModel>();
         services.AddSingleton(sp => new TrayMenuViewModel(
             sp.GetRequiredService<AuthViewModel>(),
             sp.GetRequiredService<IPinService>(),
             sp.GetRequiredService<IArmService>(),
+            sp.GetRequiredService<IPermissionsService>(),
             quit: () => Current.Exit(),
             openMainWindow: () =>
             {

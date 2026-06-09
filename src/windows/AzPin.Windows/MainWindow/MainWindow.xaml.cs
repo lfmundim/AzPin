@@ -6,6 +6,7 @@ using AzPin.Windows.TrayIcon;
 using AzPin.Windows.Utilities;
 using AzPin.Windows.ViewModels;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -19,6 +20,8 @@ public sealed partial class MainWindow : Window
     // Created in code so ShowAt uses this window's XamlRoot (not H.NotifyIcon's internal popup).
     // H.NotifyIcon's popup window has no WinUI control templates loaded, so SymbolIcon renders blank.
     private readonly MenuFlyout TrayFlyout = new() { AreOpenCloseAnimationsEnabled = false };
+
+    private MainWindowViewModel? _vm;
 
     [DllImport("user32.dll")]
     private static extern bool GetCursorPos(out System.Drawing.Point lpPoint);
@@ -41,6 +44,18 @@ public sealed partial class MainWindow : Window
     {
         ContentFrame.Navigate(typeof(BrowsePage));
         NavView.SelectedItem = NavView.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(i => i.Tag as string == "Browse");
+
+        _vm = App.Services.GetRequiredService<MainWindowViewModel>();
+        PinnedRgList.ItemsSource = _vm.PinnedRgs;
+        _vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.PinnedRgs))
+            {
+                PinnedRgList.ItemsSource = _vm.PinnedRgs;
+                NoPinnedRgsText.Visibility = _vm.PinnedRgs.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            }
+        };
+        _ = _vm.LoadPinnedRgsAsync();
     }
 
     public void InitializeTrayIcon(TrayMenuViewModel vm)
@@ -59,6 +74,36 @@ public sealed partial class MainWindow : Window
         TrayIcon.RightClickCommand = new RelayCommand(() => DispatcherQueue.TryEnqueue(ShowTrayFlyout));
 
         _ = vm.OnMenuOpenedAsync();
+    }
+
+    public async Task<bool> ShowOnboardingAsync(OnboardingViewModel vm)
+    {
+        var page = new OnboardingPage(vm);
+        var dialog = new ContentDialog
+        {
+            Title = "Welcome to AzPin",
+            Content = page,
+            PrimaryButtonText = "Get Started",
+            XamlRoot = Content.XamlRoot
+        };
+        dialog.SetBinding(ContentDialog.IsPrimaryButtonEnabledProperty,
+            new Microsoft.UI.Xaml.Data.Binding
+            {
+                Source = vm,
+                Path = new Microsoft.UI.Xaml.PropertyPath(nameof(OnboardingViewModel.CanGetStarted)),
+                Mode = Microsoft.UI.Xaml.Data.BindingMode.OneWay
+            });
+
+        vm.StartPolling();
+        var result = await dialog.ShowAsync();
+        vm.StopPolling();
+
+        if (result == ContentDialogResult.Primary)
+        {
+            vm.CompleteOnboarding();
+            return true;
+        }
+        return false;
     }
 
     private void ShowTrayFlyout()
@@ -92,6 +137,26 @@ public sealed partial class MainWindow : Window
             },
             IsEnabled = false
         });
+
+        if (vm.Auth.State == AuthState.CliNotInstalled)
+        {
+            TrayFlyout.Items.Add(new MenuFlyoutItem
+            {
+                Text = "Install Azure CLI...",
+                Command = new RelayCommand(() =>
+                    _ = global::Windows.System.Launcher.LaunchUriAsync(
+                        new Uri("https://aka.ms/installazurecliwindows")))
+            });
+        }
+        else if (vm.Auth.State == AuthState.NotSignedIn)
+        {
+            TrayFlyout.Items.Add(new MenuFlyoutItem
+            {
+                Text = "Open Terminal",
+                Command = vm.OpenTerminalCommand
+            });
+        }
+
         TrayFlyout.Items.Add(new MenuFlyoutSeparator());
 
         bool hasAny = vm.PinnedRgItems.Count > 0 || vm.PinnedResources.Count > 0;
@@ -128,28 +193,39 @@ public sealed partial class MainWindow : Window
     {
         var rgItem = new MenuFlyoutSubItem
         {
-            Text = rg.Name,
+            Text = rg.DisplayLabel,
             Icon = new SymbolIcon(Symbol.Folder)
         };
 
-        foreach (var res in rg.Resources)
+        if (rg.HasError)
         {
-            if (res.IsRunnable)
-                rgItem.Items.Add(BuildRunnableResourceSubItem(res));
-            else
+            rgItem.Items.Add(new MenuFlyoutItem
             {
-                var resUri = res.PortalUri;
-                rgItem.Items.Add(new MenuFlyoutItem
-                {
-                    Text = res.Name,
-                    Icon = SymbolIconFor(res.Resource.Type),
-                    Command = new RelayCommand(() => { _ = global::Windows.System.Launcher.LaunchUriAsync(resUri); })
-                });
-            }
+                Text = rg.ErrorMessage ?? "Failed to load resources",
+                IsEnabled = false
+            });
         }
+        else
+        {
+            foreach (var res in rg.Resources)
+            {
+                if (res.IsRunnable)
+                    rgItem.Items.Add(BuildRunnableResourceSubItem(res));
+                else
+                {
+                    var resUri = res.PortalUri;
+                    rgItem.Items.Add(new MenuFlyoutItem
+                    {
+                        Text = res.Name,
+                        Icon = SymbolIconFor(res.Resource.Type),
+                        Command = new RelayCommand(() => { _ = global::Windows.System.Launcher.LaunchUriAsync(resUri); })
+                    });
+                }
+            }
 
-        if (rg.Resources.Count == 0)
-            rgItem.Items.Add(new MenuFlyoutItem { Text = "Loading...", IsEnabled = false });
+            if (rg.Resources.Count == 0)
+                rgItem.Items.Add(new MenuFlyoutItem { Text = "Loading...", IsEnabled = false });
+        }
 
         rgItem.Items.Add(new MenuFlyoutSeparator());
         var rgUri = rg.PortalUri;
@@ -171,13 +247,18 @@ public sealed partial class MainWindow : Window
             Icon = SymbolIconFor(res.Resource.Type)
         };
 
-        if (res.RunningState != AppRunningState.Running)
+        if (res.ShowStartButton)
             item.Items.Add(new MenuFlyoutItem { Text = "Start", Command = res.StartCommand });
 
-        if (res.RunningState != AppRunningState.Stopped)
+        if (res.ShowStopButton)
             item.Items.Add(new MenuFlyoutItem { Text = "Stop", Command = res.StopCommand });
 
-        item.Items.Add(new MenuFlyoutItem { Text = "Restart", Command = res.RestartCommand });
+        if (res.ShowRestartButton)
+            item.Items.Add(new MenuFlyoutItem { Text = "Restart", Command = res.RestartCommand });
+
+        if (res.ActionError is not null)
+            item.Items.Add(new MenuFlyoutItem { Text = res.ActionError, IsEnabled = false });
+
         item.Items.Add(new MenuFlyoutSeparator());
 
         var uri = res.PortalUri;
@@ -212,5 +293,38 @@ public sealed partial class MainWindow : Window
             ContentFrame.Navigate(typeof(SettingsPage));
         else if (args.SelectedItem is NavigationViewItem { Tag: "Browse" })
             ContentFrame.Navigate(typeof(BrowsePage));
+    }
+
+    private void OnRgSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_vm is null) return;
+        _vm.SelectedRg = PinnedRgList.SelectedItem as SidebarRgItemViewModel;
+        if (_vm.SelectedRg is not null)
+            ContentFrame.Navigate(typeof(DetailPage), _vm.SelectedRg);
+    }
+
+    private void OnRgDragCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
+    {
+        if (_vm is null) return;
+        _ = _vm.PersistOrderAsync();
+    }
+
+    private void ShowRgContextMenu(SidebarRgItemViewModel rg, FrameworkElement anchor)
+    {
+        if (_vm is null) return;
+        var flyout = new MenuFlyout();
+
+        var uri = rg.PortalUri;
+        flyout.Items.Add(new MenuFlyoutItem
+        {
+            Text = "Open in Portal",
+            Command = new RelayCommand(() => _ = global::Windows.System.Launcher.LaunchUriAsync(uri))
+        });
+        flyout.Items.Add(new MenuFlyoutItem
+        {
+            Text = "Unpin",
+            Command = new RelayCommand(() => _ = _vm.UnpinRgAsync(rg))
+        });
+        flyout.ShowAt(anchor);
     }
 }

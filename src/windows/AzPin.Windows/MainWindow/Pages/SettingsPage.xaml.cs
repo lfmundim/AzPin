@@ -15,6 +15,13 @@ public sealed partial class SettingsPage : Page
         ViewModel = App.Services.GetRequiredService<SettingsViewModel>();
         InitializeComponent();
         TabBar.SelectedItem = AccountTab;
+
+        ViewModel.ReRunSetupRequested += async () =>
+        {
+            var mainWindow = App.Services.GetRequiredService<MainWindow>();
+            var onboardingVm = App.Services.GetRequiredService<OnboardingViewModel>();
+            await mainWindow.ShowOnboardingAsync(onboardingVm);
+        };
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)

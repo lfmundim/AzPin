@@ -175,6 +175,10 @@
                                           MinWidth="0" />
                         </Grid>
                     </Border>
+
+                    <TextBlock Text="Setup" Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <Button Content="Re-run Setup"
+                            Command="{x:Bind ViewModel.ReRunSetupCommand}" />
                 </StackPanel>
             </ScrollViewer>
         </Grid>
