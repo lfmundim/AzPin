@@ -369,6 +369,7 @@ jobs:
           }
 
       - name: Submit winget manifest
+        continue-on-error: true
         shell: pwsh
         env:
           WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
