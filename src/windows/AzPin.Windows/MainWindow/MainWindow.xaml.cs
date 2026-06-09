@@ -1,7 +1,7 @@
 using AzPin.Windows.MainWindow.Pages;
 using AzPin.Windows.TrayIcon;
 using AzPin.Windows.ViewModels;
-using H.NotifyIcon;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -38,12 +38,11 @@ public sealed partial class MainWindow : Window
         TrayIcon.Icon = new System.Drawing.Icon(iconPath);
         TrayIcon.ToolTipText = "AzPin";
         TrayIcon.LeftClickCommand = vm.OpenMainWindowCommand;
-        // ContextMenuMode must be set in code-behind AFTER InitializeComponent so that
-        // ContextFlyout is already populated when PrepareContextMenuWindow() is called.
-        TrayIcon.ContextMenuMode = ContextMenuMode.SecondWindow;
+
+        // PopupMenu mode (the default) reads ContextFlyout.Items fresh on every right-click,
+        // so reactive rebuilds work. SecondWindow copies items once at setup and ignores updates.
 
         RebuildContextMenu(vm);
-
         vm.PropertyChanged += (_, _) => RebuildContextMenu(vm);
         vm.Auth.PropertyChanged += (_, _) => RebuildContextMenu(vm);
 
@@ -72,18 +71,18 @@ public sealed partial class MainWindow : Window
         {
             foreach (var r in vm.PinnedResources)
             {
-                var item = new MenuFlyoutItem
+                var uri = r.PortalUri;
+                TrayFlyout.Items.Add(new MenuFlyoutItem
                 {
                     Text = r.Name,
                     Icon = new FontIcon
                     {
                         FontFamily = new FontFamily("Segoe Fluent Icons"),
                         Glyph = r.GlyphCode
-                    }
-                };
-                var uri = r.PortalUri;
-                item.Click += async (_, _) => await global::Windows.System.Launcher.LaunchUriAsync(uri);
-                TrayFlyout.Items.Add(item);
+                    },
+                    // PopupMenu mode fires Command, not Click — must use Command here
+                    Command = new RelayCommand(() => { _ = global::Windows.System.Launcher.LaunchUriAsync(uri); })
+                });
             }
         }
         else
@@ -93,13 +92,8 @@ public sealed partial class MainWindow : Window
 
         TrayFlyout.Items.Add(new MenuFlyoutSeparator());
 
-        var openItem = new MenuFlyoutItem { Text = "Open AzPin" };
-        openItem.Click += (_, _) => vm.OpenMainWindowCommand.Execute(null);
-        TrayFlyout.Items.Add(openItem);
-
-        var quitItem = new MenuFlyoutItem { Text = "Quit AzPin" };
-        quitItem.Click += (_, _) => vm.QuitCommand.Execute(null);
-        TrayFlyout.Items.Add(quitItem);
+        TrayFlyout.Items.Add(new MenuFlyoutItem { Text = "Open AzPin", Command = vm.OpenMainWindowCommand });
+        TrayFlyout.Items.Add(new MenuFlyoutItem { Text = "Quit AzPin",  Command = vm.QuitCommand });
     }
 
     private void OnNavSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
