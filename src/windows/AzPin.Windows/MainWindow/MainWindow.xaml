@@ -4,8 +4,17 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tb="using:H.NotifyIcon"
     mc:Ignorable="d">
     <Grid>
+        <tb:TaskbarIcon x:Name="TrayIcon"
+                        ContextMenuMode="SecondWindow"
+                        NoLeftClickDelay="True">
+            <tb:TaskbarIcon.ContextFlyout>
+                <MenuFlyout x:Name="TrayFlyout"
+                            AreOpenCloseAnimationsEnabled="False" />
+            </tb:TaskbarIcon.ContextFlyout>
+        </tb:TaskbarIcon>
         <NavigationView
             x:Name="NavView"
             PaneDisplayMode="Left"

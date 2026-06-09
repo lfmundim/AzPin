@@ -6,6 +6,7 @@ using AzPin.Windows.Utilities;
 using AzPin.Windows.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Windows.Graphics;
 using LaunchActivatedEventArgs = Microsoft.UI.Xaml.LaunchActivatedEventArgs;
@@ -17,7 +18,6 @@ public partial class App : Application
     public static IServiceProvider Services { get; private set; } = null!;
 
     private MainWindow.MainWindow? _mainWindow;
-    private TrayHostWindow? _trayHostWindow;
 
     public App()
     {
@@ -43,13 +43,14 @@ public partial class App : Application
 
             _mainWindow.InitializeContent();
 
-            // TrayHostWindow is a permanent 1×1 invisible window that hosts the TaskbarIcon.
-            // It is never hidden so H.NotifyIcon's popup XamlRoot always stays valid.
-            _trayHostWindow = new TrayHostWindow();
-            _trayHostWindow.Activate();
-            _trayHostWindow.InitializeTrayIcon(Services.GetRequiredService<TrayMenuViewModel>());
+            // Position off-screen before activating so the window is never visible on startup.
+            // Activate() is required to fire FrameworkElement.Loaded so the TaskbarIcon registers
+            // its tray icon with the shell. After that, the window can be hidden/shown freely.
+            _mainWindow.AppWindow.Move(new PointInt32(-32000, -32000));
+            _mainWindow.Activate();
 
-            // MainWindow starts hidden — it is shown when the user clicks "Open AzPin" in the tray.
+            _mainWindow.InitializeTrayIcon(Services.GetRequiredService<TrayMenuViewModel>());
+
             _mainWindow.AppWindow.IsShownInSwitchers = false;
         }
         catch (Exception ex)
@@ -117,7 +118,12 @@ public partial class App : Application
             quit: () => Current.Exit(),
             openMainWindow: () =>
             {
-                mainWindow.AppWindow.Resize(new SizeInt32(960, 640));
+                var workArea = DisplayArea.GetFromWindowId(
+                    mainWindow.AppWindow.Id,
+                    DisplayAreaFallback.Nearest).WorkArea;
+                int x = workArea.X + (workArea.Width - 960) / 2;
+                int y = workArea.Y + (workArea.Height - 640) / 2;
+                mainWindow.AppWindow.MoveAndResize(new RectInt32(x, y, 960, 640));
                 mainWindow.AppWindow.IsShownInSwitchers = true;
                 mainWindow.Activate();
             }));
