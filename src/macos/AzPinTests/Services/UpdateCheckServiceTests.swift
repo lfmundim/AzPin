@@ -1,6 +1,7 @@
 import XCTest
 @testable import AzPin
 
+@MainActor
 final class UpdateCheckServiceTests: XCTestCase {
 
     // MARK: - isNewer
