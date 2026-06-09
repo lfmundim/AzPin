@@ -4,6 +4,7 @@ import SwiftData
 struct MenuBarView: View {
     @Environment(AuthViewModel.self) private var auth
     @Environment(MenuBarViewModel.self) private var menuVM
+    @Environment(UpdateCheckService.self) private var updateChecker
     @Environment(\.modelContext) private var modelContext
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
@@ -41,6 +42,11 @@ struct MenuBarView: View {
                 Button("Pin Resource Group...") { openMainWindow() }
             }
             Button("Open AzPin...") { openMainWindow() }
+            if case .updateAvailable(_, let latest, let url) = updateChecker.state {
+                Button("Update Available: v\(latest)") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
             Button("Settings...") { openSettings(); NSApp.activate(ignoringOtherApps: true) }
             Button("Quit AzPin") { NSApplication.shared.terminate(nil) }
         }

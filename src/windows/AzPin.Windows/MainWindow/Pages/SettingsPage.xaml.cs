@@ -22,6 +22,15 @@ public sealed partial class SettingsPage : Page
             var onboardingVm = App.Services.GetRequiredService<OnboardingViewModel>();
             await mainWindow.ShowOnboardingAsync(onboardingVm);
         };
+
+        ViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ViewModel.ReleaseUrl) && ViewModel.ReleaseUrl is not null)
+            {
+                if (Uri.TryCreate(ViewModel.ReleaseUrl, UriKind.Absolute, out var uri))
+                    ReleaseLink.NavigateUri = uri;
+            }
+        };
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)

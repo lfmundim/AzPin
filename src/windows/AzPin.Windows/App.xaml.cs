@@ -131,11 +131,18 @@ public partial class App : Application
         services.AddSingleton<IShellRunner, ShellRunner>();
         services.AddSingleton<IAzCliService, AzCliService>();
         services.AddHttpClient("arm", c => c.BaseAddress = new Uri("https://management.azure.com"));
+        services.AddHttpClient("github", c =>
+        {
+            c.BaseAddress = new Uri("https://api.github.com");
+            c.DefaultRequestHeaders.UserAgent.ParseAdd("AzPin");
+            c.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+        });
         services.AddTransient<ITokenCache, TokenCache>();
         services.AddTransient<IArmService, ArmService>();
         services.AddTransient<IPermissionsService, PermissionsService>();
         services.AddSingleton<IPinService, PinService>();
         services.AddSingleton<ISubscriptionSettingsService, SubscriptionSettingsService>();
+        services.AddSingleton<IUpdateCheckService, UpdateCheckService>();
 
         services.AddSingleton<AuthViewModel>();
         services.AddSingleton<BrowseViewModel>();
@@ -149,6 +156,7 @@ public partial class App : Application
             sp.GetRequiredService<IPinService>(),
             sp.GetRequiredService<IArmService>(),
             sp.GetRequiredService<IPermissionsService>(),
+            sp.GetRequiredService<IUpdateCheckService>(),
             quit: () => Current.Exit(),
             openMainWindow: () =>
             {

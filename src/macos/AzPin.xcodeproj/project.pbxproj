@@ -61,6 +61,8 @@
 		F1F3D6AE5F5419F03ED657E6 /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81F848932D8993F17C471DD4 /* DetailView.swift */; };
 		FBB406BC6A7823B4DE7AF4F3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A8D86AEFEE3AE945152DBA0 /* SettingsView.swift */; };
 		FE73A19C0AC1AF4252182242 /* MockTokenCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC626AEC6A0AA2FFCF35A702 /* MockTokenCache.swift */; };
+		844033182A40421991BC300A /* UpdateCheckService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1AA0D287FBF4F1ABC96D744 /* UpdateCheckService.swift */; };
+		77A5561480384096B713F47B /* UpdateCheckServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B82E05BB36C489C9D2F7004 /* UpdateCheckServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -132,6 +134,8 @@
 		E7F42F332FCCCD9F005D884D /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		E8F3ADAB904438A648F7311D /* ResourceGroupMenuItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceGroupMenuItem.swift; sourceTree = "<group>"; };
 		E998B1BDF6A1C58028E89DEC /* AzPin.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AzPin.entitlements; sourceTree = "<group>"; };
+		A1AA0D287FBF4F1ABC96D744 /* UpdateCheckService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckService.swift; sourceTree = "<group>"; };
+		0B82E05BB36C489C9D2F7004 /* UpdateCheckServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -254,6 +258,7 @@
 				CC11DD22EE33FF44AA55BB77 /* ARMServiceTests.swift */,
 				2BA295AF6DE33B0A7D091A90 /* PermissionsServiceTests.swift */,
 				0D61F0AC53A68747C4CEEB9F /* TokenCacheTests.swift */,
+				0B82E05BB36C489C9D2F7004 /* UpdateCheckServiceTests.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -296,6 +301,7 @@
 				058BC49418DF8FB7AE66C712 /* AzCLIService.swift */,
 				BF26866B352453B4921139C9 /* PermissionsService.swift */,
 				088B66AD957350D17525104B /* TokenCache.swift */,
+				A1AA0D287FBF4F1ABC96D744 /* UpdateCheckService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -410,6 +416,7 @@
 				A04872A8517A8D7BA4B2D483 /* TokenCacheTests.swift in Sources */,
 				BB11CC22DD33EE44FF55AA77 /* RGBrowseViewModelTests.swift in Sources */,
 				DD11EE22FF33AA44BB55CC77 /* ARMServiceTests.swift in Sources */,
+				77A5561480384096B713F47B /* UpdateCheckServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -454,6 +461,7 @@
 				AAE055A87A8056B36960A004 /* ShellRunner.swift in Sources */,
 				89CF8F2CF4F4E9E5B2B50702 /* SidebarView.swift in Sources */,
 				53A393D9DA775938DD6761C4 /* TokenCache.swift in Sources */,
+				844033182A40421991BC300A /* UpdateCheckService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

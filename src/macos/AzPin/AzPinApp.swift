@@ -14,6 +14,7 @@ struct AzPinApp: App {
     let menuBarViewModel: MenuBarViewModel
     let accountSettingsViewModel: AccountSettingsViewModel
     let rgBrowseViewModel: RGBrowseViewModel
+    let updateChecker: UpdateCheckService
 
     init() {
         let c = try! ModelContainer(for: PinnedResourceGroup.self, PinnedResource.self, CachedToken.self)
@@ -31,6 +32,7 @@ struct AzPinApp: App {
         menuBarViewModel = MenuBarViewModel(arm: arm, permissionsService: permissions)
         accountSettingsViewModel = AccountSettingsViewModel(azCLI: az, tokenCache: tc)
         rgBrowseViewModel = RGBrowseViewModel(arm: arm)
+        updateChecker = UpdateCheckService()
     }
 
     var body: some Scene {
@@ -42,6 +44,7 @@ struct AzPinApp: App {
                 .environment(permissions)
                 .environment(authViewModel)
                 .environment(menuBarViewModel)
+                .environment(updateChecker)
                 .environment(\.modelContext, container.mainContext)
         }
         .menuBarExtraStyle(.menu)
@@ -70,6 +73,7 @@ struct AzPinApp: App {
                 .environment(permissions)
                 .environment(authViewModel)
                 .environment(accountSettingsViewModel)
+                .environment(updateChecker)
         }
         .modelContainer(container)
     }
