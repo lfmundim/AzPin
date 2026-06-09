@@ -135,7 +135,7 @@ public partial class BrowseViewModel : ObservableObject
         catch (Exception ex)
         {
             if (SelectedSubscription?.Id == sub.Id)
-                ErrorMessage = ex.InnerException?.Message ?? ex.Message;
+                ErrorMessage = ex.Message;
         }
         finally
         {

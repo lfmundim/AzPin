@@ -27,6 +27,11 @@ All notable changes to AzPin are documented in this file.
 - "Open AzPin..." tray button shows/activates main window (singleton, never recreated).
 - `PinService` uses `IDbContextFactory<AzPinDbContext>` for singleton-safe DB access.
 - Added tests: `BrowseViewModelTests`, `ResourceGroupItemViewModelTests`, `ResourceItemViewModelTests`, `PinServiceTests`, `PortalUrlTests`, `ResourceTypeMapperTests`, `TrayMenuViewModelTests`.
+- Fixed: tray icon unresponsive on startup — removed `TrayHostWindow`, moved `TaskbarIcon` into `MainWindow`, activating main window off-screen (`-32000,-32000`) so shell registers the tray icon without a visible flash.
+- Fixed: main window appeared tiny (1×1) on startup — eliminated the dedicated `TrayHostWindow`; main window now opens centered at 960×640 on first show.
+- Fixed: right-click context menu never appeared — switched from `TrayPopup` (broken in H.NotifyIcon WinUI v2) to `ContextFlyout` + `MenuFlyout`; menu rebuilds reactively on every `PropertyChanged` event.
+- Fixed: `DbUpdateException` on token fetch — `TokenCache` was a Singleton holding a scoped `DbContext` forever; switched to `IDbContextFactory<AzPinDbContext>` so each call opens and disposes its own context.
+- Fixed: `SQLite Error 19 NOT NULL constraint failed: CachedTokens.TenantId` — `az account get-access-token` on some environments omits `tenantId`; `TokenCache` now falls back to `string.Empty` instead of passing null to SQLite.
 
 ### Menubar
 

@@ -84,6 +84,25 @@ public class TokenCacheTests
         Assert.NotNull(await verifyDb.CachedTokens.SingleOrDefaultAsync(t => t.SubscriptionId == "sub2"));
     }
 
+    [Fact]
+    public async Task GetTokenAsync_HandlesMissingTenantId_WhenAzCliReturnsNull()
+    {
+        var options = CreateOptions();
+        var az = new FakeAzCliService
+        {
+            TokenToReturn = new AzPin.Windows.Models.AzTokenResponse("token-no-tenant", "2024-01-15 14:30:00.000000", null!, "sub3", DateTime.UtcNow.AddHours(2))
+        };
+
+        var cache = new TokenCache(new TestDbContextFactory(options), az);
+        var token = await cache.GetTokenAsync("sub3", string.Empty);
+
+        await using var verifyDb = new AzPinDbContext(options);
+        var saved = await verifyDb.CachedTokens.SingleAsync(t => t.SubscriptionId == "sub3");
+
+        Assert.Equal("token-no-tenant", token);
+        Assert.Equal(string.Empty, saved.TenantId);
+    }
+
     private static DbContextOptions<AzPinDbContext> CreateOptions() =>
         new DbContextOptionsBuilder<AzPinDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())

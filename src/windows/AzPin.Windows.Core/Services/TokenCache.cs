@@ -23,14 +23,14 @@ public class TokenCache(IDbContextFactory<AzPinDbContext> dbFactory, IAzCliServi
             db.CachedTokens.Add(new CachedToken
             {
                 SubscriptionId = subscriptionId,
-                TenantId = token.TenantId,
+                TenantId = token.TenantId ?? string.Empty,
                 AccessToken = token.AccessToken,
                 ExpiresOn = token.ExpiresOnUtc
             });
         }
         else
         {
-            existing.TenantId = token.TenantId;
+            existing.TenantId = token.TenantId ?? string.Empty;
             existing.AccessToken = token.AccessToken;
             existing.ExpiresOn = token.ExpiresOnUtc;
         }
