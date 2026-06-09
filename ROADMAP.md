@@ -4,15 +4,9 @@ Planned features, ordered by likely release. Nothing here is committed to a time
 
 ---
 
-## v0.3 — Next Up
-
-- **Copy resource ID**: right-click on a resource → "Copy Resource ID" copies the ARM ID to clipboard.
-
----
-
 ## v1.0 — Required Before Release
 
-_(No blocking items currently. Sparkle / auto-update moved to unversioned consideration below.)_
+_(No blocking items currently. Sparkle / auto-update moved to unversioned consideration below. Waiting on WinGet for v1.0 release)_
 
 ---
 
