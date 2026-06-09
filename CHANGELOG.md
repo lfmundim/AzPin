@@ -27,6 +27,27 @@ All notable changes to AzPin are documented in this file.
 - "Open AzPin..." tray button shows/activates main window (singleton, never recreated).
 - `PinService` uses `IDbContextFactory<AzPinDbContext>` for singleton-safe DB access.
 - Added tests: `BrowseViewModelTests`, `ResourceGroupItemViewModelTests`, `ResourceItemViewModelTests`, `PinServiceTests`, `PortalUrlTests`, `ResourceTypeMapperTests`, `TrayMenuViewModelTests`.
+- Fixed: tray icon unresponsive on startup — removed `TrayHostWindow`, moved `TaskbarIcon` into `MainWindow`, activating main window off-screen (`-32000,-32000`) so shell registers the tray icon without a visible flash.
+- Fixed: main window appeared tiny (1×1) on startup — eliminated the dedicated `TrayHostWindow`; main window now opens centered at 960×640 on first show.
+- Fixed: right-click context menu never appeared — switched from `TrayPopup` (broken in H.NotifyIcon WinUI v2) to `ContextFlyout` + `MenuFlyout`; menu rebuilds reactively on every `PropertyChanged` event.
+- Fixed: `DbUpdateException` on token fetch — `TokenCache` was a Singleton holding a scoped `DbContext` forever; switched to `IDbContextFactory<AzPinDbContext>` so each call opens and disposes its own context.
+- Fixed: `SQLite Error 19 NOT NULL constraint failed: CachedTokens.TenantId` — `az account get-access-token` on some environments omits `tenantId`; `TokenCache` now falls back to `string.Empty` instead of passing null to SQLite.
+- Fixed: pinning a resource did not update the tray icon list until next app restart — `IPinService` now raises `PinsChanged` after every pin/unpin; `TrayMenuViewModel` subscribes and reloads the pinned list immediately.
+- Added: pin button on resource group header rows; clicking pins/unpins the entire RG and reflects the pinned state in the tray.
+- Fixed: BrowsePage toolbar (subscription picker + search box) was overlapped by system caption buttons — removed `ExtendsContentIntoTitleBar` so the window uses a standard title bar.
+- Fixed: Settings navigation item did nothing — added `SettingsPage` and wired up the nav handler.
+- Fixed: tray icon showed the default Windows app icon — regenerated `tray.ico` from the app's branded PNG assets (16×16, 32×32, 256×256).
+- Fixed: tray context menu showed no pinned items after pin/unpin — `PropertyChanged` fired on a background thread; context menu rebuild now dispatched to UI thread via `DispatcherQueue.TryEnqueue`.
+- Fixed: pinned resource groups were not shown in the tray context menu — `TrayMenuViewModel` now loads both pinned RGs and individual resources; RGs appear above resources in the menu as portal links.
+- Fixed: app window and taskbar icon showed the default Windows icon — `AppWindow.SetIcon` now called on startup with the branded `tray.ico`.
+- Pinned RGs in tray context menu now show as cascading submenus: live resources (fetched from ARM on startup/pin change) listed inside; runnable resources get a nested Stop/Start/Restart/Open in Portal submenu; "Open Resource Group in Portal" and "Unpin" at the bottom.
+- Added `TrayRgViewModel`, `TrayResourceViewModel`, `AppRunningState` to Core; `ResourceTypeMapper.IsRunnable()` helper added.
+- Fixed: tray context menu icons not rendering — replaced `FontIcon` + Segoe Fluent Icons (unreliable in WinUI popup context) with `SymbolIcon` (Segoe MDL2 Assets, always available); per-type mapping covers all known resource types.
+- Settings page now has three tabs matching the macOS version: **Account** (User, Tenant ID, Active Subscription Name/ID, Refresh Token button), **Subscriptions** (per-subscription visibility toggles; hidden subs excluded from Browse on next load), **Preferences** (Open at Login toggle via registry `HKCU\…\Run`).
+- Added `HiddenSubscription` entity, `ISubscriptionSettingsService` / `SubscriptionSettingsService`; `BrowseViewModel` filters hidden subscriptions on load.
+- Added `SettingsViewModel`, `SubscriptionItemViewModel` to Core.
+- `AuthViewModel` now exposes `ActiveSubscriptionId`.
+- DB forward-compat: `HiddenSubscriptions` table created via `CREATE TABLE IF NOT EXISTS` on startup so existing databases upgrade without data loss.
 
 ### Menubar
 
@@ -57,6 +78,27 @@ All notable changes to AzPin are documented in this file.
 - Browse tab within a selected sidebar RG now shows that RG's live resources (with pin buttons), not the full subscription browser. The subscription browser is shown when no RG is selected.
 - Two pinned RGs sharing the same name across different subscriptions show a subscription disambiguator suffix in the menubar label (e.g. "rg-shared · Production").
 - `AzureResource` now decodes the optional `tags` dictionary from ARM responses (not displayed yet; foundation for future filtering).
+
+### Windows pre-release feature set (tasks 3.1–3.11)
+
+- First-run onboarding dialog polls every 2 s: CLI installed → signed in → subscription accessible; "Get Started" enables when all three pass. Steps show ProgressRing (checking), green checkmark (pass), or red warning (fail).
+- Re-run Setup button in Settings → Preferences resets the onboarding flag and re-shows the onboarding dialog.
+- Pinned resource groups stored in SQLite; tray context menu builds cascading RG submenus with live resources fetched from ARM on menu open.
+- Running state (Running/Stopped/Unknown) fetched per runnable resource after the resource list loads; transitional states (Fetching/Starting/Stopping/Restarting) show a spinner in the submenu.
+- Permissions checked via `GET .../providers/Microsoft.Authorization/permissions` before showing Start/Stop/Restart buttons; fail-safe: no buttons shown if check fails or returns an error.
+- Container Apps use API version `2023-05-01` and read `.properties.runningStatus`; Logic Apps use `2019-05-01` and map "Enabled"/"Disabled" to Running/Stopped; restart for both is stop → start sequence.
+- Logic App start/stop mapped to ARM "enable"/"disable" actions.
+- Main window sidebar shows pinned RGs in a reorderable `ListView` (CanDrag/CanReorder); drag-completed persists `DisplayOrder` via `UpdateDisplayOrderAsync`.
+- Two pinned RGs with the same name across different subscriptions show a subscription disambiguator suffix in the sidebar.
+- Detail page shows "Pinned" and "Browse" tabs (`SelectorBar`) when a sidebar RG is selected; no-selection placeholder shown otherwise.
+- Pinned Resources tab: reorderable list of individually-pinned resources with inline unpin button; drag-completed persists order.
+- Browse tab within a selected sidebar RG: live resources fetched from ARM with inline pin/unpin buttons.
+- Start/Stop/Restart commands revert state optimistically on ARM failure and surface a 4-second inline error message.
+- Action error auto-clears after 4 s via fire-and-forget async method.
+- `InternalsVisibleTo` on Core assembly allows tests to call `ArmService.ApiVersion()` and `ArmService.MapAction()` directly.
+- Tray context menu disambiguates RG labels when two pinned RGs share the same name across different subscriptions (appends first 8 chars of subscription ID, e.g. "shared-rg · sub-aaaa"). Matches macOS menubar behavior.
+- Individually-pinned resources whose parent RG is also pinned are excluded from the flat tray list; they appear inside the RG submenu only, preventing duplicates.
+- Added 63 new tests: `ArmServiceTypeAwareTests` (API version selection, action mapping, state parsing per resource type), `TrayResourceViewModelTests` (show-button gating, transitional states, action error/revert), `TrayRgViewModelTests` (error tracking, Fetching→final state flow, permissions propagation), `MainWindowViewModelTests` (sort order, name disambiguation, unpin collection/selection), `PinnedResourcesViewModelTests` (subscription+RG filter, case-insensitive, unpin). All 111 tests pass.
 - Resource and resource group names behave as hyperlinks: pointer cursor on hover, underline on hover, click opens in Azure Portal.
 - Resource group rows show a rotating chevron for the drawer toggle; chevron click toggles, name click opens Portal.
 - RG expand/collapse animates smoothly (switched from List/NSTableView to ScrollView+LazyVStack).

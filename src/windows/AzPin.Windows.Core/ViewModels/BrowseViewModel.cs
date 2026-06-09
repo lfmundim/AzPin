@@ -11,6 +11,7 @@ public partial class BrowseViewModel : ObservableObject
     private readonly IAzCliService _azCli;
     private readonly IArmService _arm;
     private readonly IPinService _pinService;
+    private readonly ISubscriptionSettingsService _subscriptionSettings;
 
     [ObservableProperty]
     public partial ObservableCollection<AzSubscription> Subscriptions { get; set; } = [];
@@ -59,11 +60,12 @@ public partial class BrowseViewModel : ObservableObject
     public bool ShowRgList =>
         ShowRgArea && !IsLoadingResourceGroups && FilteredResourceGroups.Any();
 
-    public BrowseViewModel(IAzCliService azCli, IArmService arm, IPinService pinService)
+    public BrowseViewModel(IAzCliService azCli, IArmService arm, IPinService pinService, ISubscriptionSettingsService subscriptionSettings)
     {
         _azCli = azCli;
         _arm = arm;
         _pinService = pinService;
+        _subscriptionSettings = subscriptionSettings;
     }
 
     private void RaiseVisibilityProps()
@@ -99,9 +101,11 @@ public partial class BrowseViewModel : ObservableObject
         ErrorMessage = null;
         try
         {
+            var hidden = await _subscriptionSettings.GetHiddenSubscriptionIdsAsync(ct);
             var subs = await _azCli.ListSubscriptionsAsync(ct);
-            Subscriptions = new ObservableCollection<AzSubscription>(subs);
-            SelectedSubscription = subs.FirstOrDefault(s => s.IsDefault) ?? subs.FirstOrDefault();
+            var visible = subs.Where(s => !hidden.Contains(s.Id)).ToList();
+            Subscriptions = new ObservableCollection<AzSubscription>(visible);
+            SelectedSubscription = visible.FirstOrDefault(s => s.IsDefault) ?? visible.FirstOrDefault();
         }
         catch (Exception ex)
         {
@@ -129,8 +133,17 @@ public partial class BrowseViewModel : ObservableObject
             // Guard: user may have changed selection while loading
             if (SelectedSubscription?.Id != sub.Id) return;
 
-            foreach (var rg in rgs.OrderBy(r => r.Name, StringComparer.OrdinalIgnoreCase))
-                ResourceGroups.Add(new ResourceGroupItemViewModel(rg, sub.Id, sub.TenantId, _arm, _pinService));
+            var rgVms = await Task.WhenAll(
+                rgs.OrderBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
+                   .Select(async rg =>
+                   {
+                       var vm = new ResourceGroupItemViewModel(rg, sub.Id, sub.TenantId, _arm, _pinService);
+                       await vm.InitializeAsync(ct);
+                       return vm;
+                   }));
+            if (SelectedSubscription?.Id != sub.Id) return;
+            foreach (var vm in rgVms)
+                ResourceGroups.Add(vm);
         }
         catch (Exception ex)
         {

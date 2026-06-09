@@ -12,7 +12,9 @@ public class TrayMenuViewModelTests
         az ??= new FakeAzCliService();
         var auth = new AuthViewModel(az);
         var pins = new FakePinService();
-        var vm = new TrayMenuViewModel(auth, pins, quit: static () => { }, openMainWindow: static () => { });
+        var arm = new FakeArmService();
+        var perms = new FakePermissionsService();
+        var vm = new TrayMenuViewModel(auth, pins, arm, perms, quit: static () => { }, openMainWindow: static () => { });
         return (vm, pins);
     }
 
@@ -50,7 +52,8 @@ public class TrayMenuViewModelTests
         var gate = new TaskCompletionSource();
         var auth = new AuthViewModel(new FakeAzCliService());
         var pins = new FakePinService { DelayBeforeGet = gate.Task };
-        var vm = new TrayMenuViewModel(auth, pins, quit: static () => { }, openMainWindow: static () => { });
+        var perms = new FakePermissionsService();
+        var vm = new TrayMenuViewModel(auth, pins, new FakeArmService(), perms, quit: static () => { }, openMainWindow: static () => { });
 
         var task = vm.OnMenuOpenedAsync();
         await Task.Delay(20);
@@ -93,12 +96,70 @@ public class TrayMenuViewModelTests
     }
 
     [Fact]
+    public async Task PinnedResources_ExcludesResourcesWhoseParentRgIsPinned()
+    {
+        var (vm, pins) = Make();
+        // Pin an individual resource under "sub-a / rg-shared"
+        await pins.PinResourceAsync(
+            new ArmResource("/id/app1", "app1", "Microsoft.Web/sites", "eastus"),
+            "sub-a", "rg-shared", displayOrder: 0);
+        // Also pin the parent RG — resource should be deduped out of the flat list
+        await pins.PinResourceGroupAsync(new ArmResourceGroup("/id/rg", "rg-shared", "eastus"), "sub-a", displayOrder: 0);
+
+        await vm.OnMenuOpenedAsync();
+
+        Assert.Empty(vm.PinnedResources);
+        Assert.Single(vm.PinnedRgItems);
+    }
+
+    [Fact]
+    public async Task PinnedResources_IncludesResourcesWhoseParentRgIsNotPinned()
+    {
+        var (vm, pins) = Make();
+        await pins.PinResourceAsync(
+            new ArmResource("/id/app1", "app1", "Microsoft.Web/sites", "eastus"),
+            "sub-a", "rg-not-pinned", displayOrder: 0);
+        // Pin a different RG — should not affect the flat resource
+        await pins.PinResourceGroupAsync(new ArmResourceGroup("/id/rg2", "rg-other", "eastus"), "sub-a", displayOrder: 0);
+
+        await vm.OnMenuOpenedAsync();
+
+        Assert.Single(vm.PinnedResources);
+    }
+
+    [Fact]
+    public async Task PinnedRgItems_DisplayLabel_HasSubSuffix_WhenNamesCollide()
+    {
+        var (vm, pins) = Make();
+        await pins.PinResourceGroupAsync(new ArmResourceGroup("/id/1", "shared-rg", "eastus"), "sub-aaaa1111", displayOrder: 0);
+        await pins.PinResourceGroupAsync(new ArmResourceGroup("/id/2", "shared-rg", "eastus"), "sub-bbbb2222", displayOrder: 1);
+
+        await vm.OnMenuOpenedAsync();
+
+        Assert.Equal(2, vm.PinnedRgItems.Count);
+        Assert.All(vm.PinnedRgItems, item => Assert.StartsWith("shared-rg · ", item.DisplayLabel));
+        // Each shows a distinct subscription prefix
+        Assert.NotEqual(vm.PinnedRgItems[0].DisplayLabel, vm.PinnedRgItems[1].DisplayLabel);
+    }
+
+    [Fact]
+    public async Task PinnedRgItems_DisplayLabel_NoSuffix_WhenNamesAreUnique()
+    {
+        var (vm, pins) = Make();
+        await pins.PinResourceGroupAsync(new ArmResourceGroup("/id/1", "rg-unique", "eastus"), "sub-a", displayOrder: 0);
+
+        await vm.OnMenuOpenedAsync();
+
+        Assert.Equal("rg-unique", vm.PinnedRgItems[0].DisplayLabel);
+    }
+
+    [Fact]
     public void QuitCommand_InvokesQuitAction()
     {
         var auth = new AuthViewModel(new FakeAzCliService());
         var pins = new FakePinService();
         var quitCalled = false;
-        var vm = new TrayMenuViewModel(auth, pins, quit: () => quitCalled = true, openMainWindow: static () => { });
+        var vm = new TrayMenuViewModel(auth, pins, new FakeArmService(), new FakePermissionsService(), quit: () => quitCalled = true, openMainWindow: static () => { });
 
         vm.QuitCommand.Execute(null);
 
@@ -111,7 +172,7 @@ public class TrayMenuViewModelTests
         var auth = new AuthViewModel(new FakeAzCliService());
         var pins = new FakePinService();
         var openCalled = false;
-        var vm = new TrayMenuViewModel(auth, pins, quit: static () => { }, openMainWindow: () => openCalled = true);
+        var vm = new TrayMenuViewModel(auth, pins, new FakeArmService(), new FakePermissionsService(), quit: static () => { }, openMainWindow: () => openCalled = true);
 
         vm.OpenMainWindowCommand.Execute(null);
 

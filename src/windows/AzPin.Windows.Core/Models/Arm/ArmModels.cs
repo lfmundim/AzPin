@@ -33,3 +33,21 @@ public record ArmSiteProperties(
 public record ArmSiteResponse(
     [property: JsonPropertyName("properties")] ArmSiteProperties? Properties
 );
+
+public record ArmResourceStateProperties(
+    [property: JsonPropertyName("state")] string? State,
+    [property: JsonPropertyName("runningStatus")] string? RunningStatus
+);
+
+public record ArmResourceStateResponse(
+    [property: JsonPropertyName("properties")] ArmResourceStateProperties? Properties
+);
+
+public record ArmPermissionsEntry(
+    [property: JsonPropertyName("actions")] List<string> Actions,
+    [property: JsonPropertyName("notActions")] List<string> NotActions
+);
+
+public record ArmPermissionsResponse(
+    [property: JsonPropertyName("value")] List<ArmPermissionsEntry> Value
+);

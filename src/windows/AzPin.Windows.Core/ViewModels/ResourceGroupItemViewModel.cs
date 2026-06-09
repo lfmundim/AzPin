@@ -29,6 +29,9 @@ public partial class ResourceGroupItemViewModel : ObservableObject
     [ObservableProperty]
     public partial string? ResourceError { get; set; }
 
+    [ObservableProperty]
+    public partial bool IsRgPinned { get; set; }
+
     public ResourceGroupItemViewModel(
         ArmResourceGroup rg,
         string subscriptionId,
@@ -41,6 +44,26 @@ public partial class ResourceGroupItemViewModel : ObservableObject
         TenantId = tenantId;
         _arm = arm;
         _pinService = pinService;
+    }
+
+    public async Task InitializeAsync(CancellationToken ct = default)
+    {
+        IsRgPinned = await _pinService.IsResourceGroupPinnedAsync(SubscriptionId, ResourceGroup.Name, ct);
+    }
+
+    [RelayCommand]
+    public async Task ToggleRgPinAsync(CancellationToken ct = default)
+    {
+        if (IsRgPinned)
+        {
+            await _pinService.UnpinResourceGroupAsync(SubscriptionId, ResourceGroup.Name, ct);
+            IsRgPinned = false;
+        }
+        else
+        {
+            await _pinService.PinResourceGroupAsync(ResourceGroup, SubscriptionId, 0, ct);
+            IsRgPinned = true;
+        }
     }
 
     [RelayCommand]

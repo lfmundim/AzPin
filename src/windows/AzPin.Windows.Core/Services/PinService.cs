@@ -7,6 +7,7 @@ namespace AzPin.Windows.Services;
 
 public class PinService(IDbContextFactory<AzPinDbContext> dbFactory) : IPinService
 {
+    public event Action? PinsChanged;
     public async Task<bool> IsResourcePinnedAsync(string resourceId, CancellationToken ct = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
@@ -30,6 +31,7 @@ public class PinService(IDbContextFactory<AzPinDbContext> dbFactory) : IPinServi
             DisplayOrder = displayOrder
         });
         await db.SaveChangesAsync(ct);
+        PinsChanged?.Invoke();
     }
 
     public async Task UnpinResourceAsync(string resourceId, CancellationToken ct = default)
@@ -40,6 +42,7 @@ public class PinService(IDbContextFactory<AzPinDbContext> dbFactory) : IPinServi
         {
             db.PinnedResources.Remove(entity);
             await db.SaveChangesAsync(ct);
+            PinsChanged?.Invoke();
         }
     }
 
@@ -65,6 +68,7 @@ public class PinService(IDbContextFactory<AzPinDbContext> dbFactory) : IPinServi
             DisplayOrder = displayOrder
         });
         await db.SaveChangesAsync(ct);
+        PinsChanged?.Invoke();
     }
 
     public async Task UnpinResourceGroupAsync(string subscriptionId, string rgName, CancellationToken ct = default)
@@ -76,6 +80,7 @@ public class PinService(IDbContextFactory<AzPinDbContext> dbFactory) : IPinServi
         {
             db.PinnedResourceGroups.Remove(entity);
             await db.SaveChangesAsync(ct);
+            PinsChanged?.Invoke();
         }
     }
 
@@ -89,5 +94,17 @@ public class PinService(IDbContextFactory<AzPinDbContext> dbFactory) : IPinServi
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
         return await db.PinnedResourceGroups.OrderBy(rg => rg.DisplayOrder).ToListAsync(ct);
+    }
+
+    public async Task UpdateDisplayOrderAsync(IEnumerable<(int LocalId, int DisplayOrder)> updates, CancellationToken ct = default)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync(ct);
+        foreach (var (localId, displayOrder) in updates)
+        {
+            var entity = await db.PinnedResourceGroups.FindAsync([localId], ct);
+            if (entity is not null)
+                entity.DisplayOrder = displayOrder;
+        }
+        await db.SaveChangesAsync(ct);
     }
 }
