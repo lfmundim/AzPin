@@ -191,7 +191,7 @@ jobs:
             --hide-extension "AzPin.app" \
             --app-drop-link 450 185 \
             "AzPin-${{ steps.version.outputs.version }}.dmg" \
-            "build/export/"
+            "build/export/AzPin.app"
 
       - name: Create GitHub release
         env:
