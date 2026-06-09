@@ -16,7 +16,6 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
         Title = "AzPin";
-        SystemBackdrop = new MicaBackdrop();
         AppWindow.IsShownInSwitchers = false;
 
         AppWindow.Closing += (_, args) =>
