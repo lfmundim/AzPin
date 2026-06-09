@@ -6,21 +6,7 @@ Planned features, ordered by likely release. Nothing here is committed to a time
 
 ## v1.0 — Required Before Release
 
-### Auto-Update (Sparkle)
-
-Integrate [Sparkle](https://sparkle-project.org) (MIT) for in-app update checks and silent background downloads.
-
-**Why:** Direct-distribution app with no App Store delivery mechanism. Users need a reliable way to receive updates without manually checking GitHub.
-
-**How it works:**
-- Add Sparkle via SPM.
-- Wire `SPUStandardUpdaterController` into `AppDelegate` / app entry point.
-- Set `SUFeedURL` in `Info.plist` pointing at appcast hosted on GitHub Releases.
-- Generate EdDSA signing key once with Sparkle's `generate_keys` tool; store private key in secrets, embed public key in app bundle.
-- Release workflow: export `.app` → zip → run `generate_appcast` → push appcast + zip asset to GitHub Release. GitVersioning provides the version string.
-- Update check triggers on launch (with user-configurable interval); Sparkle handles download, verification, and relaunch.
-
-**Scope:** No custom update UI needed — Sparkle's standard sheet is sufficient for v1.0.
+_(No blocking items currently. Sparkle / auto-update moved to unversioned consideration below. Waiting on WinGet for v1.0 release)_
 
 ---
 
@@ -57,23 +43,7 @@ One-click copy of the primary endpoint for runnable resources directly from the 
 
 ---
 
-## v1.2 — Background Polling (Periodic Refresh)
-
-Periodically re-fetch running state for all pinned runnable resources while the app is running, without the user opening the menu.
-
-**Why:** Running state shown in the menubar can go stale if a resource is stopped externally (deployment, auto-scaling, another user). Background polling keeps the indicators accurate.
-
-**How it works:**
-- Settings toggle: "Auto-refresh running state" — off by default, configurable interval (1 min / 5 min / 15 min).
-- Uses `DispatchSource.makeTimerSource` (or a Swift `AsyncStream`-based ticker) — no `Timer`.
-- On each tick, fan out `fetchAppState` calls in parallel via `TaskGroup` for all pinned runnable resources.
-- Updates `MenuBarViewModel.appStates` on `@MainActor`; no UI flicker if state is unchanged.
-- Polling pauses when the machine is sleeping (`NSWorkspace.willSleepNotification`) and resumes on wake.
-- Does not re-fetch permissions or resource lists — only running state.
-
----
-
-## v1.3 — Multi-Subscription Pinning
+## v1.2 — Multi-Subscription Pinning
 
 Pin resource groups from different subscriptions simultaneously without switching the active `az` subscription context.
 
@@ -93,18 +63,6 @@ var subscriptionDisplayName: String  // resolved once at pin time, stored
 
 ---
 
-## v1.4 — Windows Version
-
-Native WinUI 3 app with feature parity. Task list in `src/windows/tasks/`.
-
-### Auto-Update (Windows)
-
-Use **MSIX + AppInstaller** for update delivery — OS-native, zero extra dependencies, hosts `.appinstaller` file on GitHub Releases same as macOS appcast.
-
-**Velopack note:** [Velopack](https://velopack.io) (MIT) is a cross-platform alternative that would unify macOS + Windows release scripting under one tool. Currently sticking with Sparkle (macOS) + MSIX AppInstaller (Windows) as the more mature path. Revisit Velopack before Windows release work begins — if it has matured significantly, switching both platforms to Velopack may be worth the migration.
-
----
-
 ## v2 — Multi-Tenant / Multi-Environment
 
 Support multiple Azure tenants (e.g. "Work" and "Personal") each with their own pinned resource groups, selectable from the menubar.
@@ -121,6 +79,19 @@ Support multiple Azure tenants (e.g. "Work" and "Personal") each with their own 
 
 ---
 
-## v0.3 — Next Up
+## Unversioned Considerations
 
-- **Copy resource ID**: right-click on a resource → "Copy Resource ID" copies the ARM ID to clipboard.
+### Auto-Update (macOS — Sparkle)
+
+[Sparkle](https://sparkle-project.org) (MIT) provides in-app update checks and silent background downloads for direct-distribution macOS apps.
+
+Users can already check for updates manually via the Check for Updates option in the app. Sparkle would add background/scheduled checks and in-app download + relaunch.
+
+**Consider adding if:** manual update checks prove insufficient (e.g. users miss releases frequently, or Homebrew distribution is dropped).
+
+**How it would work:**
+- Add Sparkle via SPM.
+- Wire `SPUStandardUpdaterController` into the app entry point.
+- Set `SUFeedURL` in `Info.plist` pointing at an appcast hosted on GitHub Releases.
+- Generate EdDSA signing key once; store private key in secrets, embed public key in app bundle.
+- Release workflow: export `.app` → zip → run `generate_appcast` → push appcast + zip asset to GitHub Release.

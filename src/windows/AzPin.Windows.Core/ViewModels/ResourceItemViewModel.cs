@@ -14,6 +14,7 @@ public partial class ResourceItemViewModel : ObservableObject
     public string SubscriptionId { get; }
     public string ResourceGroupName { get; }
 
+    public string ResourceId => Resource.Id;
     public string GlyphCode => ResourceTypeMapper.GlyphFor(Resource.Type);
     public string Name => Resource.Name;
     public string Type => Resource.Type;

@@ -14,22 +14,22 @@ No Azure SDK. No App Store. No sandbox. Requires macOS 26 Tahoe.
 
 ## Prerequisites
 
-- **macOS 26 Tahoe** or later
-- **Azure CLI** installed ([aka.ms/installazureclimacos](https://aka.ms/installazureclimacos))
+- **macOS 26 Tahoe** or later | **Windows 11** or later
+- **[Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)** installed
 - Signed in: `az login`
 
 ---
 
 ## Install
 
-### Homebrew (recommended)
+### macOS - Homebrew (recommended)
 
 ```bash
 brew tap lfmundim/tap
 brew install --cask azpin
 ```
 
-### DMG (manual)
+### macOS - DMG (manual)
 
 Download the latest `.dmg` from [Releases](../../releases), drag `AzPin.app` to `/Applications`.
 
@@ -46,14 +46,14 @@ No separate Windows App SDK runtime installer is required — the bundle is self
 **Pin an entire resource group** — all current and future resources in that RG appear in the menubar on every open. New resources show up automatically.
 
 ![Resource Group pinning](/docs/Pin_RG.png)
+![Resource Group pinning on Windows](/docs/Pin_RG_Win.png)
 
 **Pin individual resources** — only those specific resources appear, even if their parent RG is not pinned.
 
 ![Individual Resource pinning](/docs/Pin_Resource.png)
+![Individual Resource pinning on Windows](/docs/Pin_Resource_Win.png)
 
-Both modes coexist. If a resource is individually pinned and its parent RG is also pinned, it appears once (deduplication by resource ID). Pinned RGs are reorderable by drag in the main window.
-
-![Resource Group reordering](/docs/Pin_Reorder.png)
+Both modes coexist. If a resource is individually pinned and its parent RG is also pinned, it appears once (deduplication by resource ID). 
 
 ---
 
@@ -68,6 +68,7 @@ Click the `☁` icon in the menubar to see:
 5. Quick access to open the main window or quit
 
 ![Menu Bar, pinned RG](/docs/MenuBar_RG.png)
+![Tray Icon, pinned RG](/docs/TrayIcon_RG.png)
 
 ---
 

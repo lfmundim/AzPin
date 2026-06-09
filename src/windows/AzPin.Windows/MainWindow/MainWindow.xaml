@@ -18,7 +18,6 @@
             OpenPaneLength="220"
             SelectionChanged="OnNavSelectionChanged">
             <NavigationView.MenuItems>
-                <NavigationViewItem Icon="AllApps" Content="Resources" Tag="Browse" />
             </NavigationView.MenuItems>
 
             <!-- Pinned RG sidebar -->
@@ -68,6 +67,7 @@
             </NavigationView.PaneCustomContent>
 
             <NavigationView.FooterMenuItems>
+                <NavigationViewItem Icon="AllApps" Content="Resources" Tag="Browse" />
                 <NavigationViewItem Icon="Setting" Content="Settings" Tag="Settings" />
             </NavigationView.FooterMenuItems>
             <Frame x:Name="ContentFrame" />

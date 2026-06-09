@@ -53,6 +53,19 @@ struct ResourceRow: View {
         .onAppear {
             isPinned = checkIfPinned()
         }
+        .contextMenu {
+            Button {
+                NSWorkspace.shared.open(PortalURL.resource(id: resource.id))
+            } label: {
+                Label("Open in Portal", systemImage: "arrow.up.forward")
+            }
+            Button {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(resource.id, forType: .string)
+            } label: {
+                Label("Copy Resource ID", systemImage: "doc.on.doc")
+            }
+        }
     }
 
     private func pinResource() {

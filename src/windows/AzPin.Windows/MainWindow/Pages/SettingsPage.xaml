@@ -176,6 +176,92 @@
                         </Grid>
                     </Border>
 
+                    <TextBlock Text="Updates" Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="16,0">
+                        <StackPanel>
+                            <Grid Padding="0,12" ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Current Version" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{x:Bind ViewModel.CurrentVersion}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           VerticalAlignment="Center"
+                                           FontFamily="Consolas" FontSize="12" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- idle / up-to-date: show Check button -->
+                    <Button Content="Check for Updates"
+                            Command="{x:Bind ViewModel.CheckForUpdatesCommand}"
+                            Visibility="{x:Bind ViewModel.IsUpdateChecking, Mode=OneWay, Converter={StaticResource NotBoolToVis}}" />
+
+                    <!-- checking: spinner -->
+                    <StackPanel Orientation="Horizontal" Spacing="8"
+                                Visibility="{x:Bind ViewModel.IsUpdateChecking, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                        <ProgressRing IsActive="True" Width="20" Height="20" />
+                        <TextBlock Text="Checking for updates…" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+
+                    <!-- up to date -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="16,12"
+                            Visibility="{x:Bind ViewModel.IsUpdateUpToDate, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                        <TextBlock>
+                            <Run Text="&#xE73E; " FontFamily="Segoe Fluent Icons" Foreground="Green" />
+                            <Run Text="{x:Bind ViewModel.LatestVersion, Mode=OneWay}" />
+                            <Run Text=" is the latest version." />
+                        </TextBlock>
+                    </Border>
+
+                    <!-- update available -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="16,12"
+                            Visibility="{x:Bind ViewModel.IsUpdateAvailable, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Spacing="8">
+                            <TextBlock FontWeight="SemiBold">
+                                <Run Text="&#xE118; " FontFamily="Segoe Fluent Icons" />
+                                <Run Text="v" /><Run Text="{x:Bind ViewModel.LatestVersion, Mode=OneWay}" />
+                                <Run Text=" is available" />
+                            </TextBlock>
+                            <TextBlock Text="Run in a terminal to update:" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <Border Background="{ThemeResource ControlFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="4" Padding="8,4">
+                                <TextBlock Text="winget upgrade lfmundim.AzPin"
+                                           FontFamily="Consolas" FontSize="12"
+                                           IsTextSelectionEnabled="True" />
+                            </Border>
+                            <HyperlinkButton x:Name="ReleaseLink" NavigateUri="" Padding="0">
+                                <TextBlock Text="View release on GitHub" />
+                            </HyperlinkButton>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- failed -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="16,12"
+                            Visibility="{x:Bind ViewModel.IsUpdateFailed, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Spacing="4">
+                            <TextBlock Foreground="{ThemeResource SystemFillColorCriticalBrush}">
+                                <Run Text="&#xEA39; " FontFamily="Segoe Fluent Icons" />
+                                <Run Text="Update check failed" />
+                            </TextBlock>
+                            <TextBlock Text="{x:Bind ViewModel.UpdateErrorMessage, Mode=OneWay}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       TextWrapping="Wrap" FontSize="12" />
+                        </StackPanel>
+                    </Border>
+
                     <TextBlock Text="Setup" Style="{StaticResource SubtitleTextBlockStyle}" />
                     <Button Content="Re-run Setup"
                             Command="{x:Bind ViewModel.ReRunSetupCommand}" />

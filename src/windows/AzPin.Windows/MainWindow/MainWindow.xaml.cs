@@ -43,7 +43,7 @@ public sealed partial class MainWindow : Window
     public void InitializeContent()
     {
         ContentFrame.Navigate(typeof(BrowsePage));
-        NavView.SelectedItem = NavView.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(i => i.Tag as string == "Browse");
+        NavView.SelectedItem = NavView.FooterMenuItems.OfType<NavigationViewItem>().FirstOrDefault(i => i.Tag as string == "Browse");
 
         _vm = App.Services.GetRequiredService<MainWindowViewModel>();
         PinnedRgList.ItemsSource = _vm.PinnedRgs;
@@ -78,6 +78,13 @@ public sealed partial class MainWindow : Window
 
     public async Task<bool> ShowOnboardingAsync(OnboardingViewModel vm)
     {
+        if (Content.XamlRoot is null)
+        {
+            var tcs = new TaskCompletionSource();
+            ((FrameworkElement)Content).Loaded += (_, _) => tcs.TrySetResult();
+            await tcs.Task;
+        }
+
         var page = new OnboardingPage(vm);
         var dialog = new ContentDialog
         {

@@ -77,4 +77,15 @@ internal sealed class FakePinService : IPinService
         }
         return Task.CompletedTask;
     }
+
+    public Task UpdateResourceDisplayOrderAsync(IEnumerable<(int LocalId, int DisplayOrder)> updates, CancellationToken ct = default)
+    {
+        foreach (var (localId, displayOrder) in updates)
+        {
+            var r = _resources.FirstOrDefault(r => r.LocalId == localId);
+            if (r is not null)
+                r.DisplayOrder = displayOrder;
+        }
+        return Task.CompletedTask;
+    }
 }

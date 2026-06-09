@@ -14,7 +14,7 @@ public class TrayMenuViewModelTests
         var pins = new FakePinService();
         var arm = new FakeArmService();
         var perms = new FakePermissionsService();
-        var vm = new TrayMenuViewModel(auth, pins, arm, perms, quit: static () => { }, openMainWindow: static () => { });
+        var vm = new TrayMenuViewModel(auth, pins, arm, perms, new FakeUpdateCheckService(), quit: static () => { }, openMainWindow: static () => { });
         return (vm, pins);
     }
 
@@ -53,7 +53,7 @@ public class TrayMenuViewModelTests
         var auth = new AuthViewModel(new FakeAzCliService());
         var pins = new FakePinService { DelayBeforeGet = gate.Task };
         var perms = new FakePermissionsService();
-        var vm = new TrayMenuViewModel(auth, pins, new FakeArmService(), perms, quit: static () => { }, openMainWindow: static () => { });
+        var vm = new TrayMenuViewModel(auth, pins, new FakeArmService(), perms, new FakeUpdateCheckService(), quit: static () => { }, openMainWindow: static () => { });
 
         var task = vm.OnMenuOpenedAsync();
         await Task.Delay(20);
@@ -159,7 +159,7 @@ public class TrayMenuViewModelTests
         var auth = new AuthViewModel(new FakeAzCliService());
         var pins = new FakePinService();
         var quitCalled = false;
-        var vm = new TrayMenuViewModel(auth, pins, new FakeArmService(), new FakePermissionsService(), quit: () => quitCalled = true, openMainWindow: static () => { });
+        var vm = new TrayMenuViewModel(auth, pins, new FakeArmService(), new FakePermissionsService(), new FakeUpdateCheckService(), quit: () => quitCalled = true, openMainWindow: static () => { });
 
         vm.QuitCommand.Execute(null);
 
@@ -172,7 +172,7 @@ public class TrayMenuViewModelTests
         var auth = new AuthViewModel(new FakeAzCliService());
         var pins = new FakePinService();
         var openCalled = false;
-        var vm = new TrayMenuViewModel(auth, pins, new FakeArmService(), new FakePermissionsService(), quit: static () => { }, openMainWindow: () => openCalled = true);
+        var vm = new TrayMenuViewModel(auth, pins, new FakeArmService(), new FakePermissionsService(), new FakeUpdateCheckService(), quit: static () => { }, openMainWindow: () => openCalled = true);
 
         vm.OpenMainWindowCommand.Execute(null);
 
