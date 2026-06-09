@@ -15,7 +15,6 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
         Title = "AzPin";
-        ExtendsContentIntoTitleBar = true;
         SystemBackdrop = new MicaBackdrop();
         AppWindow.IsShownInSwitchers = false;
 
@@ -98,10 +97,9 @@ public sealed partial class MainWindow : Window
 
     private void OnNavSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
-        if (args.IsSettingsSelected)
-            return;
-
-        if (args.SelectedItem is NavigationViewItem { Tag: "Browse" })
+        if (args.SelectedItem is NavigationViewItem { Tag: "Settings" })
+            ContentFrame.Navigate(typeof(SettingsPage));
+        else if (args.SelectedItem is NavigationViewItem { Tag: "Browse" })
             ContentFrame.Navigate(typeof(BrowsePage));
     }
 }

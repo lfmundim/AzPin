@@ -129,8 +129,17 @@ public partial class BrowseViewModel : ObservableObject
             // Guard: user may have changed selection while loading
             if (SelectedSubscription?.Id != sub.Id) return;
 
-            foreach (var rg in rgs.OrderBy(r => r.Name, StringComparer.OrdinalIgnoreCase))
-                ResourceGroups.Add(new ResourceGroupItemViewModel(rg, sub.Id, sub.TenantId, _arm, _pinService));
+            var rgVms = await Task.WhenAll(
+                rgs.OrderBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
+                   .Select(async rg =>
+                   {
+                       var vm = new ResourceGroupItemViewModel(rg, sub.Id, sub.TenantId, _arm, _pinService);
+                       await vm.InitializeAsync(ct);
+                       return vm;
+                   }));
+            if (SelectedSubscription?.Id != sub.Id) return;
+            foreach (var vm in rgVms)
+                ResourceGroups.Add(vm);
         }
         catch (Exception ex)
         {

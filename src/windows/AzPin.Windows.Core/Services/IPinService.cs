@@ -5,6 +5,7 @@ namespace AzPin.Windows.Services;
 
 public interface IPinService
 {
+    event Action? PinsChanged;
     Task<bool> IsResourcePinnedAsync(string resourceId, CancellationToken ct = default);
     Task PinResourceAsync(ArmResource resource, string subscriptionId, string resourceGroupName, int displayOrder, CancellationToken ct = default);
     Task UnpinResourceAsync(string resourceId, CancellationToken ct = default);

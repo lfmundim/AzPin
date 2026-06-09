@@ -27,6 +27,7 @@ public partial class TrayMenuViewModel : ObservableObject
         _pinService = pinService;
         _quit = quit;
         _openMainWindow = openMainWindow;
+        pinService.PinsChanged += () => _ = LoadPinnedResourcesAsync();
     }
 
     [RelayCommand]

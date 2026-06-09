@@ -32,6 +32,11 @@ All notable changes to AzPin are documented in this file.
 - Fixed: right-click context menu never appeared — switched from `TrayPopup` (broken in H.NotifyIcon WinUI v2) to `ContextFlyout` + `MenuFlyout`; menu rebuilds reactively on every `PropertyChanged` event.
 - Fixed: `DbUpdateException` on token fetch — `TokenCache` was a Singleton holding a scoped `DbContext` forever; switched to `IDbContextFactory<AzPinDbContext>` so each call opens and disposes its own context.
 - Fixed: `SQLite Error 19 NOT NULL constraint failed: CachedTokens.TenantId` — `az account get-access-token` on some environments omits `tenantId`; `TokenCache` now falls back to `string.Empty` instead of passing null to SQLite.
+- Fixed: pinning a resource did not update the tray icon list until next app restart — `IPinService` now raises `PinsChanged` after every pin/unpin; `TrayMenuViewModel` subscribes and reloads the pinned list immediately.
+- Added: pin button on resource group header rows; clicking pins/unpins the entire RG and reflects the pinned state in the tray.
+- Fixed: BrowsePage toolbar (subscription picker + search box) was overlapped by system caption buttons — removed `ExtendsContentIntoTitleBar` so the window uses a standard title bar.
+- Fixed: Settings navigation item did nothing — added `SettingsPage` and wired up the nav handler.
+- Fixed: tray icon showed the default Windows app icon — regenerated `tray.ico` from the app's branded PNG assets (16×16, 32×32, 256×256).
 
 ### Menubar
 
