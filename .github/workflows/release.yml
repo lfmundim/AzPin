@@ -207,6 +207,28 @@ jobs:
             $PRERELEASE_FLAG \
             "AzPin-${{ steps.version.outputs.version }}.dmg"
 
+      - name: Compute DMG SHA256
+        id: sha
+        run: |
+          echo "sha256=$(shasum -a 256 "AzPin-${{ steps.version.outputs.version }}.dmg" | awk '{print $1}')" >> $GITHUB_OUTPUT
+
+      - name: Update Homebrew cask
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/lfmundim/homebrew-tap.git" tap
+          sed -i '' \
+            -e "s/version \".*\"/version \"${{ steps.version.outputs.version }}\"/" \
+            -e "s/sha256 \".*\"/sha256 \"${{ steps.sha.outputs.sha256 }}\"/" \
+            tap/Casks/azpin.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/azpin.rb
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: bump azpin to ${{ steps.version.outputs.version }}"
+          git push
+
   build-windows:
     needs: detect
     if: needs.detect.outputs.windows == 'true'
