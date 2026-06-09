@@ -24,7 +24,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.*" />
-    <PackageReference Include="H.NotifyIcon.WinUI" Version="1.*" />
+    <PackageReference Include="H.NotifyIcon.WinUI" Version="2.*" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.*" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.*" />
   </ItemGroup>
