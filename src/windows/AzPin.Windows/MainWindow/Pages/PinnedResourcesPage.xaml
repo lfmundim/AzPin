@@ -29,7 +29,9 @@
                   Padding="8">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="vm:PinnedResourceItemViewModel">
-                    <Grid Padding="4,6" ColumnSpacing="8">
+                    <Grid Padding="4,6" ColumnSpacing="8"
+                          Tag="{x:Bind ResourceId}"
+                          RightTapped="OnResourceRightTapped">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />

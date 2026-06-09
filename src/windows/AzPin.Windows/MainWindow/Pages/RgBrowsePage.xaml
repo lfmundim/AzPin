@@ -42,7 +42,9 @@
             <ItemsRepeater ItemsSource="{x:Bind ViewModel.Resources, Mode=OneWay}" Margin="8,4">
                 <ItemsRepeater.ItemTemplate>
                     <DataTemplate x:DataType="vm:ResourceItemViewModel">
-                        <Grid Padding="4,6" ColumnSpacing="8">
+                        <Grid Padding="4,6" ColumnSpacing="8"
+                              Tag="{x:Bind ResourceId}"
+                              RightTapped="OnResourceRightTapped">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />

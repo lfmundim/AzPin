@@ -30,6 +30,12 @@ struct PinnedResourceRow: View {
             } label: {
                 Label("Open in Portal", systemImage: "arrow.up.forward")
             }
+            Button {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(resource.id, forType: .string)
+            } label: {
+                Label("Copy Resource ID", systemImage: "doc.on.doc")
+            }
             Divider()
             Button(role: .destructive) {
                 modelContext.delete(resource)
