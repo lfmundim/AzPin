@@ -78,6 +78,13 @@ public sealed partial class MainWindow : Window
 
     public async Task<bool> ShowOnboardingAsync(OnboardingViewModel vm)
     {
+        if (Content.XamlRoot is null)
+        {
+            var tcs = new TaskCompletionSource();
+            Content.Loaded += (_, _) => tcs.TrySetResult();
+            await tcs.Task;
+        }
+
         var page = new OnboardingPage(vm);
         var dialog = new ContentDialog
         {
