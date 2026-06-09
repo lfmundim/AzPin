@@ -20,7 +20,7 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
-        UnhandledException += (_, e) => LogAndExit(e.Exception, ref e.Handled);
+        UnhandledException += (_, e) => { e.Handled = true; LogAndExit(e.Exception); };
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             LogAndExit(e.ExceptionObject as Exception ?? new Exception(e.ExceptionObject?.ToString()));
         TaskScheduler.UnobservedTaskException += (_, e) => { e.SetObserved(); LogAndExit(e.Exception); };
@@ -75,12 +75,6 @@ public partial class App : Application
             }
             Exit();
         }
-    }
-
-    private static void LogAndExit(Exception? ex, ref bool handled)
-    {
-        handled = true;
-        LogAndExit(ex);
     }
 
     private static void LogAndExit(Exception? ex)
