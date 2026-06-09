@@ -6,7 +6,7 @@
 
 AzPin is a native macOS menubar app that reads your existing `az` CLI session and gives you fast, pinnable access to Azure resources. Open the menubar, see your pinned resource groups and their live resources, click to open in the portal, or start/stop/restart runnable resources without leaving the desktop.
 
-There is also an in-progress WinUI 3 Windows port under `src/windows/`. Windows builds are currently distributed as pre-release zip bundles from GitHub Releases rather than an installer.
+There is also a WinUI 3 Windows port under `src/windows/`, distributed as a self-contained zip from GitHub Releases.
 
 No Azure SDK. No App Store. No sandbox. Requires macOS 26 Tahoe.
 
@@ -33,22 +33,11 @@ brew install --cask azpin
 
 Download the latest `.dmg` from [Releases](../../releases), drag `AzPin.app` to `/Applications`.
 
-### Windows Preview (manual)
+### Windows (manual)
 
-Download the latest Windows pre-release zip from [Releases](../../releases), extract it on a Windows 11 VM, and run `AzPin.Windows.exe`.
+Download the latest `AzPin-Windows-win-x64-*.zip` from [Releases](../../releases), extract, and run `AzPin.Windows.exe`.
 
-The Windows release workflow publishes a self-contained unpackaged bundle, so no separate Windows App SDK runtime installer should be required for that artifact.
-
----
-
-## Running the Unsigned App
-
-Until the first signed release, pre-built DMGs are **unsigned and unnotarized**. To bypass Gatekeeper:
-
-1. Right-click (or Control-click) `AzPin.app` → **Open**.
-2. Click **Open** on the warning dialog.
-
-You only need to do this once.
+No separate Windows App SDK runtime installer is required — the bundle is self-contained.
 
 ---
 
@@ -68,7 +57,7 @@ Both modes coexist. If a resource is individually pinned and its parent RG is al
 
 ---
 
-## Menubar
+## MacOS Menubar / Windows TaskBar
 
 Click the `☁` icon in the menubar to see:
 
@@ -96,6 +85,8 @@ Open via **Open AzPin...** in the menubar or `⌘Space → AzPin`.
 
 ## Build from Source
 
+### macOS
+
 Requires Xcode 26+ and the Xcode command-line tools.
 
 ```bash
@@ -108,6 +99,27 @@ xcodebuild -scheme AzPin -configuration Debug test | xcbeautify
 # Release archive
 xcodebuild -scheme AzPin -configuration Release \
   -archivePath build/AzPin.xcarchive archive | xcbeautify
+```
+
+### Windows
+
+Requires .NET 10 SDK and the Windows App SDK workload.
+
+```powershell
+# Restore
+dotnet restore src/windows/AzPin.Windows/AzPin.Windows.csproj -p:Platform=x64
+
+# Debug build
+dotnet build src/windows/AzPin.Windows/AzPin.Windows.csproj -c Debug -p:Platform=x64
+
+# Run tests
+dotnet test src/windows/AzPin.Windows.sln
+
+# Self-contained release bundle
+dotnet publish src/windows/AzPin.Windows/AzPin.Windows.csproj `
+  -c Release -r win-x64 -p:Platform=x64 `
+  -p:WindowsAppSDKSelfContained=true --self-contained true `
+  -o build/publish/win-x64
 ```
 
 ---

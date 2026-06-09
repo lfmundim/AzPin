@@ -191,7 +191,7 @@ jobs:
             --hide-extension "AzPin.app" \
             --app-drop-link 450 185 \
             "AzPin-${{ steps.version.outputs.version }}.dmg" \
-            "build/export/"
+            "build/export/AzPin.app"
 
       - name: Create GitHub release
         env:
@@ -206,6 +206,28 @@ jobs:
             --generate-notes \
             $PRERELEASE_FLAG \
             "AzPin-${{ steps.version.outputs.version }}.dmg"
+
+      - name: Compute DMG SHA256
+        id: sha
+        run: |
+          echo "sha256=$(shasum -a 256 "AzPin-${{ steps.version.outputs.version }}.dmg" | awk '{print $1}')" >> $GITHUB_OUTPUT
+
+      - name: Update Homebrew cask
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/lfmundim/homebrew-tap.git" tap
+          sed -i '' \
+            -e "s/version \".*\"/version \"${{ steps.version.outputs.version }}\"/" \
+            -e "s/sha256 \".*\"/sha256 \"${{ steps.sha.outputs.sha256 }}\"/" \
+            tap/Casks/azpin.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/azpin.rb
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: bump azpin to ${{ steps.version.outputs.version }}"
+          git push
 
   build-windows:
     needs: detect
@@ -231,6 +253,7 @@ jobs:
         shell: pwsh
         run: |
           dotnet tool install -g nbgv
+          dotnet tool install -g wix
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\\.dotnet\\tools"
 
       - name: Restore
@@ -280,17 +303,38 @@ jobs:
             -o "$publishDir" `
             -bl:build\publish.binlog
 
+      - name: Harvest publish directory
+        shell: pwsh
+        run: |
+          wix harvest dir build\publish\win-x64 `
+            -cg AzPinFiles `
+            -dr INSTALLFOLDER `
+            -o build\AzPinFiles.wxs
+
+      - name: Build MSI installer
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          wix build `
+            src\windows\installer\AzPin.wxs `
+            build\AzPinFiles.wxs `
+            -d Version=$version `
+            -arch x64 `
+            -o "build\AzPin-Setup-x64-$version.msi"
+
       - name: Package Windows artifact
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path build | Out-Null
           Compress-Archive -Path build/publish/win-x64/* -DestinationPath "build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}.zip"
 
-      - name: Upload workflow artifact
+      - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
         with:
           name: AzPin-Windows-win-x64-${{ steps.version.outputs.version }}
-          path: build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}.zip
+          path: |
+            build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}.zip
+            build/AzPin-Setup-x64-${{ steps.version.outputs.version }}.msi
           if-no-files-found: error
 
       - name: Create or update GitHub release
@@ -299,14 +343,16 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $tag = "${{ steps.version.outputs.tag }}"
-          $asset = "build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}.zip"
+          $zip = "build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}.zip"
+          $msi = "build/AzPin-Setup-x64-${{ steps.version.outputs.version }}.msi"
 
           if (gh release view $tag *> $null) {
-            gh release upload $tag $asset --clobber
+            gh release upload $tag $zip $msi --clobber
           } else {
             gh release create $tag `
               --title "AzPin Windows ${{ steps.version.outputs.version }}" `
               --generate-notes `
               --prerelease `
-              $asset
+              $zip `
+              $msi
           }
