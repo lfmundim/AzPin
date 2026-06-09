@@ -1,19 +1,11 @@
 name: Windows CI
 
 on:
-  push:
-    paths:
-      - 'src/windows/**'
-      - '.github/workflows/windows-ci.yml'
-      - '.github/workflows/release-windows.yml'
   pull_request:
     branches:
       - main
-      - 'release/win/v*'
     paths:
       - 'src/windows/**'
-      - '.github/workflows/windows-ci.yml'
-      - '.github/workflows/release-windows.yml'
   workflow_dispatch:
 
 jobs:
