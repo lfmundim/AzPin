@@ -4,42 +4,38 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AzPin.Windows.Services;
 
-public class TokenCache(AzPinDbContext dbContext, IAzCliService azCliService) : ITokenCache
+public class TokenCache(IDbContextFactory<AzPinDbContext> dbFactory, IAzCliService azCliService) : ITokenCache
 {
-    private readonly AzPinDbContext _dbContext = dbContext;
-    private readonly IAzCliService _azCliService = azCliService;
-
     public async Task<string> GetTokenAsync(string subscriptionId, string tenantId, CancellationToken ct = default)
     {
-        var existing = await _dbContext.CachedTokens
+        await using var db = await dbFactory.CreateDbContextAsync(ct);
+
+        var existing = await db.CachedTokens
             .SingleOrDefaultAsync(t => t.SubscriptionId == subscriptionId, ct);
 
         if (existing is not null && existing.ExpiresOn > DateTime.UtcNow.AddMinutes(5))
-        {
             return existing.AccessToken;
-        }
 
-        var token = await _azCliService.GetAccessTokenAsync(subscriptionId, ct);
-        var expiresOnUtc = token.ExpiresOnUtc;
+        var token = await azCliService.GetAccessTokenAsync(subscriptionId, ct);
 
         if (existing is null)
         {
-            _dbContext.CachedTokens.Add(new CachedToken
+            db.CachedTokens.Add(new CachedToken
             {
                 SubscriptionId = subscriptionId,
                 TenantId = token.TenantId,
                 AccessToken = token.AccessToken,
-                ExpiresOn = expiresOnUtc
+                ExpiresOn = token.ExpiresOnUtc
             });
         }
         else
         {
             existing.TenantId = token.TenantId;
             existing.AccessToken = token.AccessToken;
-            existing.ExpiresOn = expiresOnUtc;
+            existing.ExpiresOn = token.ExpiresOnUtc;
         }
 
-        await _dbContext.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(ct);
         return token.AccessToken;
     }
 }
