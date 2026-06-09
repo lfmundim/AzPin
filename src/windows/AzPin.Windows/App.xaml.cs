@@ -6,6 +6,7 @@ using AzPin.Windows.Utilities;
 using AzPin.Windows.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Windows.Graphics;
 using LaunchActivatedEventArgs = Microsoft.UI.Xaml.LaunchActivatedEventArgs;
@@ -45,11 +46,11 @@ public partial class App : Application
             // Activate once so the visual tree (and TaskbarIcon XamlRoot) is live,
             // then immediately hide so the app starts tray-only.
             _mainWindow.AppWindow.IsShownInSwitchers = false;
-            // Resize to 1×1 before Activate so the window never appears full-size at startup.
-            // We must NOT call AppWindow.Hide() — that breaks H.NotifyIcon's popup XamlRoot.
-            _mainWindow.AppWindow.Resize(new SizeInt32(1, 1));
             _mainWindow.Activate();
             _mainWindow.InitializeTrayIcon(Services.GetRequiredService<TrayMenuViewModel>());
+            // Minimize (not Hide) so XamlRoot stays valid for H.NotifyIcon popup.
+            // IsShownInSwitchers=false means no taskbar button and no Alt+Tab entry.
+            (_mainWindow.AppWindow.Presenter as OverlappedPresenter)?.Minimize();
         }
         catch (Exception ex)
         {
@@ -122,6 +123,7 @@ public partial class App : Application
             {
                 mainWindow.AppWindow.Resize(new SizeInt32(960, 640));
                 mainWindow.AppWindow.IsShownInSwitchers = true;
+                (mainWindow.AppWindow.Presenter as OverlappedPresenter)?.Restore();
                 mainWindow.Activate();
             }));
 

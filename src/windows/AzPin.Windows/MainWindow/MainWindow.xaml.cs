@@ -25,8 +25,7 @@ public sealed partial class MainWindow : Window
         {
             args.Cancel = true;
             AppWindow.IsShownInSwitchers = false;
-            // Resize to 1×1 instead of Hide — AppWindow.Hide() breaks H.NotifyIcon popup XamlRoot.
-            AppWindow.Resize(new SizeInt32(1, 1));
+            (AppWindow.Presenter as OverlappedPresenter)?.Minimize();
         };
     }
 
