@@ -8,6 +8,7 @@ on:
       - 'src/macos/**'
       - '.github/workflows/release.yml'
       - '.github/workflows/release-windows.yml'
+  workflow_dispatch:
 
 jobs:
   build-and-release:
