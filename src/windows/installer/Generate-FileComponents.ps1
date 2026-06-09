@@ -7,7 +7,8 @@ $files = Get-ChildItem -Path $PublishDir -Recurse -File
 $idx = 0
 $components = $files | ForEach-Object {
     $id = 'Cmp{0:D5}' -f ($idx++)
-    "      <Component Id=""$id"" Directory=""INSTALLFOLDER""><File Source=""$($_.FullName)"" /></Component>"
+    $fid = 'Fil{0:D5}' -f ($idx - 1)
+    "      <Component Id=""$id"" Directory=""INSTALLFOLDER""><File Id=""$fid"" Source=""$($_.FullName)"" /></Component>"
 }
 
 $content = @"
