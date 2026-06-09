@@ -35,7 +35,7 @@ public sealed partial class RgBrowsePage : Page
         e.Handled = true;
     }
 
-    private static void ShowCopyFlyout(FrameworkElement anchor, Windows.Foundation.Point position, string resourceId)
+    private static void ShowCopyFlyout(FrameworkElement anchor, global::Windows.Foundation.Point position, string resourceId)
     {
         var item = new MenuFlyoutItem { Text = "Copy Resource ID" };
         item.Click += (_, _) =>
