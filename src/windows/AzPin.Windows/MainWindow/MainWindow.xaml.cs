@@ -81,7 +81,7 @@ public sealed partial class MainWindow : Window
         if (Content.XamlRoot is null)
         {
             var tcs = new TaskCompletionSource();
-            Content.Loaded += (_, _) => tcs.TrySetResult();
+            ((FrameworkElement)Content).Loaded += (_, _) => tcs.TrySetResult();
             await tcs.Task;
         }
 
