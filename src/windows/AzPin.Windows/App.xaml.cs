@@ -6,7 +6,6 @@ using AzPin.Windows.Utilities;
 using AzPin.Windows.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Windows.Graphics;
 using LaunchActivatedEventArgs = Microsoft.UI.Xaml.LaunchActivatedEventArgs;
@@ -18,6 +17,7 @@ public partial class App : Application
     public static IServiceProvider Services { get; private set; } = null!;
 
     private MainWindow.MainWindow? _mainWindow;
+    private TrayHostWindow? _trayHostWindow;
 
     public App()
     {
@@ -43,18 +43,17 @@ public partial class App : Application
 
             _mainWindow.InitializeContent();
 
-            // Activate once so the visual tree (and TaskbarIcon XamlRoot) is live,
-            // then immediately hide so the app starts tray-only.
+            // TrayHostWindow is a permanent 1×1 invisible window that hosts the TaskbarIcon.
+            // It is never hidden so H.NotifyIcon's popup XamlRoot always stays valid.
+            _trayHostWindow = new TrayHostWindow();
+            _trayHostWindow.Activate();
+            _trayHostWindow.InitializeTrayIcon(Services.GetRequiredService<TrayMenuViewModel>());
+
+            // MainWindow starts hidden — it is shown when the user clicks "Open AzPin" in the tray.
             _mainWindow.AppWindow.IsShownInSwitchers = false;
-            _mainWindow.Activate();
-            _mainWindow.InitializeTrayIcon(Services.GetRequiredService<TrayMenuViewModel>());
-            // Minimize (not Hide) so XamlRoot stays valid for H.NotifyIcon popup.
-            // IsShownInSwitchers=false means no taskbar button and no Alt+Tab entry.
-            (_mainWindow.AppWindow.Presenter as OverlappedPresenter)?.Minimize();
         }
         catch (Exception ex)
         {
-            // Write crash log first — dialog may fail if XamlRoot is not yet live.
             var logPath = Path.Combine(Path.GetTempPath(), "azpin-crash.log");
             try { File.WriteAllText(logPath, $"{DateTime.Now:O}\n{ex}"); } catch { }
 
@@ -72,10 +71,9 @@ public partial class App : Application
             }
             else
             {
-                // XamlRoot not available (crash before Activate) — use Win32 MessageBox.
                 MessageBox(IntPtr.Zero,
                     $"AzPin failed to start.\n\n{ex.Message}\n\nFull details written to:\n{logPath}",
-                    "AzPin", 0x10 /* MB_ICONERROR */);
+                    "AzPin", 0x10);
             }
             Exit();
         }
@@ -107,8 +105,6 @@ public partial class App : Application
         services.AddSingleton<IShellRunner, ShellRunner>();
         services.AddSingleton<IAzCliService, AzCliService>();
         services.AddHttpClient("arm", c => c.BaseAddress = new Uri("https://management.azure.com"));
-        // Transient: these hold per-operation state (token, HttpClient).  Using Scoped
-        // would create captive dependencies inside Singleton view-models.
         services.AddTransient<ITokenCache, TokenCache>();
         services.AddTransient<IArmService, ArmService>();
         services.AddSingleton<IPinService, PinService>();
@@ -123,7 +119,6 @@ public partial class App : Application
             {
                 mainWindow.AppWindow.Resize(new SizeInt32(960, 640));
                 mainWindow.AppWindow.IsShownInSwitchers = true;
-                (mainWindow.AppWindow.Presenter as OverlappedPresenter)?.Restore();
                 mainWindow.Activate();
             }));
 
