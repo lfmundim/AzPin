@@ -1,10 +1,10 @@
 using System.Collections.ObjectModel;
 using System.Reflection;
 using AzPin.Windows.Services;
+using AzPin.Windows.Utilities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
-using Windows.Storage;
 
 namespace AzPin.Windows.ViewModels;
 
@@ -108,7 +108,7 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     public void ReRunSetup()
     {
-        ApplicationData.Current.LocalSettings.Values["HasCompletedOnboarding"] = false;
+        AppSettings.SetOnboardingCompleted(false);
         ReRunSetupRequested?.Invoke();
     }
 

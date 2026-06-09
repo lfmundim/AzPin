@@ -9,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Windows.Graphics;
-using Windows.Storage;
 using LaunchActivatedEventArgs = Microsoft.UI.Xaml.LaunchActivatedEventArgs;
 
 namespace AzPin.Windows;
@@ -59,8 +58,7 @@ public partial class App : Application
 
             _mainWindow.InitializeTrayIcon(Services.GetRequiredService<TrayMenuViewModel>());
 
-            bool completed = ApplicationData.Current.LocalSettings.Values
-                .TryGetValue("HasCompletedOnboarding", out var val) && val is true;
+            bool completed = AppSettings.IsOnboardingCompleted();
 
             if (!completed)
             {

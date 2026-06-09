@@ -1,7 +1,7 @@
 using AzPin.Windows.Services;
+using AzPin.Windows.Utilities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Windows.Storage;
 
 namespace AzPin.Windows.ViewModels;
 
@@ -88,6 +88,6 @@ public partial class OnboardingViewModel : ObservableObject
     public void CompleteOnboarding()
     {
         StopPolling();
-        ApplicationData.Current.LocalSettings.Values["HasCompletedOnboarding"] = true;
+        AppSettings.SetOnboardingCompleted(true);
     }
 }
