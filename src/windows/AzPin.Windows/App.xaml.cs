@@ -115,6 +115,7 @@ public partial class App : Application
         services.AddSingleton(sp => new TrayMenuViewModel(
             sp.GetRequiredService<AuthViewModel>(),
             sp.GetRequiredService<IPinService>(),
+            sp.GetRequiredService<IArmService>(),
             quit: () => Current.Exit(),
             openMainWindow: () =>
             {

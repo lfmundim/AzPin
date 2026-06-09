@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using AzPin.Windows.Models.Entities;
 using AzPin.Windows.Services;
 using AzPin.Windows.ViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -11,6 +10,7 @@ public partial class TrayMenuViewModel : ObservableObject
 {
     private readonly AuthViewModel _auth;
     private readonly IPinService _pinService;
+    private readonly IArmService _arm;
     private readonly Action _quit;
     private readonly Action _openMainWindow;
 
@@ -20,15 +20,16 @@ public partial class TrayMenuViewModel : ObservableObject
     public partial ObservableCollection<PinnedResourceItemViewModel> PinnedResources { get; set; } = [];
 
     [ObservableProperty]
-    public partial ObservableCollection<PinnedResourceGroup> PinnedResourceGroups { get; set; } = [];
+    public partial ObservableCollection<TrayRgViewModel> PinnedRgItems { get; set; } = [];
 
     [ObservableProperty]
     public partial bool IsLoadingPinnedResources { get; set; }
 
-    public TrayMenuViewModel(AuthViewModel auth, IPinService pinService, Action quit, Action openMainWindow)
+    public TrayMenuViewModel(AuthViewModel auth, IPinService pinService, IArmService arm, Action quit, Action openMainWindow)
     {
         _auth = auth;
         _pinService = pinService;
+        _arm = arm;
         _quit = quit;
         _openMainWindow = openMainWindow;
         pinService.PinsChanged += () => _ = LoadPinnedResourcesAsync();
@@ -47,13 +48,19 @@ public partial class TrayMenuViewModel : ObservableObject
         try
         {
             var pinned = await _pinService.GetPinnedResourcesAsync();
+            var pinnedRgs = await _pinService.GetPinnedResourceGroupsAsync();
+
+            var rgVms = pinnedRgs.OrderBy(rg => rg.DisplayOrder)
+                                 .Select(rg => new TrayRgViewModel(rg, _arm, _pinService))
+                                 .ToList();
+
+            await Task.WhenAll(rgVms.Select(vm => vm.LoadResourcesAsync()));
+
             PinnedResources = new ObservableCollection<PinnedResourceItemViewModel>(
                 pinned.OrderBy(p => p.DisplayOrder)
                       .Select(p => new PinnedResourceItemViewModel(p)));
 
-            var pinnedRgs = await _pinService.GetPinnedResourceGroupsAsync();
-            PinnedResourceGroups = new ObservableCollection<PinnedResourceGroup>(
-                pinnedRgs.OrderBy(rg => rg.DisplayOrder));
+            PinnedRgItems = new ObservableCollection<TrayRgViewModel>(rgVms);
         }
         finally
         {

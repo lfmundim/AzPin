@@ -40,6 +40,8 @@ All notable changes to AzPin are documented in this file.
 - Fixed: tray context menu showed no pinned items after pin/unpin — `PropertyChanged` fired on a background thread; context menu rebuild now dispatched to UI thread via `DispatcherQueue.TryEnqueue`.
 - Fixed: pinned resource groups were not shown in the tray context menu — `TrayMenuViewModel` now loads both pinned RGs and individual resources; RGs appear above resources in the menu as portal links.
 - Fixed: app window and taskbar icon showed the default Windows icon — `AppWindow.SetIcon` now called on startup with the branded `tray.ico`.
+- Pinned RGs in tray context menu now show as cascading submenus: live resources (fetched from ARM on startup/pin change) listed inside; runnable resources get a nested Stop/Start/Restart/Open in Portal submenu; "Open Resource Group in Portal" and "Unpin" at the bottom.
+- Added `TrayRgViewModel`, `TrayResourceViewModel`, `AppRunningState` to Core; `ResourceTypeMapper.IsRunnable()` helper added.
 
 ### Menubar
 
