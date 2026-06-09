@@ -46,9 +46,9 @@ public partial class PinnedResourcesViewModel : ObservableObject
 
     public async Task PersistOrderAsync(CancellationToken ct = default)
     {
-        // PinnedResource uses LocalId for ordering — use PinService.UpdateDisplayOrderAsync
-        // Note: resources are PinnedResource entities; we need their LocalId
-        // For now, no-op since PinnedResourceItemViewModel doesn't expose LocalId
-        await Task.CompletedTask;
+        var updates = Resources
+            .Select((vm, idx) => (vm.LocalId, DisplayOrder: idx))
+            .ToList();
+        await _pinService.UpdateResourceDisplayOrderAsync(updates, ct);
     }
 }

@@ -15,4 +15,5 @@ public interface IPinService
     Task<IReadOnlyList<PinnedResource>> GetPinnedResourcesAsync(CancellationToken ct = default);
     Task<IReadOnlyList<PinnedResourceGroup>> GetPinnedResourceGroupsAsync(CancellationToken ct = default);
     Task UpdateDisplayOrderAsync(IEnumerable<(int LocalId, int DisplayOrder)> updates, CancellationToken ct = default);
+    Task UpdateResourceDisplayOrderAsync(IEnumerable<(int LocalId, int DisplayOrder)> updates, CancellationToken ct = default);
 }

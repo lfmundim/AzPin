@@ -107,4 +107,16 @@ public class PinService(IDbContextFactory<AzPinDbContext> dbFactory) : IPinServi
         }
         await db.SaveChangesAsync(ct);
     }
+
+    public async Task UpdateResourceDisplayOrderAsync(IEnumerable<(int LocalId, int DisplayOrder)> updates, CancellationToken ct = default)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync(ct);
+        foreach (var (localId, displayOrder) in updates)
+        {
+            var entity = await db.PinnedResources.FindAsync([localId], ct);
+            if (entity is not null)
+                entity.DisplayOrder = displayOrder;
+        }
+        await db.SaveChangesAsync(ct);
+    }
 }
