@@ -1,3 +1,4 @@
+using System.Linq;
 using AzPin.Windows.MainWindow.Pages;
 using AzPin.Windows.Models;
 using AzPin.Windows.TrayIcon;
@@ -29,6 +30,7 @@ public sealed partial class MainWindow : Window
     public void InitializeContent()
     {
         ContentFrame.Navigate(typeof(BrowsePage));
+        NavView.SelectedItem = NavView.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(i => i.Tag as string == "Browse");
     }
 
     public void InitializeTrayIcon(TrayMenuViewModel vm)
@@ -41,10 +43,9 @@ public sealed partial class MainWindow : Window
         // Set app window icon (taskbar / app switcher)
         AppWindow.SetIcon(iconPath);
 
-        // PopupMenu mode (the default) reads ContextFlyout.Items fresh on every right-click,
-        // so reactive rebuilds work. SecondWindow copies items once at setup and ignores updates.
-        // PropertyChanged may fire on a background thread after async pin ops — always dispatch
-        // to UI thread before touching MenuFlyout.Items.
+        // XamlRoot must match the window so WinUI control templates (SymbolIcon etc.) resolve.
+        // Without this, icon elements render blank in H.NotifyIcon's popup window context.
+        TrayFlyout.XamlRoot = ((FrameworkElement)Content).XamlRoot;
 
         RebuildContextMenu(vm);
         vm.PropertyChanged += (_, _) => DispatcherQueue.TryEnqueue(() => RebuildContextMenu(vm));

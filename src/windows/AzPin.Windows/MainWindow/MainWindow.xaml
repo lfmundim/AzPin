@@ -21,6 +21,9 @@
             IsBackButtonVisible="Collapsed"
             OpenPaneLength="220"
             SelectionChanged="OnNavSelectionChanged">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Icon="AllApps" Content="Resources" Tag="Browse" />
+            </NavigationView.MenuItems>
             <NavigationView.FooterMenuItems>
                 <NavigationViewItem Icon="Setting" Content="Settings" Tag="Settings" />
             </NavigationView.FooterMenuItems>
