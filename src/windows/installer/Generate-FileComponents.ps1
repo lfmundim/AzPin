@@ -7,7 +7,7 @@ $PublishDir = $PublishDir.TrimEnd('\', '/')
 $files = Get-ChildItem -Path $PublishDir -Recurse -File
 
 # Map relative dir path -> XML ID. '' = INSTALLFOLDER (root).
-$dirMap = [ordered]@{ '' = 'INSTALLFOLDER' }
+$dirMap = @{ '' = 'INSTALLFOLDER' }
 
 foreach ($file in $files) {
     $rel     = $file.FullName.Substring($PublishDir.Length + 1)
