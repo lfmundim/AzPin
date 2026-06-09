@@ -1,3 +1,4 @@
+using H.NotifyIcon;
 using Microsoft.UI.Xaml;
 using Windows.Graphics;
 
@@ -20,5 +21,7 @@ public sealed partial class TrayHostWindow : Window
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "tray.ico");
         TrayIcon.Icon = new System.Drawing.Icon(iconPath);
         TrayIcon.TrayPopup = new TrayMenuView { DataContext = vm };
+        TrayIcon.TrayPopupActivation = PopupActivationMode.LeftOrDoubleClick;
+        TrayIcon.ForceCreate();
     }
 }
