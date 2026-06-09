@@ -39,12 +39,12 @@ public partial class App : Application
                 await db.Database.EnsureCreatedAsync();
             }
 
-            _mainWindow.InitializeTrayIcon(Services.GetRequiredService<TrayMenuViewModel>());
             _mainWindow.InitializeContent();
 
             // Activate once so the visual tree (and TaskbarIcon XamlRoot) is live,
             // then immediately hide so the app starts tray-only.
             _mainWindow.Activate();
+            _mainWindow.InitializeTrayIcon(Services.GetRequiredService<TrayMenuViewModel>());
             _mainWindow.AppWindow.Hide();
             _mainWindow.AppWindow.IsShownInSwitchers = false;
         }
