@@ -16,13 +16,6 @@ public sealed partial class SettingsPage : Page
         InitializeComponent();
         TabBar.SelectedItem = AccountTab;
 
-        ViewModel.ReRunSetupRequested += async () =>
-        {
-            var mainWindow = App.Services.GetRequiredService<MainWindow>();
-            var onboardingVm = App.Services.GetRequiredService<OnboardingViewModel>();
-            await mainWindow.ShowOnboardingAsync(onboardingVm);
-        };
-
         ViewModel.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(ViewModel.ReleaseUrl) && ViewModel.ReleaseUrl is not null)

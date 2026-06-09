@@ -50,6 +50,15 @@ public partial class App : Application
 
             _mainWindow.InitializeContent();
 
+            // Wire up re-run setup here — MainWindow is not in DI so SettingsPage can't resolve it.
+            Services.GetRequiredService<SettingsViewModel>().ReRunSetupRequested += async () =>
+            {
+                var onboardingVm = Services.GetRequiredService<OnboardingViewModel>();
+                _mainWindow.AppWindow.IsShownInSwitchers = true;
+                await _mainWindow.ShowOnboardingAsync(onboardingVm);
+                _mainWindow.AppWindow.IsShownInSwitchers = false;
+            };
+
             // Position off-screen before activating so the window is never visible on startup.
             // Activate() is required to fire FrameworkElement.Loaded so the TaskbarIcon registers
             // its tray icon with the shell. After that, the window can be hidden/shown freely.
