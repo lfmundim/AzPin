@@ -45,11 +45,11 @@ public partial class App : Application
             // Activate once so the visual tree (and TaskbarIcon XamlRoot) is live,
             // then immediately hide so the app starts tray-only.
             _mainWindow.AppWindow.IsShownInSwitchers = false;
+            // Resize to 1×1 before Activate so the window never appears full-size at startup.
+            // We must NOT call AppWindow.Hide() — that breaks H.NotifyIcon's popup XamlRoot.
+            _mainWindow.AppWindow.Resize(new SizeInt32(1, 1));
             _mainWindow.Activate();
             _mainWindow.InitializeTrayIcon(Services.GetRequiredService<TrayMenuViewModel>());
-            // Keep window alive (XamlRoot must stay valid for tray popup) but make it invisible:
-            // collapse to 1×1 at origin rather than AppWindow.Hide() which can break H.NotifyIcon.
-            _mainWindow.AppWindow.Resize(new SizeInt32(1, 1));
         }
         catch (Exception ex)
         {
