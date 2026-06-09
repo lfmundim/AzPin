@@ -6,7 +6,6 @@ using AzPin.Windows.ViewModels;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
 using Windows.Graphics;
 
 namespace AzPin.Windows.MainWindow;
@@ -89,7 +88,7 @@ public sealed partial class MainWindow : Window
                 TrayFlyout.Items.Add(new MenuFlyoutItem
                 {
                     Text = r.Name,
-                    Icon = new FontIcon { FontFamily = new FontFamily("Segoe Fluent Icons"), Glyph = r.GlyphCode },
+                    Icon = SymbolIconFor(r.Type),
                     Command = new RelayCommand(() => { _ = global::Windows.System.Launcher.LaunchUriAsync(uri); })
                 });
             }
@@ -108,7 +107,7 @@ public sealed partial class MainWindow : Window
         var rgItem = new MenuFlyoutSubItem
         {
             Text = rg.Name,
-            Icon = new FontIcon { FontFamily = new FontFamily("Segoe Fluent Icons"), Glyph = ResourceTypeMapper.GlyphFor("microsoft.resources/resourcegroups") }
+            Icon = new SymbolIcon(Symbol.Folder)
         };
 
         foreach (var res in rg.Resources)
@@ -121,7 +120,7 @@ public sealed partial class MainWindow : Window
                 rgItem.Items.Add(new MenuFlyoutItem
                 {
                     Text = res.Name,
-                    Icon = new FontIcon { FontFamily = new FontFamily("Segoe Fluent Icons"), Glyph = res.GlyphCode },
+                    Icon = SymbolIconFor(res.Resource.Type),
                     Command = new RelayCommand(() => { _ = global::Windows.System.Launcher.LaunchUriAsync(resUri); })
                 });
             }
@@ -147,7 +146,7 @@ public sealed partial class MainWindow : Window
         var item = new MenuFlyoutSubItem
         {
             Text = res.Name,
-            Icon = new FontIcon { FontFamily = new FontFamily("Segoe Fluent Icons"), Glyph = res.GlyphCode }
+            Icon = SymbolIconFor(res.Resource.Type)
         };
 
         if (res.RunningState != AppRunningState.Running)
@@ -168,6 +167,22 @@ public sealed partial class MainWindow : Window
 
         return item;
     }
+
+    private static SymbolIcon SymbolIconFor(string type) => new(type.ToLowerInvariant() switch
+    {
+        "microsoft.web/sites" or "microsoft.web/sites/slots" => Symbol.Globe,
+        "microsoft.keyvault/vaults"                          => Symbol.Permissions,
+        "microsoft.storage/storageaccounts"                  => Symbol.SaveLocal,
+        "microsoft.insights/components"                      => Symbol.Find,
+        "microsoft.sql/servers"                              => Symbol.List,
+        "microsoft.documentdb/databaseaccounts"              => Symbol.List,
+        "microsoft.app/containerapps"                        => Symbol.AllApps,
+        "microsoft.logic/workflows"                          => Symbol.Sync,
+        "microsoft.servicebus/namespaces"                    => Symbol.Forward,
+        "microsoft.apimanagement/service"                    => Symbol.Manage,
+        "microsoft.resources/resourcegroups"                 => Symbol.Folder,
+        _                                                    => Symbol.Globe
+    });
 
     private void OnNavSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {

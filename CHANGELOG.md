@@ -42,6 +42,12 @@ All notable changes to AzPin are documented in this file.
 - Fixed: app window and taskbar icon showed the default Windows icon — `AppWindow.SetIcon` now called on startup with the branded `tray.ico`.
 - Pinned RGs in tray context menu now show as cascading submenus: live resources (fetched from ARM on startup/pin change) listed inside; runnable resources get a nested Stop/Start/Restart/Open in Portal submenu; "Open Resource Group in Portal" and "Unpin" at the bottom.
 - Added `TrayRgViewModel`, `TrayResourceViewModel`, `AppRunningState` to Core; `ResourceTypeMapper.IsRunnable()` helper added.
+- Fixed: tray context menu icons not rendering — replaced `FontIcon` + Segoe Fluent Icons (unreliable in WinUI popup context) with `SymbolIcon` (Segoe MDL2 Assets, always available); per-type mapping covers all known resource types.
+- Settings page now has three tabs matching the macOS version: **Account** (User, Tenant ID, Active Subscription Name/ID, Refresh Token button), **Subscriptions** (per-subscription visibility toggles; hidden subs excluded from Browse on next load), **Preferences** (Open at Login toggle via registry `HKCU\…\Run`).
+- Added `HiddenSubscription` entity, `ISubscriptionSettingsService` / `SubscriptionSettingsService`; `BrowseViewModel` filters hidden subscriptions on load.
+- Added `SettingsViewModel`, `SubscriptionItemViewModel` to Core.
+- `AuthViewModel` now exposes `ActiveSubscriptionId`.
+- DB forward-compat: `HiddenSubscriptions` table created via `CREATE TABLE IF NOT EXISTS` on startup so existing databases upgrade without data loss.
 
 ### Menubar
 

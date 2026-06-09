@@ -39,6 +39,13 @@ public partial class App : Application
             {
                 var db = scope.ServiceProvider.GetRequiredService<AzPinDbContext>();
                 await db.Database.EnsureCreatedAsync();
+                // Forward-compat: ensure HiddenSubscriptions table exists for DBs created
+                // before this table was added (EnsureCreatedAsync won't add missing tables).
+                await db.Database.ExecuteSqlRawAsync("""
+                    CREATE TABLE IF NOT EXISTS HiddenSubscriptions (
+                        SubscriptionId TEXT NOT NULL CONSTRAINT PK_HiddenSubscriptions PRIMARY KEY
+                    )
+                    """);
             }
 
             _mainWindow.InitializeContent();
@@ -109,9 +116,11 @@ public partial class App : Application
         services.AddTransient<ITokenCache, TokenCache>();
         services.AddTransient<IArmService, ArmService>();
         services.AddSingleton<IPinService, PinService>();
+        services.AddSingleton<ISubscriptionSettingsService, SubscriptionSettingsService>();
 
         services.AddSingleton<AuthViewModel>();
         services.AddSingleton<BrowseViewModel>();
+        services.AddSingleton<SettingsViewModel>();
         services.AddSingleton(sp => new TrayMenuViewModel(
             sp.GetRequiredService<AuthViewModel>(),
             sp.GetRequiredService<IPinService>(),
