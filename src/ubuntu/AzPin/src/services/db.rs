@@ -1,9 +1,10 @@
 use rusqlite::{params, Connection, Result};
 use std::path::PathBuf;
 use crate::models::persistence::{CachedToken, PinnedResourceGroup, PinnedResource};
+use std::sync::Mutex;
 
 pub struct Db {
-    conn: Connection,
+    conn: Mutex<Connection>,
 }
 
 impl Db {
@@ -13,7 +14,7 @@ impl Db {
             std::fs::create_dir_all(parent).unwrap_or_default();
         }
         let conn = Connection::open(&db_path)?;
-        let db = Self { conn };
+        let db = Self { conn: Mutex::new(conn) };
         db.init()?;
         Ok(db)
     }
@@ -26,7 +27,8 @@ impl Db {
     }
 
     fn init(&self) -> Result<()> {
-        self.conn.execute(
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
             "CREATE TABLE IF NOT EXISTS tokens (
                 subscription_id TEXT PRIMARY KEY,
                 tenant_id TEXT NOT NULL,
@@ -36,7 +38,7 @@ impl Db {
             [],
         )?;
 
-        self.conn.execute(
+        conn.execute(
             "CREATE TABLE IF NOT EXISTS pinned_resource_groups (
                 id TEXT PRIMARY KEY,
                 subscription_id TEXT NOT NULL,
@@ -46,7 +48,7 @@ impl Db {
             [],
         )?;
 
-        self.conn.execute(
+        conn.execute(
             "CREATE TABLE IF NOT EXISTS pinned_resources (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -67,7 +69,8 @@ impl Db {
     // --- Token Operations ---
 
     pub fn save_token(&self, token: &CachedToken) -> Result<()> {
-        self.conn.execute(
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
             "INSERT OR REPLACE INTO tokens (subscription_id, tenant_id, access_token, expires_on)
              VALUES (?1, ?2, ?3, ?4)",
             params![token.subscription_id, token.tenant_id, token.access_token, token.expires_on],
@@ -76,7 +79,8 @@ impl Db {
     }
 
     pub fn get_token(&self, subscription_id: &str) -> Result<Option<CachedToken>> {
-        let mut stmt = self.conn.prepare("SELECT subscription_id, tenant_id, access_token, expires_on FROM tokens WHERE subscription_id = ?1")?;
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT subscription_id, tenant_id, access_token, expires_on FROM tokens WHERE subscription_id = ?1")?;
         let mut rows = stmt.query(params![subscription_id])?;
 
         if let Some(row) = rows.next()? {
@@ -94,11 +98,14 @@ impl Db {
     // --- Pinned Resource Operations ---
 
     pub fn save_pinned_group(&self, group: &PinnedResourceGroup) -> Result<()> {
-        self.conn.execute(
-            "INSERT OR REPLACE INTO pinned_resource_groups (id, subscription_id, name, display_order)
-             VALUES (?1, ?2, ?3, ?4)",
-            params![group.id, group.subscription_id, group.name, group.display_order],
-        )?;
+        {
+            let conn = self.conn.lock().unwrap();
+            conn.execute(
+                "INSERT OR REPLACE INTO pinned_resource_groups (id, subscription_id, name, display_order)
+                 VALUES (?1, ?2, ?3, ?4)",
+                params![group.id, group.subscription_id, group.name, group.display_order],
+            )?;
+        }
 
         // For simplicity, we can also manage resources here or separately
         for res in &group.resources {
@@ -108,7 +115,8 @@ impl Db {
     }
 
     pub fn save_pinned_resource(&self, resource: &PinnedResource, group_id: &str) -> Result<()> {
-        self.conn.execute(
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
             "INSERT OR REPLACE INTO pinned_resources (id, name, type, resource_group, subscription_id, location, display_order, group_id)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             params![
@@ -120,7 +128,9 @@ impl Db {
     }
 
     pub fn get_pinned_groups(&self) -> Result<Vec<PinnedResourceGroup>> {
-        let mut stmt = self.conn.prepare("SELECT id, subscription_id, name, display_order FROM pinned_resource_groups ORDER BY display_order ASC")?;
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT id, subscription_id, name, display_order FROM pinned_resource_groups ORDER BY display_order ASC")?;
+        
         let group_iter = stmt.query_map([], |row| {
             let id: String = row.get(0)?;
             Ok(PinnedResourceGroup {
@@ -128,7 +138,7 @@ impl Db {
                 subscription_id: row.get(1)?,
                 name: row.get(2)?,
                 display_order: row.get(3)?,
-                resources: self.get_pinned_resources(&id).unwrap_or_default(),
+                resources: Vec::new(),
             })
         })?;
 
@@ -136,11 +146,20 @@ impl Db {
         for group in group_iter {
             groups.push(group?);
         }
+        
+        drop(stmt);
+        drop(conn);
+
+        for group in &mut groups {
+            group.resources = self.get_pinned_resources(&group.id).unwrap_or_default();
+        }
+
         Ok(groups)
     }
 
     pub fn get_pinned_resources(&self, group_id: &str) -> Result<Vec<PinnedResource>> {
-        let mut stmt = self.conn.prepare("SELECT id, name, type, resource_group, subscription_id, location, display_order FROM pinned_resources WHERE group_id = ?1 ORDER BY display_order ASC")?;
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT id, name, type, resource_group, subscription_id, location, display_order FROM pinned_resources WHERE group_id = ?1 ORDER BY display_order ASC")?;
         let res_iter = stmt.query_map(params![group_id], |row| {
             Ok(PinnedResource {
                 id: row.get(0)?,
@@ -161,7 +180,8 @@ impl Db {
     }
 
     pub fn delete_pinned_group(&self, id: &str) -> Result<()> {
-        self.conn.execute("DELETE FROM pinned_resource_groups WHERE id = ?1", params![id])?;
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM pinned_resource_groups WHERE id = ?1", params![id])?;
         // Resources are cascade-deleted due to FOREIGN KEY
         Ok(())
     }
