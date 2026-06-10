@@ -10,6 +10,7 @@ All notable changes to AzPin are documented in this file.
 
 ### CI
 
+- Bumped version to 1.0.x.
 - Unified macOS and Windows release assets into a single GitHub release per version (one "latest" flag covers both platforms).
 - Added `create-release` job to `release.yml` and `prerelease.yml`; both build jobs now depend on it for version and tag, then upload assets independently.
 - Windows MSI renamed to `AzPin-Windows-{version}-Installer.msi` (release) / `AzPin-Windows-{version}-beta-Installer.msi` (beta).
