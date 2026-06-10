@@ -324,6 +324,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = E027856099715EE06993EACA /* Build configuration list for PBXNativeTarget "AzPin" */;
 			buildPhases = (
+				B3E7F2A1CC4D9E0512345678 /* Inject Git Version */,
 				F56C123D94BAAB1C15950F7A /* Sources */,
 				C08327F8C7C63BC4422702C5 /* Resources */,
 			);
@@ -384,6 +385,27 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		B3E7F2A1CC4D9E0512345678 /* Inject Git Version */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Inject Git Version";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "VERSION=$(git -C \"$SRCROOT\" describe --tags --abbrev=0 2>/dev/null | sed 's/^[vV]//')\nif [ -n \"$VERSION\" ]; then\n    /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $VERSION\" \"$BUILT_PRODUCTS_DIR/$INFOPLIST_PATH\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXResourcesBuildPhase section */
 		C08327F8C7C63BC4422702C5 /* Resources */ = {
