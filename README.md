@@ -37,11 +37,19 @@ brew install --cask azpin
 
 Download the latest `.dmg` from [Releases](../../releases), drag `AzPin.app` to `/Applications`.
 
-### Windows (manual)
+### Windows - Winget (recommended)
 
-Download the latest `AzPin-Windows-win-x64-*.zip` from [Releases](../../releases), extract, and run `AzPin.Windows.exe`.
+```powershell
+winget install KimDim.AzPin
+```
 
-No separate Windows App SDK runtime installer is required — the bundle is self-contained.
+### Windows - MSI (manual)
+
+Download the latest `AzPin-Windows-*-Installer.msi` from [Releases](../../releases) and run it.
+
+> **Note:** The installer is self-signed. Your browser and Windows SmartScreen may flag it as unrecognized. Click **More info → Run anyway** (SmartScreen) or keep the file if your browser warns. The app is safe to install. If there is enough demand, a recognized certificate may be obtained in the future.
+
+No separate Windows App SDK runtime is required — the bundle is self-contained.
 
 ---
 
