@@ -1,0 +1,342 @@
+name: Beta
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/macos/**'
+      - 'src/windows/**'
+      - '.github/workflows/prerelease.yml'
+  workflow_dispatch:
+    inputs:
+      build_macos:
+        description: 'Build macOS'
+        type: boolean
+        default: true
+      build_windows:
+        description: 'Build Windows'
+        type: boolean
+        default: true
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      macos: ${{ steps.changes.outputs.macos }}
+      windows: ${{ steps.changes.outputs.windows }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed paths
+        id: changes
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "macos=${{ inputs.build_macos }}" >> $GITHUB_OUTPUT
+            echo "windows=${{ inputs.build_windows }}" >> $GITHUB_OUTPUT
+          else
+            CHANGED=$(git diff --name-only HEAD^ HEAD)
+            if echo "$CHANGED" | grep -qE '^src/macos/|^\.github/workflows/prerelease\.yml'; then
+              echo "macos=true" >> $GITHUB_OUTPUT
+            else
+              echo "macos=false" >> $GITHUB_OUTPUT
+            fi
+            if echo "$CHANGED" | grep -qE '^src/windows/|^\.github/workflows/prerelease\.yml'; then
+              echo "windows=true" >> $GITHUB_OUTPUT
+            else
+              echo "windows=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+  build-macos:
+    needs: detect
+    if: needs.detect.outputs.macos == 'true'
+    runs-on: macos-26
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect signing capability
+        id: signing
+        env:
+          CERT: ${{ secrets.DEVELOPER_ID_CERT_BASE64 }}
+        run: |
+          if [[ -n "$CERT" ]]; then
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "available=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install tooling
+        run: |
+          brew install xcbeautify create-dmg
+          dotnet tool install -g nbgv
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Compute version
+        id: version
+        run: |
+          NBGV=$(nbgv get-version -f json)
+          MAJOR=$(echo "$NBGV" | jq -r '.VersionMajor')
+          MINOR=$(echo "$NBGV" | jq -r '.VersionMinor')
+          HEIGHT=$(echo "$NBGV" | jq -r '.VersionHeight')
+          VERSION="${MAJOR}.${MINOR}.${HEIGHT}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=beta-v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push release tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git ls-remote --tags origin "${{ steps.version.outputs.tag }}" | grep -q .; then
+            git tag "${{ steps.version.outputs.tag }}"
+            git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}" "${{ steps.version.outputs.tag }}"
+          fi
+
+      - name: Import Developer ID certificate
+        if: steps.signing.outputs.available == 'true'
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.DEVELOPER_ID_CERT_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_CERT_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          echo -n "$CERTIFICATE_BASE64" | base64 --decode -o $RUNNER_TEMP/cert.p12
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security import $RUNNER_TEMP/cert.p12 -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+      - name: Archive (signed)
+        if: steps.signing.outputs.available == 'true'
+        run: |
+          set -o pipefail
+          xcodebuild -project src/macos/AzPin.xcodeproj \
+            -scheme AzPin \
+            -configuration Release \
+            -archivePath build/AzPin.xcarchive \
+            MARKETING_VERSION="${{ steps.version.outputs.version }}" \
+            CODE_SIGN_IDENTITY="${{ secrets.APPLE_DEVELOPER_ID }}" \
+            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
+            archive | xcbeautify
+
+      - name: Archive (unsigned)
+        if: steps.signing.outputs.available != 'true'
+        run: |
+          set -o pipefail
+          xcodebuild -project src/macos/AzPin.xcodeproj \
+            -scheme AzPin \
+            -configuration Release \
+            -archivePath build/AzPin.xcarchive \
+            MARKETING_VERSION="${{ steps.version.outputs.version }}" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            archive | xcbeautify
+
+      - name: Export .app (signed)
+        if: steps.signing.outputs.available == 'true'
+        run: |
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath build/AzPin.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist ExportOptions.plist \
+            | xcbeautify
+
+      - name: List export directory
+        if: steps.signing.outputs.available == 'true'
+        run: ls -laR build/export/
+
+      - name: Export .app (unsigned)
+        if: steps.signing.outputs.available != 'true'
+        run: |
+          mkdir -p build/export
+          cp -r build/AzPin.xcarchive/Products/Applications/AzPin.app build/export/
+
+      - name: Notarize
+        if: steps.signing.outputs.available == 'true'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          ditto -c -k --keepParent build/export/AzPin.app build/AzPin.zip
+          xcrun notarytool submit build/AzPin.zip \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+          xcrun stapler staple build/export/AzPin.app
+
+      - name: Create DMG
+        run: |
+          create-dmg \
+            --volname "AzPin" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 128 \
+            --icon "AzPin.app" 150 185 \
+            --hide-extension "AzPin.app" \
+            --app-drop-link 450 185 \
+            "AzPin-${{ steps.version.outputs.version }}-beta.dmg" \
+            "build/export/AzPin.app"
+
+      - name: Create GitHub pre-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "AzPin ${{ steps.version.outputs.version }} (beta)" \
+            --generate-notes \
+            --prerelease \
+            "AzPin-${{ steps.version.outputs.version }}-beta.dmg"
+
+  build-windows:
+    needs: detect
+    if: needs.detect.outputs.windows == 'true'
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    env:
+      Solution_Name: src/windows/AzPin.Windows.sln
+      App_Project: src/windows/AzPin.Windows/AzPin.Windows.csproj
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Install tooling
+        shell: pwsh
+        run: |
+          dotnet tool install -g nbgv
+          dotnet tool install -g wix --version "4.*"
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\\.dotnet\\tools"
+
+      - name: Restore
+        run: dotnet restore $env:App_Project -p:Platform=x64
+
+      - name: Build release
+        run: dotnet build $env:App_Project -c Release -p:Platform=x64 --no-restore -bl:build\build.binlog
+
+      # TODO: test build disabled — same WinUI/MrtCore PRI gen issue as windows-ci.yml
+
+      - name: Compute version
+        id: version
+        shell: pwsh
+        run: |
+          $nbgv = nbgv get-version -f json | ConvertFrom-Json
+          $major = $nbgv.VersionMajor
+          $minor = $nbgv.VersionMinor
+          $height = $nbgv.VersionHeight
+          $version = "$major.$minor.$height"
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "tag=beta-win-v$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Create and push release tag
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          $tag = "${{ steps.version.outputs.tag }}"
+          $tagExists = (git ls-remote --tags origin $tag)
+          if (-not $tagExists) {
+            git tag $tag
+            git push "https://x-access-token:${env:GITHUB_TOKEN}@github.com/${{ github.repository }}" $tag
+          }
+
+      - name: Publish self-contained x64 bundle
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE 'build\publish\win-x64'
+          dotnet publish $env:App_Project `
+            -c Release `
+            -r win-x64 `
+            -p:Platform=x64 `
+            -p:WindowsAppSDKSelfContained=true `
+            --self-contained true `
+            -o "$publishDir" `
+            -bl:build\publish.binlog
+
+      - name: Generate file components
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE 'build\publish\win-x64'
+          $outputPath = Join-Path $env:GITHUB_WORKSPACE 'build\AzPinFiles.wxs'
+          & src\windows\installer\Generate-FileComponents.ps1 -PublishDir $publishDir -OutputPath $outputPath
+
+      - name: Build MSI installer
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          wix build `
+            src\windows\installer\AzPin.wxs `
+            build\AzPinFiles.wxs `
+            -d Version=$version `
+            -arch x64 `
+            -o "build\AzPin-Setup-x64-$version-beta.msi"
+
+      - name: Sign MSI
+        shell: pwsh
+        env:
+          WINDOWS_PFX_BASE64: ${{ secrets.WINDOWS_PFX_BASE64 }}
+          WINDOWS_PFX_PASSWORD: ${{ secrets.WINDOWS_PFX_PASSWORD }}
+        run: |
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'azpin.pfx'
+          [System.IO.File]::WriteAllBytes($pfxPath, [System.Convert]::FromBase64String($env:WINDOWS_PFX_BASE64))
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" |
+            Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+          $msi = "build\AzPin-Setup-x64-${{ steps.version.outputs.version }}-beta.msi"
+          & $signtool sign /f $pfxPath /p $env:WINDOWS_PFX_PASSWORD /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 $msi
+          Remove-Item $pfxPath -Force
+
+      - name: Package Windows artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build | Out-Null
+          Compress-Archive -Path build/publish/win-x64/* -DestinationPath "build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}-beta.zip"
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: AzPin-Windows-win-x64-${{ steps.version.outputs.version }}-beta
+          path: |
+            build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}-beta.zip
+            build/AzPin-Setup-x64-${{ steps.version.outputs.version }}-beta.msi
+          if-no-files-found: error
+
+      - name: Create GitHub pre-release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ steps.version.outputs.tag }}"
+          $zip = "build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}-beta.zip"
+          $msi = "build/AzPin-Setup-x64-${{ steps.version.outputs.version }}-beta.msi"
+          gh release create $tag `
+            --title "AzPin Windows ${{ steps.version.outputs.version }} (beta)" `
+            --generate-notes `
+            --prerelease `
+            $zip `
+            $msi
