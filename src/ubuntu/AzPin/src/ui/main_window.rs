@@ -294,7 +294,7 @@ impl MainWindow {
         let browse_res_list_clone = browse_res_list.clone();
         let db_for_pin = db.clone();
         let tray_handle_pin = tray_handle.clone();
-        let header_bar_clone = header_bar.clone();
+        let detail_header_clone = detail_header.clone();
         let switcher_title_clone = switcher_title.clone();
         
         sidebar_list.connect_row_selected(move |_listbox, row_opt| {
@@ -303,10 +303,10 @@ impl MainWindow {
                 if name == "BROWSE_AZURE" {
                     detail_stack.set_visible_child_name("browse_azure");
                     let title = adw::WindowTitle::new("Browse Azure", "");
-                    header_bar_clone.set_title_widget(Some(&title));
+                    detail_header_clone.set_title_widget(Some(&title));
                 } else if name.starts_with("RG:") {
                     detail_stack.set_visible_child_name("rg_view");
-                    header_bar_clone.set_title_widget(Some(&switcher_title_clone));
+                    detail_header_clone.set_title_widget(Some(&switcher_title_clone));
                     let parts: Vec<&str> = name.split('|').collect();
                     if parts.len() == 2 {
                         let sub_id = parts[0].replace("RG:", "");
