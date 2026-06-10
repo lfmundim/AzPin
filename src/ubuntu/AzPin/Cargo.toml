@@ -18,7 +18,7 @@ dirs = "5.0" # For XDG spec based directories
 [package.metadata.deb]
 maintainer = "Lucas Mundim <lucas@example.com>"
 copyright = "2026, Lucas Mundim"
-depends = "libgtk-4-1, libadwaita-1-0, libappindicator3-1"
+depends = "libgtk-4-1, libadwaita-1-0, libayatana-appindicator3-1"
 recommends = "azure-cli"
 extended-description = "A native GTK4 app and indicator to manage Azure resources."
 section = "utility"
