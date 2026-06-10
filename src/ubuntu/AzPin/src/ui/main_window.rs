@@ -208,9 +208,11 @@ impl MainWindow {
         let (sub_tx, sub_rx) = gtk::glib::MainContext::channel(gtk::glib::Priority::DEFAULT);
         let sub_model_clone = sub_model.clone();
         let subs_cache_clone = subs_cache.clone();
+        let sub_dropdown_clone = sub_dropdown.clone();
         sub_rx.attach(None, move |subs: Vec<AzSubscription>| {
             sub_model_clone.splice(0, sub_model_clone.n_items(), &subs.iter().map(|s| s.name.as_str()).collect::<Vec<_>>());
             *subs_cache_clone.borrow_mut() = subs;
+            sub_dropdown_clone.notify("selected-item");
             gtk::glib::ControlFlow::Continue
         });
         std::thread::spawn(move || {
@@ -292,20 +294,24 @@ impl MainWindow {
         let browse_res_list_clone = browse_res_list.clone();
         let db_for_pin = db.clone();
         let tray_handle_pin = tray_handle.clone();
+        let header_bar_clone = header_bar.clone();
+        let switcher_title_clone = switcher_title.clone();
         
         sidebar_list.connect_row_selected(move |_listbox, row_opt| {
             if let Some(row) = row_opt {
                 let name = row.widget_name().to_string();
                 if name == "BROWSE_AZURE" {
                     detail_stack.set_visible_child_name("browse_azure");
-                    switcher_title.set_title("Browse Azure");
+                    let title = adw::WindowTitle::new("Browse Azure", "");
+                    header_bar_clone.set_title_widget(Some(&title));
                 } else if name.starts_with("RG:") {
                     detail_stack.set_visible_child_name("rg_view");
+                    header_bar_clone.set_title_widget(Some(&switcher_title_clone));
                     let parts: Vec<&str> = name.split('|').collect();
                     if parts.len() == 2 {
                         let sub_id = parts[0].replace("RG:", "");
                         let rg_name = parts[1].to_string();
-                        switcher_title.set_title(&rg_name);
+                        switcher_title_clone.set_title(&rg_name);
                         
                         // Clear browse list
                         let b_list = browse_res_list_clone.clone();
