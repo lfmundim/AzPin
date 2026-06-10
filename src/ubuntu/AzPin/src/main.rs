@@ -24,14 +24,25 @@ async fn main() {
         let token_cache = std::sync::Arc::new(crate::services::token_cache::TokenCache::new(db.clone()));
         let arm_service = std::sync::Arc::new(crate::services::arm::ArmService::new(token_cache));
         
+        let (open_tx, open_rx) = gtk::glib::MainContext::channel(gtk::glib::Priority::DEFAULT);
+        let app_clone = app.clone();
+        open_rx.attach(None, move |_| {
+            if let Some(win) = app_clone.active_window() {
+                win.present();
+            } else if let Some(win) = app_clone.windows().first() {
+                win.present();
+            }
+            gtk::glib::ControlFlow::Continue
+        });
+
         // Initialize Tray (without GTK3 linkage)
-        let tray = crate::ui::indicator::AzPinTray { db: db.clone(), arm_service: arm_service.clone() };
+        let tray = crate::ui::indicator::AzPinTray { db: db.clone(), arm_service: arm_service.clone(), open_tx };
         let tray_service = ksni::TrayService::new(tray);
-        let _handle = tray_service.handle();
+        let tray_handle = tray_service.handle();
         tray_service.spawn();
 
         // Present main window for testing as well
-        let window = crate::ui::main_window::MainWindow::new(app, db, arm_service);
+        let window = crate::ui::main_window::MainWindow::new(app, db, arm_service, tray_handle);
         window.present();
         
         // This is a minimal hook to prevent immediate exit

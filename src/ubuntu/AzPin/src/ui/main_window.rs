@@ -11,7 +11,7 @@ pub struct MainWindow {
 }
 
 impl MainWindow {
-    pub fn new(app: &adw::Application, db: Arc<Db>, arm_service: Arc<ArmService>) -> Self {
+    pub fn new(app: &adw::Application, db: Arc<Db>, arm_service: Arc<ArmService>, tray_handle: ksni::Handle<crate::ui::indicator::AzPinTray>) -> Self {
         let root_stack = gtk::Stack::new();
         root_stack.set_transition_type(gtk::StackTransitionType::Crossfade);
 
@@ -46,18 +46,51 @@ impl MainWindow {
         let sub_id = subscription_id.clone();
         let rg_listbox_clone = rg_listbox.clone();
 
+        let tray_handle_for_groups = tray_handle.clone();
+        let db_for_groups = db.clone();
+
         if !sub_id.is_empty() {
             gtk::glib::spawn_future_local(async move {
                 if let Ok(groups) = arm_svc.fetch_resource_groups(&sub_id).await {
                     for group in groups {
                         let row = gtk::ListBoxRow::new();
+                        
+                        let box_ = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+                        box_.set_margin_start(12);
+                        box_.set_margin_end(12);
+                        box_.set_margin_top(8);
+                        box_.set_margin_bottom(8);
+                        
                         let label = gtk::Label::new(Some(&group.name));
                         label.set_halign(gtk::Align::Start);
-                        label.set_margin_start(12);
-                        label.set_margin_end(12);
-                        label.set_margin_top(8);
-                        label.set_margin_bottom(8);
-                        row.set_child(Some(&label));
+                        label.set_hexpand(true);
+                        
+                        let pin_btn = gtk::Button::builder()
+                            .icon_name("bookmark-new-symbolic")
+                            .css_classes(vec!["flat".to_string()])
+                            .build();
+                        
+                        let db_clone = db_for_groups.clone();
+                        let sub_clone = sub_id.clone();
+                        let group_clone = group.clone();
+                        let tray_handle_clone = tray_handle_for_groups.clone();
+                        
+                        pin_btn.connect_clicked(move |_| {
+                            use crate::models::persistence::PinnedResourceGroup;
+                            let _ = db_clone.save_pinned_group(&PinnedResourceGroup {
+                                id: group_clone.name.clone(),
+                                subscription_id: sub_clone.clone(),
+                                name: group_clone.name.clone(),
+                                display_order: 0,
+                                resources: vec![],
+                            });
+                            let _ = tray_handle_clone.update(|_| {});
+                        });
+                        
+                        box_.append(&label);
+                        box_.append(&pin_btn);
+                        
+                        row.set_child(Some(&box_));
                         row.set_widget_name(&group.name);
                         rg_listbox_clone.append(&row);
                     }
@@ -146,6 +179,7 @@ impl MainWindow {
                             let db_clone2 = db_ref.clone();
                             let grp_name_clone = group_name.clone();
                             let sub_clone = sub.clone();
+                            let tray_handle_clone = tray_handle.clone();
                             pin_btn.connect_clicked(move |_| {
                                 use crate::models::persistence::{PinnedResource, PinnedResourceGroup};
                                 let _ = db_clone2.save_pinned_group(&PinnedResourceGroup {
@@ -164,6 +198,7 @@ impl MainWindow {
                                     location: res_clone.location.clone(),
                                     display_order: 0,
                                 }, &grp_name_clone);
+                                let _ = tray_handle_clone.update(|_| {});
                             });
 
                             box_.append(&label);
@@ -208,18 +243,18 @@ impl MainWindow {
         // --- Onboarding View ---
         let status_page = adw::StatusPage::builder()
             .title("Welcome to AzPin")
-            .description("Please sign in to your Azure account to view and pin your resources.")
+            .description("Not signed in — run 'az login' in your terminal.")
             .icon_name("network-server-symbolic")
             .build();
 
-        let sign_in_btn = gtk::Button::builder()
-            .label("Sign In to Azure")
+        let refresh_btn = gtk::Button::builder()
+            .label("Refresh Auth Status")
             .css_classes(vec!["suggested-action".to_string(), "pill".to_string()])
             .halign(gtk::Align::Center)
             .margin_bottom(32)
             .build();
 
-        status_page.set_child(Some(&sign_in_btn));
+        status_page.set_child(Some(&refresh_btn));
         root_stack.add_named(&status_page, Some("onboarding"));
 
         // --- Logic ---
@@ -230,19 +265,18 @@ impl MainWindow {
             root_stack.set_visible_child_name("onboarding");
         }
 
-        let (sender, receiver) = gtk::glib::MainContext::channel(gtk::glib::Priority::DEFAULT);
-        
         let root_stack_clone = root_stack.clone();
-        receiver.attach(None, move |_| {
-            root_stack_clone.set_visible_child_name("main");
-            gtk::glib::ControlFlow::Continue
-        });
-
-        sign_in_btn.connect_clicked(move |_| {
-            let sender = sender.clone();
+        refresh_btn.connect_clicked(move |_| {
+            let root_stack_clone = root_stack_clone.clone();
             std::thread::spawn(move || {
-                let _ = std::process::Command::new("az").arg("login").output();
-                let _ = sender.send(());
+                let is_logged_in = AzCliService::get_default_subscription().is_ok();
+                if is_logged_in {
+                    gtk::glib::idle_add_local(move || {
+                        root_stack_clone.set_visible_child_name("main");
+                        // We rely on the user to reopen the app or we can do a proper refresh here later
+                        gtk::glib::ControlFlow::Break
+                    });
+                }
             });
         });
 
@@ -254,6 +288,11 @@ impl MainWindow {
             .default_height(600)
             .content(&root_stack)
             .build();
+
+        window.connect_close_request(move |win| {
+            win.hide();
+            gtk::glib::Propagation::Stop
+        });
 
         Self { window }
     }
