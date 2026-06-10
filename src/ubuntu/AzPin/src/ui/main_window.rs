@@ -265,18 +265,20 @@ impl MainWindow {
             root_stack.set_visible_child_name("onboarding");
         }
 
+        let (sender, receiver) = gtk::glib::MainContext::channel(gtk::glib::Priority::DEFAULT);
         let root_stack_clone = root_stack.clone();
+        receiver.attach(None, move |is_logged_in| {
+            if is_logged_in {
+                root_stack_clone.set_visible_child_name("main");
+            }
+            gtk::glib::ControlFlow::Continue
+        });
+
         refresh_btn.connect_clicked(move |_| {
-            let root_stack_clone = root_stack_clone.clone();
+            let sender = sender.clone();
             std::thread::spawn(move || {
                 let is_logged_in = AzCliService::get_default_subscription().is_ok();
-                if is_logged_in {
-                    gtk::glib::idle_add_local(move || {
-                        root_stack_clone.set_visible_child_name("main");
-                        // We rely on the user to reopen the app or we can do a proper refresh here later
-                        gtk::glib::ControlFlow::Break
-                    });
-                }
+                let _ = sender.send(is_logged_in);
             });
         });
 
