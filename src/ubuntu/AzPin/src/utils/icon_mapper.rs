@@ -19,3 +19,20 @@ pub fn get_gnome_icon(sf_symbol: &str) -> &'static str {
         _ => "emblem-system-symbolic",
     }
 }
+
+pub fn get_icon_for_type(resource_type: &str) -> &'static str {
+    let lower = resource_type.to_lowercase();
+    if lower.contains("virtualmachine") || lower.contains("compute") {
+        "computer-symbolic"
+    } else if lower.contains("database") || lower.contains("sql") {
+        "drive-harddisk-symbolic"
+    } else if lower.contains("web/sites") {
+        "applications-internet-symbolic"
+    } else if lower.contains("storage") {
+        "folder-symbolic"
+    } else if lower.contains("network") {
+        "network-workgroup-symbolic"
+    } else {
+        "emblem-system-symbolic"
+    }
+}
