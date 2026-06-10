@@ -21,7 +21,8 @@ async fn main() {
     app.connect_command_line(move |app, _cli| {
         // Initialize services
         let db = std::sync::Arc::new(crate::services::db::Db::new().expect("Failed to init DB"));
-        let arm_service = std::sync::Arc::new(crate::services::arm::ArmService::new());
+        let token_cache = std::sync::Arc::new(crate::services::token_cache::TokenCache::new(db.clone()));
+        let arm_service = std::sync::Arc::new(crate::services::arm::ArmService::new(token_cache));
         
         // Initialize Indicator
         // We leak the indicator or store it somewhere so it doesn't get dropped
