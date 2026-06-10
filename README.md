@@ -1,5 +1,8 @@
 # AzPin
-![version](https://img.shields.io/badge/dynamic/regex?url=https://raw.githubusercontent.com/lfmundim/homebrew-tap/main/Casks/azpin.rb&search=version%20%22(.%2B)%22&label=brew)
+
+[![GitHub Release](https://img.shields.io/github/v/release/lfmundim/AzPin)](https://github.com/lfmundim/AzPin/releases/latest)
+![Brew Release](https://img.shields.io/badge/dynamic/regex?url=https://raw.githubusercontent.com/lfmundim/homebrew-tap/main/Casks/azpin.rb&search=version%20%22(.%2B)%22&label=brew)
+[![Winget Release](https://img.shields.io/winget/v/KimDim.AzPin)](https://github.com/lfmundim/AzPin/releases/latest)
 
 <p align="center">
   <img src="assets/iconset/original.svg" alt="Logo" width="30%" />
