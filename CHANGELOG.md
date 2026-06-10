@@ -14,6 +14,7 @@ All notable changes to AzPin are documented in this file.
 
 ### macOS
 
+- Build phase script injects the git tag into `CFBundleShortVersionString` at build time, fixing the update checker always reporting `v0.0.0` as the installed version.
 - `UpdateCheckService` (new): `@Observable` service that hits the GitHub Releases API and exposes `.idle / .checking / .upToDate / .updateAvailable / .failed` state.
 - Preferences Settings tab: shows current version, "Check for Updates" button, and inline result (up-to-date indicator, update banner with `brew upgrade azpin` command and GitHub release link, or error message with retry).
 - Menubar: shows "Update Available: v{latest}" item (opens release URL) whenever `UpdateCheckService.state` is `.updateAvailable`.
