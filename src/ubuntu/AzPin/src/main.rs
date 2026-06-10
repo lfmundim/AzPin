@@ -19,10 +19,20 @@ async fn main() {
 
     // Setup action for command line
     app.connect_command_line(move |app, _cli| {
-        // Here we will eventually start the app indicator and background services
-        // We do not present a window here by default
+        // Initialize services
+        let db = std::sync::Arc::new(crate::services::db::Db::new().expect("Failed to init DB"));
+        let arm_service = std::sync::Arc::new(crate::services::arm::ArmService::new());
         
-        // This is a minimal hook to prevent immediate exit while we run the indicator
+        // Initialize Indicator
+        // We leak the indicator or store it somewhere so it doesn't get dropped
+        let indicator = crate::ui::indicator::IndicatorApp::new(db.clone(), arm_service.clone());
+        Box::leak(Box::new(indicator));
+
+        // Present main window for testing as well
+        let window = crate::ui::main_window::MainWindow::new(app, db, arm_service);
+        window.present();
+        
+        // This is a minimal hook to prevent immediate exit
         app.hold();
         0
     });
