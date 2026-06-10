@@ -1,4 +1,5 @@
 # AzPin
+![version](https://img.shields.io/badge/dynamic/regex?url=https://raw.githubusercontent.com/lfmundim/homebrew-tap/main/Casks/azpin.rb&search=version%20%22(.%2B)%22&label=brew)
 
 <p align="center">
   <img src="assets/iconset/original.svg" alt="Logo" width="30%" />
