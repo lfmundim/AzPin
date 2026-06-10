@@ -230,15 +230,19 @@ impl MainWindow {
             root_stack.set_visible_child_name("onboarding");
         }
 
+        let (sender, receiver) = gtk::glib::MainContext::channel(gtk::glib::Priority::DEFAULT);
+        
         let root_stack_clone = root_stack.clone();
+        receiver.attach(None, move |_| {
+            root_stack_clone.set_visible_child_name("main");
+            gtk::glib::ControlFlow::Continue
+        });
+
         sign_in_btn.connect_clicked(move |_| {
-            let root_stack_clone = root_stack_clone.clone();
+            let sender = sender.clone();
             std::thread::spawn(move || {
                 let _ = std::process::Command::new("az").arg("login").output();
-                gtk::glib::idle_add_local(move || {
-                    root_stack_clone.set_visible_child_name("main");
-                    gtk::glib::ControlFlow::Break
-                });
+                let _ = sender.send(());
             });
         });
 
