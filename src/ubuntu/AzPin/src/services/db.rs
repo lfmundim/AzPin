@@ -91,5 +91,78 @@ impl Db {
         }
     }
 
-    // Add more CRUD operations for PinnedResourceGroup and PinnedResource as needed
+    // --- Pinned Resource Operations ---
+
+    pub fn save_pinned_group(&self, group: &PinnedResourceGroup) -> Result<()> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO pinned_resource_groups (id, subscription_id, name, display_order)
+             VALUES (?1, ?2, ?3, ?4)",
+            params![group.id, group.subscription_id, group.name, group.display_order],
+        )?;
+
+        // For simplicity, we can also manage resources here or separately
+        for res in &group.resources {
+            self.save_pinned_resource(res, &group.id)?;
+        }
+        Ok(())
+    }
+
+    pub fn save_pinned_resource(&self, resource: &PinnedResource, group_id: &str) -> Result<()> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO pinned_resources (id, name, type, resource_group, subscription_id, location, display_order, group_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![
+                resource.id, resource.name, resource.type_, resource.resource_group,
+                resource.subscription_id, resource.location, resource.display_order, group_id
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_pinned_groups(&self) -> Result<Vec<PinnedResourceGroup>> {
+        let mut stmt = self.conn.prepare("SELECT id, subscription_id, name, display_order FROM pinned_resource_groups ORDER BY display_order ASC")?;
+        let group_iter = stmt.query_map([], |row| {
+            let id: String = row.get(0)?;
+            Ok(PinnedResourceGroup {
+                id: id.clone(),
+                subscription_id: row.get(1)?,
+                name: row.get(2)?,
+                display_order: row.get(3)?,
+                resources: self.get_pinned_resources(&id).unwrap_or_default(),
+            })
+        })?;
+
+        let mut groups = Vec::new();
+        for group in group_iter {
+            groups.push(group?);
+        }
+        Ok(groups)
+    }
+
+    pub fn get_pinned_resources(&self, group_id: &str) -> Result<Vec<PinnedResource>> {
+        let mut stmt = self.conn.prepare("SELECT id, name, type, resource_group, subscription_id, location, display_order FROM pinned_resources WHERE group_id = ?1 ORDER BY display_order ASC")?;
+        let res_iter = stmt.query_map(params![group_id], |row| {
+            Ok(PinnedResource {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                type_: row.get(2)?,
+                resource_group: row.get(3)?,
+                subscription_id: row.get(4)?,
+                location: row.get(5)?,
+                display_order: row.get(6)?,
+            })
+        })?;
+
+        let mut resources = Vec::new();
+        for res in res_iter {
+            resources.push(res?);
+        }
+        Ok(resources)
+    }
+
+    pub fn delete_pinned_group(&self, id: &str) -> Result<()> {
+        self.conn.execute("DELETE FROM pinned_resource_groups WHERE id = ?1", params![id])?;
+        // Resources are cascade-deleted due to FOREIGN KEY
+        Ok(())
+    }
 }
