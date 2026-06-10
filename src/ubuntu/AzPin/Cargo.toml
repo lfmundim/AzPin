@@ -12,13 +12,13 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rusqlite = { version = "0.31", features = ["bundled"] }
 chrono = "0.4"
-appindicator3 = "0.2" # Using appindicator3 crate for ayatana bindings
+ksni = "0.2"
 dirs = "5.0" # For XDG spec based directories
 
 [package.metadata.deb]
 maintainer = "Lucas Mundim <lucas@example.com>"
 copyright = "2026, Lucas Mundim"
-depends = "libgtk-4-1, libadwaita-1-0, libayatana-appindicator3-1"
+depends = "libgtk-4-1, libadwaita-1-0"
 recommends = "azure-cli"
 extended-description = "A native GTK4 app and indicator to manage Azure resources."
 section = "utility"

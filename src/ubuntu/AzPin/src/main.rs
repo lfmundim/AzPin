@@ -24,10 +24,11 @@ async fn main() {
         let token_cache = std::sync::Arc::new(crate::services::token_cache::TokenCache::new(db.clone()));
         let arm_service = std::sync::Arc::new(crate::services::arm::ArmService::new(token_cache));
         
-        // Initialize Indicator
-        // We leak the indicator or store it somewhere so it doesn't get dropped
-        let indicator = crate::ui::indicator::IndicatorApp::new(db.clone(), arm_service.clone());
-        Box::leak(Box::new(indicator));
+        // Initialize Tray (without GTK3 linkage)
+        let tray = crate::ui::indicator::AzPinTray { db: db.clone(), arm_service: arm_service.clone() };
+        let tray_service = ksni::TrayService::new(tray);
+        let _handle = tray_service.handle();
+        tray_service.spawn();
 
         // Present main window for testing as well
         let window = crate::ui::main_window::MainWindow::new(app, db, arm_service);
