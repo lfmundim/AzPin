@@ -44,14 +44,16 @@ async fn main() {
             gtk::glib::ControlFlow::Continue
         });
 
+        let (pin_changed_tx, pin_changed_rx) = gtk::glib::MainContext::channel(gtk::glib::Priority::DEFAULT);
+
         // Initialize Tray (without GTK3 linkage)
-        let tray = crate::ui::indicator::AzPinTray { db: db.clone(), arm_service: arm_service.clone(), open_tx, settings_tx };
+        let tray = crate::ui::indicator::AzPinTray { db: db.clone(), arm_service: arm_service.clone(), open_tx, settings_tx, pin_changed_tx };
         let tray_service = ksni::TrayService::new(tray);
         let tray_handle = tray_service.handle();
         tray_service.spawn();
 
         // Present main window for testing as well
-        let window = crate::ui::main_window::MainWindow::new(app, db, arm_service, tray_handle);
+        let window = crate::ui::main_window::MainWindow::new(app, db, arm_service, tray_handle, pin_changed_rx);
         window.present();
         
         // This is a minimal hook to prevent immediate exit

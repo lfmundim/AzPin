@@ -26,7 +26,7 @@ fn get_icon_for_type(res_type: &str) -> &'static str {
 }
 
 impl MainWindow {
-    pub fn new(app: &adw::Application, db: Arc<Db>, arm_service: Arc<ArmService>, tray_handle: ksni::Handle<crate::ui::indicator::AzPinTray>) -> Self {
+    pub fn new(app: &adw::Application, db: Arc<Db>, arm_service: Arc<ArmService>, tray_handle: ksni::Handle<crate::ui::indicator::AzPinTray>, pin_changed_rx: gtk::glib::Receiver<()>) -> Self {
         let root_stack = gtk::Stack::new();
         root_stack.set_transition_type(gtk::StackTransitionType::Crossfade);
 
@@ -225,56 +225,36 @@ impl MainWindow {
                 }
             }
         });
+        let ls_for_rx = load_sidebar.clone();
+        pin_changed_rx.attach(None, move |_| {
+            ls_for_rx();
+            gtk::glib::ControlFlow::Continue
+        });
         load_sidebar();
 
         // --- Logic: Load Subscriptions ---
         let subs_cache: Rc<RefCell<Vec<AzSubscription>>> = Rc::new(RefCell::new(Vec::new()));
         let (sub_tx, sub_rx) = gtk::glib::MainContext::channel(gtk::glib::Priority::DEFAULT);
         let sub_model_clone = sub_model.clone();
-        let subs_cache_clone = subs_cache.clone();
-        let sub_dropdown_clone = sub_dropdown.clone();
-        sub_rx.attach(None, move |subs: Vec<AzSubscription>| {
-            sub_dropdown_clone.set_selected(gtk::INVALID_LIST_POSITION);
-            sub_model_clone.splice(0, sub_model_clone.n_items(), &subs.iter().map(|s| s.name.as_str()).collect::<Vec<_>>());
-            *subs_cache_clone.borrow_mut() = subs;
-            sub_dropdown_clone.set_selected(0);
-            gtk::glib::ControlFlow::Continue
-        });
-        std::thread::spawn(move || {
-            if let Ok(subs) = AzCliService::list_subscriptions() {
-                let _ = sub_tx.send(subs);
-            }
-        });
-
-        // --- Logic: Search ---
-        let rg_list_search = rg_list.clone();
-        search_entry.connect_search_changed(move |entry| {
-            let query = entry.text().to_string().to_lowercase();
-            let mut i = 0;
-            while let Some(row) = rg_list_search.row_at_index(i) {
-                if let Some(exp) = row.downcast_ref::<adw::ExpanderRow>() {
-                    let title = exp.title().to_string().to_lowercase();
-                    row.set_visible(query.is_empty() || title.contains(&query));
-                }
-                i += 1;
-            }
-        });
-
-        // --- Logic: Subscription Selected -> Fetch RGs ---
-        let arm_svc_rg = arm_service.clone();
-        let live_rg_list_clone = rg_list.clone();
-        let db_for_rg = db.clone();
-        let tray_handle_rg = tray_handle.clone();
-        let load_sidebar_rg = load_sidebar.clone();
         
-        sub_dropdown.connect_selected_item_notify(move |dropdown| {
-            let idx = dropdown.selected() as usize;
-            let subs = subs_cache.borrow();
-            if idx < subs.len() {
+        let load_rgs = {
+            let sub_dropdown_ref = sub_dropdown.clone();
+            let subs_cache = subs_cache.clone();
+            let arm_svc_rg = arm_service.clone();
+            let live_rg_list_clone = rg_list.clone();
+            let db_c = db.clone();
+            let tray_handle_rg = tray_handle.clone();
+            let load_sidebar_rg = load_sidebar.clone();
+            
+            Rc::new(move || {
+                let idx = sub_dropdown_ref.selected() as usize;
+                let subs = subs_cache.borrow();
+                if idx >= subs.len() { return; }
+                
                 let sub_id = subs[idx].id.clone();
                 let a_svc = arm_svc_rg.clone();
                 let list_c = live_rg_list_clone.clone();
-                let db_c = db_for_rg.clone();
+                let db_c = db_c.clone();
                 let tray_c = tray_handle_rg.clone();
                 let ls_c = load_sidebar_rg.clone();
                 
@@ -356,7 +336,7 @@ impl MainWindow {
                                                     for res in resources {
                                                         let act_row = adw::ActionRow::new();
                                                         act_row.set_title(&res.name);
-                                                        act_row.add_prefix(&gtk::Image::from_icon_name(get_icon_for_type(&res.type_)));
+                                                        act_row.add_prefix(&gtk::Image::from_icon_name(crate::utils::icon_mapper::get_icon_for_type(&res.type_)));
                                                         
                                                         // Check if pinned
                                                         let is_res_pinned = dbr.get_pinned_resources(&g_id_r).unwrap_or_default().iter().any(|r| r.id == res.id);
@@ -425,7 +405,43 @@ impl MainWindow {
                         }
                     }
                 });
+            })
+        };
+
+        let subs_cache_clone = subs_cache.clone();
+        let sub_dropdown_clone = sub_dropdown.clone();
+        let load_rgs_clone = load_rgs.clone();
+        sub_rx.attach(None, move |subs: Vec<AzSubscription>| {
+            sub_dropdown_clone.set_selected(gtk::INVALID_LIST_POSITION);
+            sub_model_clone.splice(0, sub_model_clone.n_items(), &subs.iter().map(|s| s.name.as_str()).collect::<Vec<_>>());
+            *subs_cache_clone.borrow_mut() = subs;
+            sub_dropdown_clone.set_selected(0);
+            load_rgs_clone();
+            gtk::glib::ControlFlow::Continue
+        });
+        std::thread::spawn(move || {
+            if let Ok(subs) = crate::services::az_cli::AzCliService::list_subscriptions() {
+                let _ = sub_tx.send(subs);
             }
+        });
+
+        // Search logic
+        let rg_list_search = rg_list.clone();
+        search_entry.connect_search_changed(move |entry| {
+            let query = entry.text().to_string().to_lowercase();
+            let mut i = 0;
+            while let Some(row) = rg_list_search.row_at_index(i) {
+                if let Some(exp) = row.downcast_ref::<adw::ExpanderRow>() {
+                    let title = exp.title().to_string().to_lowercase();
+                    row.set_visible(query.is_empty() || title.contains(&query));
+                }
+                i += 1;
+            }
+        });
+
+        // Subscription Selected Logic
+        sub_dropdown.connect_selected_item_notify(move |_| {
+            load_rgs();
         });
 
         // --- Logic: Auth Status ---

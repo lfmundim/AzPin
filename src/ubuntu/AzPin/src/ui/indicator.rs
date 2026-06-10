@@ -9,6 +9,7 @@ pub struct AzPinTray {
     pub arm_service: Arc<ArmService>,
     pub open_tx: gtk::glib::Sender<()>,
     pub settings_tx: gtk::glib::Sender<()>,
+    pub pin_changed_tx: gtk::glib::Sender<()>,
 }
 
 impl Tray for AzPinTray {
@@ -170,8 +171,7 @@ impl Tray for AzPinTray {
                     label: "Unpin".into(),
                     activate: Box::new(move |tray: &mut AzPinTray| {
                         let _ = db_unpin.delete_pinned_group(&g_id_unpin);
-                        // The tray doesn't auto-refresh here, but we can't easily trigger a refresh from inside `activate`
-                        // without a channel. So we rely on the main window or next click to refresh.
+                        let _ = tray.pin_changed_tx.send(());
                     }),
                     ..Default::default()
                 }.into());
