@@ -1,6 +1,6 @@
 # AzPin
 
-[![GitHub Release](https://img.shields.io/github/v/release/lfmundim/AzPin)](https://github.com/lfmundim/AzPin/releases/latest)
+[![GitHub Release](https://img.shields.io/github/v/release/lfmundim/AzPin?cacheSeconds=3600)](https://github.com/lfmundim/AzPin/releases/latest)
 ![Brew Release](https://img.shields.io/badge/dynamic/regex?url=https://raw.githubusercontent.com/lfmundim/homebrew-tap/main/Casks/azpin.rb&search=version%20%22(.%2B)%22&label=brew)
 [![Winget Release](https://img.shields.io/winget/v/KimDim.AzPin)](https://github.com/lfmundim/AzPin/releases/latest)
 
