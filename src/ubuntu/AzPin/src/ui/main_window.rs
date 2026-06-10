@@ -1,11 +1,9 @@
 use adw::prelude::*;
 use gtk4 as gtk;
-use gtk::prelude::*;
 use std::sync::Arc;
 use crate::services::db::Db;
 use crate::services::arm::ArmService;
 use crate::ui::settings::SettingsWindow;
-use crate::utils::icon_mapper;
 
 pub struct MainWindow {
     window: adw::ApplicationWindow,
@@ -68,7 +66,10 @@ impl MainWindow {
         let pinned_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
         let pinned_list = gtk::ListBox::new();
         pinned_list.add_css_class("boxed-list");
-        pinned_list.set_margin_all(16);
+        pinned_list.set_margin_top(16);
+        pinned_list.set_margin_bottom(16);
+        pinned_list.set_margin_start(16);
+        pinned_list.set_margin_end(16);
         pinned_box.append(&pinned_list);
         
         view_stack.add_titled(&pinned_box, Some("pinned"), "Pinned");
@@ -76,7 +77,10 @@ impl MainWindow {
         // 2. Browse Tab
         let browse_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
         let search_entry = gtk::SearchEntry::new();
-        search_entry.set_margin_all(16);
+        search_entry.set_margin_top(16);
+        search_entry.set_margin_bottom(16);
+        search_entry.set_margin_start(16);
+        search_entry.set_margin_end(16);
         browse_box.append(&search_entry);
 
         let browse_list = gtk::ListBox::new();

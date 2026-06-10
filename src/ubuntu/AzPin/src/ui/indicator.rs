@@ -6,17 +6,17 @@ use crate::services::arm::ArmService;
 // Note: AppIndicator with GTK4 typically requires exporting the gio::Menu over DBus
 // or using a specific GTK4 compatible tray library. We are conceptually implementing
 // the requested interface here.
-use appindicator3::{AppIndicator, IndicatorCategory, IndicatorStatus};
+use appindicator3::{Indicator, IndicatorCategory, IndicatorStatus};
 
 pub struct IndicatorApp {
-    indicator: AppIndicator,
+    indicator: Indicator,
     db: Arc<Db>,
     arm_service: Arc<ArmService>,
 }
 
 impl IndicatorApp {
     pub fn new(db: Arc<Db>, arm_service: Arc<ArmService>) -> Self {
-        let mut indicator = AppIndicator::new("azpin", "weather-overcast", IndicatorCategory::ApplicationStatus);
+        let mut indicator = Indicator::builder("azpin", "weather-overcast", IndicatorCategory::ApplicationStatus);
         indicator.set_status(IndicatorStatus::Active);
 
         let app = Self { indicator, db, arm_service };
