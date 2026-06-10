@@ -50,8 +50,64 @@ jobs:
             fi
           fi
 
-  build-macos:
+  create-release:
     needs: detect
+    if: needs.detect.outputs.macos == 'true' || needs.detect.outputs.windows == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.x'
+
+      - name: Install nbgv
+        run: |
+          dotnet tool install -g nbgv
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Compute version
+        id: version
+        run: |
+          NBGV=$(nbgv get-version -f json)
+          MAJOR=$(echo "$NBGV" | jq -r '.VersionMajor')
+          MINOR=$(echo "$NBGV" | jq -r '.VersionMinor')
+          HEIGHT=$(echo "$NBGV" | jq -r '.VersionHeight')
+          VERSION="${MAJOR}.${MINOR}.${HEIGHT}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=beta-v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push release tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TAG="${{ steps.version.outputs.tag }}"
+          if ! git ls-remote --tags origin "$TAG" | grep -q .; then
+            git tag "$TAG"
+            git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}" "$TAG"
+          fi
+
+      - name: Create GitHub pre-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "AzPin ${{ steps.version.outputs.version }} (beta)" \
+            --generate-notes \
+            --prerelease
+
+  build-macos:
+    needs: [detect, create-release]
     if: needs.detect.outputs.macos == 'true'
     runs-on: macos-26
     permissions:
@@ -73,38 +129,8 @@ jobs:
             echo "available=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
       - name: Install tooling
-        run: |
-          brew install xcbeautify create-dmg
-          dotnet tool install -g nbgv
-          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
-
-      - name: Compute version
-        id: version
-        run: |
-          NBGV=$(nbgv get-version -f json)
-          MAJOR=$(echo "$NBGV" | jq -r '.VersionMajor')
-          MINOR=$(echo "$NBGV" | jq -r '.VersionMinor')
-          HEIGHT=$(echo "$NBGV" | jq -r '.VersionHeight')
-          VERSION="${MAJOR}.${MINOR}.${HEIGHT}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "tag=beta-v${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Create and push release tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git ls-remote --tags origin "${{ steps.version.outputs.tag }}" | grep -q .; then
-            git tag "${{ steps.version.outputs.tag }}"
-            git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}" "${{ steps.version.outputs.tag }}"
-          fi
+        run: brew install xcbeautify create-dmg
 
       - name: Import Developer ID certificate
         if: steps.signing.outputs.available == 'true'
@@ -129,7 +155,7 @@ jobs:
             -scheme AzPin \
             -configuration Release \
             -archivePath build/AzPin.xcarchive \
-            MARKETING_VERSION="${{ steps.version.outputs.version }}" \
+            MARKETING_VERSION="${{ needs.create-release.outputs.version }}" \
             CODE_SIGN_IDENTITY="${{ secrets.APPLE_DEVELOPER_ID }}" \
             DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
             archive | xcbeautify
@@ -142,7 +168,7 @@ jobs:
             -scheme AzPin \
             -configuration Release \
             -archivePath build/AzPin.xcarchive \
-            MARKETING_VERSION="${{ steps.version.outputs.version }}" \
+            MARKETING_VERSION="${{ needs.create-release.outputs.version }}" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             archive | xcbeautify
@@ -192,21 +218,19 @@ jobs:
             --icon "AzPin.app" 150 185 \
             --hide-extension "AzPin.app" \
             --app-drop-link 450 185 \
-            "AzPin-${{ steps.version.outputs.version }}-beta.dmg" \
+            "AzPin-${{ needs.create-release.outputs.version }}-beta.dmg" \
             "build/export/AzPin.app"
 
-      - name: Create GitHub pre-release
+      - name: Upload DMG to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ steps.version.outputs.tag }}" \
-            --title "AzPin ${{ steps.version.outputs.version }} (beta)" \
-            --generate-notes \
-            --prerelease \
-            "AzPin-${{ steps.version.outputs.version }}-beta.dmg"
+          gh release upload "${{ needs.create-release.outputs.tag }}" \
+            "AzPin-${{ needs.create-release.outputs.version }}-beta.dmg" \
+            --clobber
 
   build-windows:
-    needs: detect
+    needs: [detect, create-release]
     if: needs.detect.outputs.windows == 'true'
     runs-on: windows-latest
     permissions:
@@ -228,7 +252,6 @@ jobs:
       - name: Install tooling
         shell: pwsh
         run: |
-          dotnet tool install -g nbgv
           dotnet tool install -g wix --version "4.*"
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\\.dotnet\\tools"
 
@@ -239,32 +262,6 @@ jobs:
         run: dotnet build $env:App_Project -c Release -p:Platform=x64 --no-restore -bl:build\build.binlog
 
       # TODO: test build disabled — same WinUI/MrtCore PRI gen issue as windows-ci.yml
-
-      - name: Compute version
-        id: version
-        shell: pwsh
-        run: |
-          $nbgv = nbgv get-version -f json | ConvertFrom-Json
-          $major = $nbgv.VersionMajor
-          $minor = $nbgv.VersionMinor
-          $height = $nbgv.VersionHeight
-          $version = "$major.$minor.$height"
-          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "tag=beta-win-v$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-
-      - name: Create and push release tag
-        shell: pwsh
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          $tag = "${{ steps.version.outputs.tag }}"
-          $tagExists = (git ls-remote --tags origin $tag)
-          if (-not $tagExists) {
-            git tag $tag
-            git push "https://x-access-token:${env:GITHUB_TOKEN}@github.com/${{ github.repository }}" $tag
-          }
 
       - name: Publish self-contained x64 bundle
         shell: pwsh
@@ -289,13 +286,13 @@ jobs:
       - name: Build MSI installer
         shell: pwsh
         run: |
-          $version = "${{ steps.version.outputs.version }}"
+          $version = "${{ needs.create-release.outputs.version }}"
           wix build `
             src\windows\installer\AzPin.wxs `
             build\AzPinFiles.wxs `
             -d Version=$version `
             -arch x64 `
-            -o "build\AzPin-Setup-x64-$version-beta.msi"
+            -o "build\AzPin-Windows-$version-beta-Installer.msi"
 
       - name: Sign MSI
         shell: pwsh
@@ -307,36 +304,15 @@ jobs:
           [System.IO.File]::WriteAllBytes($pfxPath, [System.Convert]::FromBase64String($env:WINDOWS_PFX_BASE64))
           $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" |
             Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
-          $msi = "build\AzPin-Setup-x64-${{ steps.version.outputs.version }}-beta.msi"
+          $msi = "build\AzPin-Windows-${{ needs.create-release.outputs.version }}-beta-Installer.msi"
           & $signtool sign /f $pfxPath /p $env:WINDOWS_PFX_PASSWORD /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 $msi
           Remove-Item $pfxPath -Force
 
-      - name: Package Windows artifact
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path build | Out-Null
-          Compress-Archive -Path build/publish/win-x64/* -DestinationPath "build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}-beta.zip"
-
-      - name: Upload workflow artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: AzPin-Windows-win-x64-${{ steps.version.outputs.version }}-beta
-          path: |
-            build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}-beta.zip
-            build/AzPin-Setup-x64-${{ steps.version.outputs.version }}-beta.msi
-          if-no-files-found: error
-
-      - name: Create GitHub pre-release
+      - name: Upload MSI to release
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $tag = "${{ steps.version.outputs.tag }}"
-          $zip = "build/AzPin-Windows-win-x64-${{ steps.version.outputs.version }}-beta.zip"
-          $msi = "build/AzPin-Setup-x64-${{ steps.version.outputs.version }}-beta.msi"
-          gh release create $tag `
-            --title "AzPin Windows ${{ steps.version.outputs.version }} (beta)" `
-            --generate-notes `
-            --prerelease `
-            $zip `
-            $msi
+          $tag = "${{ needs.create-release.outputs.tag }}"
+          $msi = "build/AzPin-Windows-${{ needs.create-release.outputs.version }}-beta-Installer.msi"
+          gh release upload $tag $msi --clobber

@@ -8,6 +8,14 @@ All notable changes to AzPin are documented in this file.
 
 ## [Unreleased]
 
+### CI
+
+- Unified macOS and Windows release assets into a single GitHub release per version (one "latest" flag covers both platforms).
+- Added `create-release` job to `release.yml` and `prerelease.yml`; both build jobs now depend on it for version and tag, then upload assets independently.
+- Windows MSI renamed to `AzPin-Windows-{version}-Installer.msi` (release) / `AzPin-Windows-{version}-beta-Installer.msi` (beta).
+- Windows beta tag unified to `beta-v{version}` (was `beta-win-v{version}`).
+- Winget manifest URL updated to match new MSI filename.
+
 ### General
 
 - Added update checker: "Check for Updates" queries the GitHub Releases API (`api.github.com/repos/lfmundim/AzPin/releases/latest`), compares the latest tag against the running version, and shows platform-specific upgrade instructions (`brew upgrade azpin` on macOS, `winget upgrade lfmundim.AzPin` on Windows) with a direct link to the release page.
