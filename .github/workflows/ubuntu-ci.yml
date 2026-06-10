@@ -1,0 +1,37 @@
+name: Ubuntu CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ feature/ubuntu-support ]
+
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libadwaita-1-dev libappindicator3-dev
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run Cargo Check
+        working-directory: src/ubuntu/AzPin
+        continue-on-error: true
+        run: cargo check
+
+      - name: Install cargo-deb
+        run: cargo install cargo-deb
+
+      - name: Build and Package
+        working-directory: src/ubuntu/AzPin
+        run: cargo deb
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: azpin-ubuntu-deb
+          path: src/ubuntu/AzPin/target/debian/*.deb
