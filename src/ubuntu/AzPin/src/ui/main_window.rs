@@ -362,8 +362,7 @@ impl MainWindow {
                                     let res_id_clone = res.id.clone();
                                     portal_btn.connect_clicked(move |_| {
                                         let uri = format!("https://portal.azure.com/#resource{}", res_id_clone);
-                                        let launcher = gtk::UriLauncher::new(&uri);
-                                        launcher.launch(None::<&gtk::Window>, gtk::gio::Cancellable::NONE, |_| {});
+                                        let _ = gtk::gio::AppInfo::launch_default_for_uri(&uri, None::<&gtk::gio::AppLaunchContext>);
                                     });
 
                                     box_.append(&label);
@@ -406,8 +405,7 @@ impl MainWindow {
                                     let res_id_clone = res.id.clone();
                                     portal_btn.connect_clicked(move |_| {
                                         let uri = format!("https://portal.azure.com/#resource{}", res_id_clone);
-                                        let launcher = gtk::UriLauncher::new(&uri);
-                                        launcher.launch(None::<&gtk::Window>, gtk::gio::Cancellable::NONE, |_| {});
+                                        let _ = gtk::gio::AppInfo::launch_default_for_uri(&uri, None::<&gtk::gio::AppLaunchContext>);
                                     });
                                     
                                     let unpin_btn = gtk::Button::builder()
