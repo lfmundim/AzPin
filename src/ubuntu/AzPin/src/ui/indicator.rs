@@ -26,16 +26,7 @@ impl Tray for AzPinTray {
     fn menu(&self) -> Vec<MenuItem<Self>> {
         let mut items = Vec::new();
 
-        let tx = self.open_tx.clone();
-        items.push(menu::StandardItem {
-            label: "Open AzPin".into(),
-            activate: Box::new(move |_| {
-                let _ = tx.send(());
-            }),
-            ..Default::default()
-        }.into());
-        items.push(menu::MenuItem::Separator);
-
+        // 1. Account info
         match crate::services::az_cli::AzCliService::get_default_subscription() {
             Ok(sub) => {
                 items.push(menu::StandardItem {
@@ -55,88 +46,134 @@ impl Tray for AzPinTray {
 
         items.push(menu::MenuItem::Separator);
 
-        // Add pinned groups
+        // 2. Pinned Groups
         if let Ok(groups) = self.db.get_pinned_groups() {
             let arm_svc = self.arm_service.clone();
+            let db_ref = self.db.clone();
             
             for group in groups {
                 let mut group_submenu = Vec::new();
-                for res in group.resources {
-                    let res_id_portal = res.id.clone();
-                    
-                    let mut submenu = vec![
-                        menu::StandardItem {
-                            label: "Open in Portal".into(),
-                            activate: Box::new(move |_| {
-                                let uri = format!("https://portal.azure.com/#resource{}", res_id_portal);
-                                let _ = gtk::gio::AppInfo::launch_default_for_uri(&uri, None::<&gtk::gio::AppLaunchContext>);
-                            }),
-                            ..Default::default()
-                        }.into(),
-                    ];
-
-                    let is_runnable = res.type_.eq_ignore_ascii_case("Microsoft.Web/sites") || 
-                                      res.type_.eq_ignore_ascii_case("Microsoft.App/containerApps") || 
-                                      res.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines");
-
-                    if is_runnable {
-                        submenu.push(menu::MenuItem::Separator);
+                
+                // Fetch resources for this group
+                if let Ok(resources) = db_ref.get_pinned_resources(&group.id) {
+                    for res in resources {
+                        let res_id_portal = res.id.clone();
                         
-                        let r_id_start = res.id.clone();
-                        let sub_start = res.subscription_id.clone();
-                        let a_svc_start = arm_svc.clone();
-                        submenu.push(menu::StandardItem {
-                            label: "Start".into(),
-                            activate: Box::new(move |_| {
-                                let a_svc = a_svc_start.clone();
-                                let sid = sub_start.clone();
-                                let rid = r_id_start.clone();
-                                gtk::glib::spawn_future_local(async move {
-                                    let _ = a_svc.start_resource(&sid, &rid, "2021-04-01").await;
-                                });
-                            }),
-                            ..Default::default()
-                        }.into());
+                        let mut submenu = vec![
+                            menu::StandardItem {
+                                label: "Open in Portal".into(),
+                                activate: Box::new(move |_| {
+                                    let uri = format!("https://portal.azure.com/#resource{}", res_id_portal);
+                                    let _ = gtk::gio::AppInfo::launch_default_for_uri(&uri, None::<&gtk::gio::AppLaunchContext>);
+                                }),
+                                ..Default::default()
+                            }.into(),
+                        ];
 
-                        let r_id_stop = res.id.clone();
-                        let sub_stop = res.subscription_id.clone();
-                        let a_svc_stop = arm_svc.clone();
-                        submenu.push(menu::StandardItem {
-                            label: "Stop".into(),
-                            activate: Box::new(move |_| {
-                                let a_svc = a_svc_stop.clone();
-                                let sid = sub_stop.clone();
-                                let rid = r_id_stop.clone();
-                                gtk::glib::spawn_future_local(async move {
-                                    let _ = a_svc.stop_resource(&sid, &rid, "2021-04-01").await;
-                                });
-                            }),
-                            ..Default::default()
-                        }.into());
+                        let is_runnable = res.type_.eq_ignore_ascii_case("Microsoft.Web/sites") || 
+                                          res.type_.eq_ignore_ascii_case("Microsoft.App/containerApps") || 
+                                          res.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines");
 
-                        let r_id_restart = res.id.clone();
-                        let sub_restart = res.subscription_id.clone();
-                        let a_svc_restart = arm_svc.clone();
-                        submenu.push(menu::StandardItem {
-                            label: "Restart".into(),
-                            activate: Box::new(move |_| {
-                                let a_svc = a_svc_restart.clone();
-                                let sid = sub_restart.clone();
-                                let rid = r_id_restart.clone();
-                                gtk::glib::spawn_future_local(async move {
-                                    let _ = a_svc.restart_resource(&sid, &rid, "2021-04-01").await;
-                                });
-                            }),
-                            ..Default::default()
-                        }.into());
+                        if is_runnable {
+                            submenu.push(menu::MenuItem::Separator);
+                            
+                            let r_id_start = res.id.clone();
+                            let sub_start = res.subscription_id.clone();
+                            let a_svc_start = arm_svc.clone();
+                            submenu.push(menu::StandardItem {
+                                label: "Start".into(),
+                                activate: Box::new(move |_| {
+                                    let a_svc = a_svc_start.clone();
+                                    let sid = sub_start.clone();
+                                    let rid = r_id_start.clone();
+                                    gtk::glib::spawn_future_local(async move {
+                                        let _ = a_svc.start_resource(&sid, &rid, "2021-04-01").await;
+                                    });
+                                }),
+                                ..Default::default()
+                            }.into());
+
+                            let r_id_stop = res.id.clone();
+                            let sub_stop = res.subscription_id.clone();
+                            let a_svc_stop = arm_svc.clone();
+                            submenu.push(menu::StandardItem {
+                                label: "Stop".into(),
+                                activate: Box::new(move |_| {
+                                    let a_svc = a_svc_stop.clone();
+                                    let sid = sub_stop.clone();
+                                    let rid = r_id_stop.clone();
+                                    gtk::glib::spawn_future_local(async move {
+                                        let _ = a_svc.stop_resource(&sid, &rid, "2021-04-01").await;
+                                    });
+                                }),
+                                ..Default::default()
+                            }.into());
+
+                            let r_id_restart = res.id.clone();
+                            let sub_restart = res.subscription_id.clone();
+                            let a_svc_restart = arm_svc.clone();
+                            submenu.push(menu::StandardItem {
+                                label: "Restart".into(),
+                                activate: Box::new(move |_| {
+                                    let a_svc = a_svc_restart.clone();
+                                    let sid = sub_restart.clone();
+                                    let rid = r_id_restart.clone();
+                                    gtk::glib::spawn_future_local(async move {
+                                        let _ = a_svc.restart_resource(&sid, &rid, "2021-04-01").await;
+                                    });
+                                }),
+                                ..Default::default()
+                            }.into());
+                        }
+
+                        // We can either add it as a submenu (if runnable) or standard item
+                        if is_runnable {
+                            group_submenu.push(menu::SubMenu {
+                                label: res.name.clone(),
+                                submenu,
+                                ..Default::default()
+                            }.into());
+                        } else {
+                            // If it doesn't have actions, just make it clickable to open portal directly
+                            let r_id = res.id.clone();
+                            group_submenu.push(menu::StandardItem {
+                                label: res.name.clone(),
+                                activate: Box::new(move |_| {
+                                    let uri = format!("https://portal.azure.com/#resource{}", r_id);
+                                    let _ = gtk::gio::AppInfo::launch_default_for_uri(&uri, None::<&gtk::gio::AppLaunchContext>);
+                                }),
+                                ..Default::default()
+                            }.into());
+                        }
                     }
-
-                    group_submenu.push(menu::SubMenu {
-                        label: res.name.clone(),
-                        submenu,
-                        ..Default::default()
-                    }.into());
                 }
+                
+                // Add bottom options for the group
+                if !group_submenu.is_empty() {
+                    group_submenu.push(menu::MenuItem::Separator);
+                }
+                
+                let g_id_portal = group.id.clone();
+                group_submenu.push(menu::StandardItem {
+                    label: "Open Resource Group in Portal".into(),
+                    activate: Box::new(move |_| {
+                        let uri = format!("https://portal.azure.com/#resource{}", g_id_portal);
+                        let _ = gtk::gio::AppInfo::launch_default_for_uri(&uri, None::<&gtk::gio::AppLaunchContext>);
+                    }),
+                    ..Default::default()
+                }.into());
+                
+                let g_id_unpin = group.id.clone();
+                let db_unpin = self.db.clone();
+                group_submenu.push(menu::StandardItem {
+                    label: "Unpin".into(),
+                    activate: Box::new(move |tray: &mut AzPinTray| {
+                        let _ = db_unpin.delete_pinned_group(&g_id_unpin);
+                        // The tray doesn't auto-refresh here, but we can't easily trigger a refresh from inside `activate`
+                        // without a channel. So we rely on the main window or next click to refresh.
+                    }),
+                    ..Default::default()
+                }.into());
                 
                 items.push(menu::SubMenu {
                     label: group.name,
@@ -145,6 +182,35 @@ impl Tray for AzPinTray {
                 }.into());
             }
         }
+
+        // 3. Pinned Individual Resources (that are NOT part of a pinned group)
+        // For now we will just show groups as per screenshot.
+
+        items.push(menu::MenuItem::Separator);
+
+        let tx = self.open_tx.clone();
+        items.push(menu::StandardItem {
+            label: "Open AzPin...".into(),
+            activate: Box::new(move |_| {
+                let _ = tx.send(());
+            }),
+            ..Default::default()
+        }.into());
+
+        // TODO: Settings
+        items.push(menu::StandardItem {
+            label: "Settings...".into(),
+            enabled: false, // We need a way to open settings from tray
+            ..Default::default()
+        }.into());
+
+        items.push(menu::StandardItem {
+            label: "Quit AzPin".into(),
+            activate: Box::new(|_| {
+                std::process::exit(0);
+            }),
+            ..Default::default()
+        }.into());
 
         items
     }
