@@ -7,8 +7,7 @@
            Scope="perUser">
     <SummaryInformation Description="Fast, pinnable access to Azure resources from the Windows tray." />
     <MajorUpgrade DowngradeErrorMessage="A newer version of AzPin is already installed." />
-    <Launch Condition="VersionNT64 &gt;= 1000 AND BuildNumber &gt;= 22621" Message="AzPin requires Windows 11 (build 22621) or later." />
-    <MediaTemplate EmbedCab="yes" />
+<MediaTemplate EmbedCab="yes" />
 
     <Feature Id="Main" Level="1">
       <ComponentGroupRef Id="AzPinFiles" />
