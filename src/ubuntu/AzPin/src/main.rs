@@ -35,8 +35,17 @@ async fn main() {
             gtk::glib::ControlFlow::Continue
         });
 
+        let (settings_tx, settings_rx) = gtk::glib::MainContext::channel(gtk::glib::Priority::DEFAULT);
+        let app_clone2 = app.clone();
+        let db_clone = db.clone();
+        settings_rx.attach(None, move |_| {
+            let settings = crate::ui::settings::SettingsWindow::new(&app_clone2, db_clone.clone());
+            settings.present();
+            gtk::glib::ControlFlow::Continue
+        });
+
         // Initialize Tray (without GTK3 linkage)
-        let tray = crate::ui::indicator::AzPinTray { db: db.clone(), arm_service: arm_service.clone(), open_tx };
+        let tray = crate::ui::indicator::AzPinTray { db: db.clone(), arm_service: arm_service.clone(), open_tx, settings_tx };
         let tray_service = ksni::TrayService::new(tray);
         let tray_handle = tray_service.handle();
         tray_service.spawn();

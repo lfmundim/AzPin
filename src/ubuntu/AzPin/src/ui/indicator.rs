@@ -8,6 +8,7 @@ pub struct AzPinTray {
     pub db: Arc<Db>,
     pub arm_service: Arc<ArmService>,
     pub open_tx: gtk::glib::Sender<()>,
+    pub settings_tx: gtk::glib::Sender<()>,
 }
 
 impl Tray for AzPinTray {
@@ -197,10 +198,12 @@ impl Tray for AzPinTray {
             ..Default::default()
         }.into());
 
-        // TODO: Settings
+        let settings_tx = self.settings_tx.clone();
         items.push(menu::StandardItem {
             label: "Settings...".into(),
-            enabled: false, // We need a way to open settings from tray
+            activate: Box::new(move |_| {
+                let _ = settings_tx.send(());
+            }),
             ..Default::default()
         }.into());
 

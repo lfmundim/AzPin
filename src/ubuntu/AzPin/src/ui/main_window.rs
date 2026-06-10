@@ -234,9 +234,10 @@ impl MainWindow {
         let subs_cache_clone = subs_cache.clone();
         let sub_dropdown_clone = sub_dropdown.clone();
         sub_rx.attach(None, move |subs: Vec<AzSubscription>| {
+            sub_dropdown_clone.set_selected(gtk::INVALID_LIST_POSITION);
             sub_model_clone.splice(0, sub_model_clone.n_items(), &subs.iter().map(|s| s.name.as_str()).collect::<Vec<_>>());
             *subs_cache_clone.borrow_mut() = subs;
-            sub_dropdown_clone.notify("selected-item");
+            sub_dropdown_clone.set_selected(0);
             gtk::glib::ControlFlow::Continue
         });
         std::thread::spawn(move || {
