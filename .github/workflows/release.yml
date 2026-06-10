@@ -131,6 +131,7 @@ jobs:
       - name: Archive (signed)
         if: steps.signing.outputs.available == 'true'
         run: |
+          set -o pipefail
           xcodebuild -project src/macos/AzPin.xcodeproj \
             -scheme AzPin \
             -configuration Release \
@@ -142,6 +143,7 @@ jobs:
       - name: Archive (unsigned)
         if: steps.signing.outputs.available != 'true'
         run: |
+          set -o pipefail
           xcodebuild -project src/macos/AzPin.xcodeproj \
             -scheme AzPin \
             -configuration Release \
@@ -153,11 +155,16 @@ jobs:
       - name: Export .app (signed)
         if: steps.signing.outputs.available == 'true'
         run: |
+          set -o pipefail
           xcodebuild -exportArchive \
             -archivePath build/AzPin.xcarchive \
             -exportPath build/export \
             -exportOptionsPlist ExportOptions.plist \
             | xcbeautify
+
+      - name: List export directory
+        if: steps.signing.outputs.available == 'true'
+        run: ls -laR build/export/
 
       - name: Export .app (unsigned)
         if: steps.signing.outputs.available != 'true'
