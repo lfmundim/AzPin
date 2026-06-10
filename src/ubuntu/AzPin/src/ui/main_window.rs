@@ -235,9 +235,9 @@ impl MainWindow {
             let root_stack_clone = root_stack_clone.clone();
             std::thread::spawn(move || {
                 let _ = std::process::Command::new("az").arg("login").output();
-                glib::idle_add_local(move || {
+                gtk::glib::idle_add_local(move || {
                     root_stack_clone.set_visible_child_name("main");
-                    glib::ControlFlow::Break
+                    gtk::glib::ControlFlow::Break
                 });
             });
         });
