@@ -4,9 +4,10 @@
            Manufacturer="Lucas Mundim"
            Version="$(var.Version)"
            UpgradeCode="3F8A1B2C-4D5E-6F7A-8B9C-0D1E2F3A4B5C"
-           Scope="perMachine">
+           Scope="perUser">
     <SummaryInformation Description="Fast, pinnable access to Azure resources from the Windows tray." />
     <MajorUpgrade DowngradeErrorMessage="A newer version of AzPin is already installed." />
+    <Launch Condition="VersionNT64 &gt;= 1000 AND BuildNumber &gt;= 22621" Message="AzPin requires Windows 11 (build 22621) or later." />
     <MediaTemplate EmbedCab="yes" />
 
     <Feature Id="Main" Level="1">
@@ -16,7 +17,7 @@
   </Package>
 
   <Fragment>
-    <StandardDirectory Id="ProgramFiles64Folder">
+    <StandardDirectory Id="LocalAppDataFolder">
       <Directory Id="INSTALLFOLDER" Name="AzPin" />
     </StandardDirectory>
     <StandardDirectory Id="ProgramMenuFolder">
