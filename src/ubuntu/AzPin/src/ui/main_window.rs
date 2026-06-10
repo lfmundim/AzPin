@@ -57,7 +57,7 @@ impl MainWindow {
             .build();
         sidebar_box.append(&scrolled_sidebar);
 
-        split_view.set_sidebar(&sidebar_box);
+        split_view.set_sidebar(Some(&sidebar_box));
 
         // --- Detail View (ViewStack with Tabs) ---
         let view_stack = adw::ViewStack::new();
@@ -116,7 +116,7 @@ impl MainWindow {
         detail_box.append(&detail_header);
         detail_box.append(&view_stack);
         
-        split_view.set_content(&detail_box);
+        split_view.set_content(Some(&detail_box));
 
         // --- Create ApplicationWindow ---
         let window = adw::ApplicationWindow::builder()
