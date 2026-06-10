@@ -136,6 +136,7 @@ jobs:
             -scheme AzPin \
             -configuration Release \
             -archivePath build/AzPin.xcarchive \
+            MARKETING_VERSION="${{ steps.version.outputs.version }}" \
             CODE_SIGN_IDENTITY="${{ secrets.APPLE_DEVELOPER_ID }}" \
             DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
             archive | xcbeautify
@@ -148,6 +149,7 @@ jobs:
             -scheme AzPin \
             -configuration Release \
             -archivePath build/AzPin.xcarchive \
+            MARKETING_VERSION="${{ steps.version.outputs.version }}" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             archive | xcbeautify
