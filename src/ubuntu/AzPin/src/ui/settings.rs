@@ -1,6 +1,7 @@
 use gtk4::prelude::*;
 use adw::prelude::*;
 use gtk4 as gtk;
+use gtk::prelude::*;
 use std::sync::Arc;
 use crate::services::db::Db;
 
