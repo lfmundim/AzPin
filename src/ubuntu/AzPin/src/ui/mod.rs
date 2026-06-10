@@ -1,1 +1,1 @@
-// Menubar/indicator and MainWindow components
+pub mod indicator;
