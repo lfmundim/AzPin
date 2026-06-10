@@ -63,6 +63,13 @@ impl Db {
             [],
         )?;
 
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS hidden_subscriptions (
+                id TEXT PRIMARY KEY
+            )",
+            [],
+        )?;
+
         Ok(())
     }
 
@@ -184,5 +191,37 @@ impl Db {
         conn.execute("DELETE FROM pinned_resource_groups WHERE id = ?1", params![id])?;
         // Resources are cascade-deleted due to FOREIGN KEY
         Ok(())
+    }
+
+    pub fn delete_pinned_resource(&self, id: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM pinned_resources WHERE id = ?1", params![id])?;
+        Ok(())
+    }
+
+    // --- Settings Operations ---
+    
+    pub fn hide_subscription(&self, id: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("INSERT OR IGNORE INTO hidden_subscriptions (id) VALUES (?1)", params![id])?;
+        Ok(())
+    }
+
+    pub fn show_subscription(&self, id: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM hidden_subscriptions WHERE id = ?1", params![id])?;
+        Ok(())
+    }
+
+    pub fn get_hidden_subscriptions(&self) -> Result<Vec<String>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT id FROM hidden_subscriptions")?;
+        let rows = stmt.query_map([], |row| row.get(0))?;
+        
+        let mut subs = Vec::new();
+        for row in rows {
+            subs.push(row?);
+        }
+        Ok(subs)
     }
 }

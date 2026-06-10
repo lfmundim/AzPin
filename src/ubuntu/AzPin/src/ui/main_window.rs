@@ -138,7 +138,7 @@ impl MainWindow {
         sub_dropdown.set_margin_top(16); sub_dropdown.set_margin_bottom(16);
         sub_dropdown.set_margin_start(16); sub_dropdown.set_margin_end(16);
         browse_azure_page.append(&sub_dropdown);
-
+        let pinned_res_list_clone = pinned_res_list.clone();
         let search_entry = gtk::SearchEntry::new();
         search_entry.set_margin_bottom(16);
         search_entry.set_margin_start(16); search_entry.set_margin_end(16);
@@ -353,7 +353,20 @@ impl MainWindow {
                                         let _ = tray_c.update(|_| {});
                                     });
 
+                                    let portal_btn = gtk::Button::builder()
+                                        .icon_name("external-link-symbolic")
+                                        .css_classes(vec!["flat".to_string()])
+                                        .build();
+                                    
+                                    let res_id_clone = res.id.clone();
+                                    portal_btn.connect_clicked(move |_| {
+                                        let uri = format!("https://portal.azure.com/#resource{}", res_id_clone);
+                                        let launcher = gtk::UriLauncher::new(&uri);
+                                        launcher.launch(None::<&gtk::Window>, gtk::gio::Cancellable::NONE, |_| {});
+                                    });
+
                                     box_.append(&label);
+                                    box_.append(&portal_btn);
                                     box_.append(&pin_btn);
                                     res_row.set_child(Some(&box_));
                                     b_list.append(&res_row);
@@ -361,7 +374,67 @@ impl MainWindow {
                             }
                         });
                         
-                        // TODO: load pinned resources into pinned_res_list
+                        // Clear pinned list
+                        let p_list = pinned_res_list_clone.clone();
+                        while let Some(child) = p_list.first_child() {
+                            p_list.remove(&child);
+                        }
+                        
+                        // Load Pinned Resources
+                        let p_list_clone = p_list.clone();
+                        let db_p = db_for_pin.clone();
+                        let g_id = rg_name.clone();
+                        let tray_p = tray_handle_pin.clone();
+                        
+                        gtk::glib::spawn_future_local(async move {
+                            if let Ok(pinned_res) = db_p.get_pinned_resources(&g_id) {
+                                for res in pinned_res {
+                                    let res_row = gtk::ListBoxRow::new();
+                                    let box_ = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+                                    box_.set_margin_start(12); box_.set_margin_end(12);
+                                    box_.set_margin_top(8); box_.set_margin_bottom(8);
+                                    
+                                    let label = gtk::Label::new(Some(&res.name));
+                                    label.set_halign(gtk::Align::Start); label.set_hexpand(true);
+                                    
+                                    let portal_btn = gtk::Button::builder()
+                                        .icon_name("external-link-symbolic")
+                                        .css_classes(vec!["flat".to_string()])
+                                        .build();
+                                        
+                                    let res_id_clone = res.id.clone();
+                                    portal_btn.connect_clicked(move |_| {
+                                        let uri = format!("https://portal.azure.com/#resource{}", res_id_clone);
+                                        let launcher = gtk::UriLauncher::new(&uri);
+                                        launcher.launch(None::<&gtk::Window>, gtk::gio::Cancellable::NONE, |_| {});
+                                    });
+                                    
+                                    let unpin_btn = gtk::Button::builder()
+                                        .icon_name("user-trash-symbolic")
+                                        .css_classes(vec!["flat".to_string()])
+                                        .build();
+                                    
+                                    let db_unpin = db_p.clone();
+                                    let row_ref = res_row.clone();
+                                    let list_ref = p_list_clone.clone();
+                                    let tray_unpin = tray_p.clone();
+                                    let unpin_id = res.id.clone();
+                                    
+                                    // We don't have delete_pinned_resource yet, so we will need to add it to db.rs
+                                    unpin_btn.connect_clicked(move |_| {
+                                        let _ = db_unpin.delete_pinned_resource(&unpin_id);
+                                        list_ref.remove(&row_ref);
+                                        let _ = tray_unpin.update(|_| {});
+                                    });
+                                    
+                                    box_.append(&label);
+                                    box_.append(&portal_btn);
+                                    box_.append(&unpin_btn);
+                                    res_row.set_child(Some(&box_));
+                                    p_list_clone.append(&res_row);
+                                }
+                            }
+                        });
                     }
                 }
             }
