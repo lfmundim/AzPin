@@ -281,127 +281,147 @@ impl MainWindow {
                 while let Some(child) = list_c.first_child() {
                     list_c.remove(&child);
                 }
-
+                
+                let loading_row = adw::ActionRow::new();
+                loading_row.set_title("Loading Resource Groups...");
+                list_c.append(&loading_row);
+                
+                let list_c_for_future = list_c.clone();
                 gtk::glib::spawn_future_local(async move {
-                    if let Ok(groups) = a_svc.fetch_resource_groups(&sub_id).await {
-                        for group in groups {
-                            let exp_row = adw::ExpanderRow::new();
-                            exp_row.set_title(&group.name);
-                            exp_row.add_prefix(&gtk::Image::from_icon_name("folder-symbolic"));
-                            
-                            // Check if pinned
-                            let is_pinned = db_c.get_pinned_groups().unwrap_or_default().iter().any(|g| g.id == group.id);
-                            
-                            let pin_btn = gtk::ToggleButton::builder()
-                                .icon_name("bookmark-new-symbolic")
-                                .css_classes(vec!["flat".to_string()])
-                                .valign(gtk::Align::Center)
-                                .active(is_pinned)
-                                .build();
+                    list_c_for_future.remove(&loading_row);
+                    match a_svc.fetch_resource_groups(&sub_id).await {
+                        Ok(groups) => {
+                            for group in groups {
+                                let exp_row = adw::ExpanderRow::new();
+                                exp_row.set_title(&group.name);
+                                exp_row.add_prefix(&gtk::Image::from_icon_name("folder-symbolic"));
                                 
-                            let g_id = group.id.clone();
-                            let s_id = sub_id.clone();
-                            let g_name = group.name.clone();
-                            let db_pin = db_c.clone();
-                            let tr_pin = tray_c.clone();
-                            let ls_pin = ls_c.clone();
-                            
-                            pin_btn.connect_toggled(move |btn| {
-                                use crate::models::persistence::PinnedResourceGroup;
-                                if btn.is_active() {
-                                    let _ = db_pin.save_pinned_group(&PinnedResourceGroup {
-                                        id: g_id.clone(), subscription_id: s_id.clone(), name: g_name.clone(), display_order: 0, resources: vec![]
-                                    });
-                                } else {
-                                    let _ = db_pin.delete_pinned_group(&g_id);
-                                }
-                                let _ = tr_pin.update(|_| {});
-                                ls_pin();
-                            });
-                            exp_row.add_suffix(&pin_btn);
-                            
-                            // Load resources on expand
-                            let loaded = Rc::new(RefCell::new(false));
-                            let a_svc_res = a_svc.clone();
-                            let sub_res = sub_id.clone();
-                            let grp_res = group.name.clone();
-                            let g_id_res = group.id.clone();
-                            let db_res = db_c.clone();
-                            let tray_res = tray_c.clone();
-                            let ls_res = ls_c.clone();
-                            let exp_row_clone = exp_row.clone();
-                            
-                            exp_row.connect_expanded_notify(move |exp| {
-                                if exp.is_expanded() && !*loaded.borrow() {
-                                    *loaded.borrow_mut() = true;
-                                    let asr = a_svc_res.clone();
-                                    let sr = sub_res.clone();
-                                    let gr = grp_res.clone();
-                                    let dbr = db_res.clone();
-                                    let tr = tray_res.clone();
-                                    let lsr = ls_res.clone();
-                                    let er = exp_row_clone.clone();
-                                    let g_id_r = g_id_res.clone();
+                                // Check if pinned
+                                let is_pinned = db_c.get_pinned_groups().unwrap_or_default().iter().any(|g| g.id == group.id);
+                                
+                                let pin_btn = gtk::ToggleButton::builder()
+                                    .icon_name("bookmark-new-symbolic")
+                                    .css_classes(vec!["flat".to_string()])
+                                    .valign(gtk::Align::Center)
+                                    .active(is_pinned)
+                                    .build();
                                     
-                                    gtk::glib::spawn_future_local(async move {
-                                        if let Ok(resources) = asr.fetch_resources(&sr, &gr).await {
-                                            for res in resources {
-                                                let act_row = adw::ActionRow::new();
-                                                act_row.set_title(&res.name);
-                                                act_row.add_prefix(&gtk::Image::from_icon_name(get_icon_for_type(&res.type_)));
-                                                
-                                                // Check if pinned
-                                                let is_res_pinned = dbr.get_pinned_resources(&g_id_r).unwrap_or_default().iter().any(|r| r.id == res.id);
-                                                
-                                                let res_pin_btn = gtk::ToggleButton::builder()
-                                                    .icon_name("bookmark-new-symbolic")
-                                                    .css_classes(vec!["flat".to_string()])
-                                                    .valign(gtk::Align::Center)
-                                                    .active(is_res_pinned)
-                                                    .build();
-                                                    
-                                                let r_id = res.id.clone();
-                                                let r_name = res.name.clone();
-                                                let r_type = res.type_.clone();
-                                                let r_loc = res.location.clone();
-                                                let g_r = gr.clone();
-                                                let s_r = sr.clone();
-                                                let db_r_pin = dbr.clone();
-                                                let tr_r_pin = tr.clone();
-                                                let ls_r_pin = lsr.clone();
-                                                let group_id_r = g_id_r.clone();
-                                                
-                                                // Save group first to satisfy foreign key if it's not pinned
-                                                let group_id_for_fk = g_id_r.clone();
-                                                let sub_for_fk = sr.clone();
-                                                let group_name_for_fk = gr.clone();
-                                                
-                                                res_pin_btn.connect_toggled(move |btn| {
-                                                    use crate::models::persistence::{PinnedResource, PinnedResourceGroup};
-                                                    if btn.is_active() {
-                                                        // Ensure group exists in DB
-                                                        let _ = db_r_pin.save_pinned_group(&PinnedResourceGroup {
-                                                            id: group_id_for_fk.clone(), subscription_id: sub_for_fk.clone(), name: group_name_for_fk.clone(), display_order: 0, resources: vec![]
+                                let g_id = group.id.clone();
+                                let s_id = sub_id.clone();
+                                let g_name = group.name.clone();
+                                let db_pin = db_c.clone();
+                                let tr_pin = tray_c.clone();
+                                let ls_pin = ls_c.clone();
+                                
+                                pin_btn.connect_toggled(move |btn| {
+                                    use crate::models::persistence::PinnedResourceGroup;
+                                    if btn.is_active() {
+                                        let _ = db_pin.save_pinned_group(&PinnedResourceGroup {
+                                            id: g_id.clone(), subscription_id: s_id.clone(), name: g_name.clone(), display_order: 0, resources: vec![]
+                                        });
+                                    } else {
+                                        let _ = db_pin.delete_pinned_group(&g_id);
+                                    }
+                                    let _ = tr_pin.update(|_| {});
+                                    ls_pin();
+                                });
+                                exp_row.add_suffix(&pin_btn);
+                                
+                                // Load resources on expand
+                                let loaded = Rc::new(RefCell::new(false));
+                                let a_svc_res = a_svc.clone();
+                                let sub_res = sub_id.clone();
+                                let grp_res = group.name.clone();
+                                let g_id_res = group.id.clone();
+                                let db_res = db_c.clone();
+                                let tray_res = tray_c.clone();
+                                let ls_res = ls_c.clone();
+                                let exp_row_clone = exp_row.clone();
+                                
+                                exp_row.connect_expanded_notify(move |exp| {
+                                    if exp.is_expanded() && !*loaded.borrow() {
+                                        *loaded.borrow_mut() = true;
+                                        let asr = a_svc_res.clone();
+                                        let sr = sub_res.clone();
+                                        let gr = grp_res.clone();
+                                        let dbr = db_res.clone();
+                                        let tr = tray_res.clone();
+                                        let lsr = ls_res.clone();
+                                        let er = exp_row_clone.clone();
+                                        let g_id_r = g_id_res.clone();
+                                        
+                                        gtk::glib::spawn_future_local(async move {
+                                            match asr.fetch_resources(&sr, &gr).await {
+                                                Ok(resources) => {
+                                                    for res in resources {
+                                                        let act_row = adw::ActionRow::new();
+                                                        act_row.set_title(&res.name);
+                                                        act_row.add_prefix(&gtk::Image::from_icon_name(get_icon_for_type(&res.type_)));
+                                                        
+                                                        // Check if pinned
+                                                        let is_res_pinned = dbr.get_pinned_resources(&g_id_r).unwrap_or_default().iter().any(|r| r.id == res.id);
+                                                        
+                                                        let res_pin_btn = gtk::ToggleButton::builder()
+                                                            .icon_name("bookmark-new-symbolic")
+                                                            .css_classes(vec!["flat".to_string()])
+                                                            .valign(gtk::Align::Center)
+                                                            .active(is_res_pinned)
+                                                            .build();
+                                                            
+                                                        let r_id = res.id.clone();
+                                                        let r_name = res.name.clone();
+                                                        let r_type = res.type_.clone();
+                                                        let r_loc = res.location.clone();
+                                                        let g_r = gr.clone();
+                                                        let s_r = sr.clone();
+                                                        let db_r_pin = dbr.clone();
+                                                        let tr_r_pin = tr.clone();
+                                                        let ls_r_pin = lsr.clone();
+                                                        let group_id_r = g_id_r.clone();
+                                                        
+                                                        // Save group first to satisfy foreign key if it's not pinned
+                                                        let group_id_for_fk = g_id_r.clone();
+                                                        let sub_for_fk = sr.clone();
+                                                        let group_name_for_fk = gr.clone();
+                                                        
+                                                        res_pin_btn.connect_toggled(move |btn| {
+                                                            use crate::models::persistence::{PinnedResource, PinnedResourceGroup};
+                                                            if btn.is_active() {
+                                                                // Ensure group exists in DB
+                                                                let _ = db_r_pin.save_pinned_group(&PinnedResourceGroup {
+                                                                    id: group_id_for_fk.clone(), subscription_id: sub_for_fk.clone(), name: group_name_for_fk.clone(), display_order: 0, resources: vec![]
+                                                                });
+                                                                let _ = db_r_pin.save_pinned_resource(&PinnedResource {
+                                                                    id: r_id.clone(), name: r_name.clone(), type_: r_type.clone(),
+                                                                    resource_group: g_r.clone(), subscription_id: s_r.clone(), location: r_loc.clone(), display_order: 0,
+                                                                }, &group_id_r);
+                                                            } else {
+                                                                let _ = db_r_pin.delete_pinned_resource(&r_id);
+                                                            }
+                                                            let _ = tr_r_pin.update(|_| {});
+                                                            ls_r_pin();
                                                         });
-                                                        let _ = db_r_pin.save_pinned_resource(&PinnedResource {
-                                                            id: r_id.clone(), name: r_name.clone(), type_: r_type.clone(),
-                                                            resource_group: g_r.clone(), subscription_id: s_r.clone(), location: r_loc.clone(), display_order: 0,
-                                                        }, &group_id_r);
-                                                    } else {
-                                                        let _ = db_r_pin.delete_pinned_resource(&r_id);
+                                                        act_row.add_suffix(&res_pin_btn);
+                                                        er.add_row(&act_row);
                                                     }
-                                                    let _ = tr_r_pin.update(|_| {});
-                                                    ls_r_pin();
-                                                });
-                                                act_row.add_suffix(&res_pin_btn);
-                                                er.add_row(&act_row);
+                                                }
+                                                Err(e) => {
+                                                    let err_row = adw::ActionRow::new();
+                                                    err_row.set_title(&format!("Error: {}", e));
+                                                    er.add_row(&err_row);
+                                                }
                                             }
-                                        }
-                                    });
-                                }
-                            });
-                            
-                            list_c.append(&exp_row);
+                                        });
+                                    }
+                                });
+                                
+                                list_c.append(&exp_row);
+                            }
+                        }
+                        Err(e) => {
+                            let err_row = adw::ActionRow::new();
+                            err_row.set_title(&format!("Failed to fetch Resource Groups: {}", e));
+                            list_c.append(&err_row);
                         }
                     }
                 });
