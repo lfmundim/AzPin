@@ -16,7 +16,7 @@ pub struct IndicatorApp {
 
 impl IndicatorApp {
     pub fn new(db: Arc<Db>, arm_service: Arc<ArmService>) -> Self {
-        let mut indicator = Indicator::builder("azpin", "weather-overcast", IndicatorCategory::ApplicationStatus);
+        let mut indicator = Indicator::new("azpin", "weather-overcast", IndicatorCategory::ApplicationStatus);
         indicator.set_status(IndicatorStatus::Active);
 
         let app = Self { indicator, db, arm_service };
