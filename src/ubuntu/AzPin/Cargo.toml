@@ -11,5 +11,6 @@ reqwest = { version = "0.11", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rusqlite = { version = "0.31", features = ["bundled"] }
+chrono = "0.4"
 ayatana-appindicator = "0.1" # Alternatively, use libappindicator or other appropriate crate
 dirs = "5.0" # For XDG spec based directories
