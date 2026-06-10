@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use gtk4::gio;
-use gtk4::prelude::*;
+use appindicator3::prelude::*;
 use crate::services::db::Db;
 use crate::services::arm::ArmService;
 // Note: AppIndicator with GTK4 typically requires exporting the gio::Menu over DBus
