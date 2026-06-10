@@ -12,7 +12,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rusqlite = { version = "0.31", features = ["bundled"] }
 chrono = "0.4"
-ayatana-appindicator = "0.1" # Alternatively, use libappindicator or other appropriate crate
+appindicator3 = "0.2" # Using appindicator3 crate for ayatana bindings
 dirs = "5.0" # For XDG spec based directories
 
 [package.metadata.deb]

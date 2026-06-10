@@ -6,7 +6,7 @@ use crate::services::arm::ArmService;
 // Note: AppIndicator with GTK4 typically requires exporting the gio::Menu over DBus
 // or using a specific GTK4 compatible tray library. We are conceptually implementing
 // the requested interface here.
-use ayatana_appindicator::{AppIndicator, IndicatorCategory, IndicatorStatus};
+use appindicator3::{AppIndicator, IndicatorCategory, IndicatorStatus};
 
 pub struct IndicatorApp {
     indicator: AppIndicator,
