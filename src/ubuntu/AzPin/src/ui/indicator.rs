@@ -22,21 +22,33 @@ impl Tray for AzPinTray {
     }
 
     fn menu(&self) -> Vec<MenuItem<Self>> {
-        let mut items = vec![
-            menu::StandardItem {
-                label: "⚠️ Not signed in".into(),
-                enabled: false,
-                ..Default::default()
-            }.into(),
-            menu::MenuItem::Separator,
-        ];
+        let mut items = Vec::new();
+
+        match crate::services::az_cli::AzCliService::get_default_subscription() {
+            Ok(sub) => {
+                items.push(menu::StandardItem {
+                    label: format!("✅ {}", sub.name),
+                    enabled: false,
+                    ..Default::default()
+                }.into());
+            },
+            Err(_) => {
+                items.push(menu::StandardItem {
+                    label: "⚠️ Not signed in".into(),
+                    enabled: false,
+                    ..Default::default()
+                }.into());
+            }
+        }
+
+        items.push(menu::MenuItem::Separator);
 
         // Add pinned groups
         if let Ok(groups) = self.db.get_pinned_groups() {
             for group in groups {
                 let mut group_submenu = Vec::new();
                 for res in group.resources {
-                    let res_id = res.id.clone();
+                    let _res_id = res.id.clone();
                     group_submenu.push(menu::SubMenu {
                         label: res.name.clone(),
                         submenu: vec![

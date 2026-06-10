@@ -3,6 +3,7 @@ use gtk4 as gtk;
 use std::sync::Arc;
 use crate::services::db::Db;
 use crate::services::arm::ArmService;
+use crate::services::az_cli::AzCliService;
 use crate::ui::settings::SettingsWindow;
 
 pub struct MainWindow {
@@ -11,6 +12,9 @@ pub struct MainWindow {
 
 impl MainWindow {
     pub fn new(app: &adw::Application, db: Arc<Db>, arm_service: Arc<ArmService>) -> Self {
+        let root_stack = gtk::Stack::new();
+        root_stack.set_transition_type(gtk::StackTransitionType::Crossfade);
+
         let split_view = adw::OverlaySplitView::new();
 
         // --- Sidebar (Resource Groups) ---
@@ -35,19 +39,30 @@ impl MainWindow {
         let rg_listbox = gtk::ListBox::new();
         rg_listbox.add_css_class("navigation-sidebar");
         
-        // Load pinned groups into listbox
-        if let Ok(groups) = db.get_pinned_groups() {
-            for group in groups {
-                let row = gtk::ListBoxRow::new();
-                let label = gtk::Label::new(Some(&group.name));
-                label.set_halign(gtk::Align::Start);
-                label.set_margin_start(12);
-                label.set_margin_end(12);
-                label.set_margin_top(8);
-                label.set_margin_bottom(8);
-                row.set_child(Some(&label));
-                rg_listbox.append(&row);
-            }
+        let is_logged_in_res = AzCliService::get_default_subscription();
+        let subscription_id = is_logged_in_res.ok().map(|s| s.id).unwrap_or_default();
+
+        let arm_svc = arm_service.clone();
+        let sub_id = subscription_id.clone();
+        let rg_listbox_clone = rg_listbox.clone();
+
+        if !sub_id.is_empty() {
+            gtk::glib::spawn_future_local(async move {
+                if let Ok(groups) = arm_svc.fetch_resource_groups(&sub_id).await {
+                    for group in groups {
+                        let row = gtk::ListBoxRow::new();
+                        let label = gtk::Label::new(Some(&group.name));
+                        label.set_halign(gtk::Align::Start);
+                        label.set_margin_start(12);
+                        label.set_margin_end(12);
+                        label.set_margin_top(8);
+                        label.set_margin_bottom(8);
+                        row.set_child(Some(&label));
+                        row.set_widget_name(&group.name);
+                        rg_listbox_clone.append(&row);
+                    }
+                }
+            });
         }
         
         let scrolled_sidebar = gtk::ScrolledWindow::builder()
@@ -89,6 +104,77 @@ impl MainWindow {
         browse_list.set_margin_end(16);
         browse_list.set_margin_bottom(16);
         browse_box.append(&browse_list);
+
+        let browse_list_clone = browse_list.clone();
+        let arm_svc_browse = arm_service.clone();
+        let sub_id_browse = subscription_id.clone();
+        let db_clone_for_pin = db.clone();
+        
+        rg_listbox.connect_row_selected(move |_listbox, row_opt| {
+            if let Some(row) = row_opt {
+                let group_name = row.widget_name().to_string();
+                let b_list = browse_list_clone.clone();
+                let a_svc = arm_svc_browse.clone();
+                let sub = sub_id_browse.clone();
+                let db_ref = db_clone_for_pin.clone();
+                
+                while let Some(child) = b_list.first_child() {
+                    b_list.remove(&child);
+                }
+
+                gtk::glib::spawn_future_local(async move {
+                    if let Ok(resources) = a_svc.fetch_resources(&sub, &group_name).await {
+                        for res in resources {
+                            let res_row = gtk::ListBoxRow::new();
+                            let box_ = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+                            box_.set_margin_start(12);
+                            box_.set_margin_end(12);
+                            box_.set_margin_top(8);
+                            box_.set_margin_bottom(8);
+                            
+                            let label = gtk::Label::new(Some(&res.name));
+                            label.set_halign(gtk::Align::Start);
+                            label.set_hexpand(true);
+                            
+                            let pin_btn = gtk::Button::builder()
+                                .icon_name("bookmark-new-symbolic")
+                                .css_classes(vec!["flat".to_string()])
+                                .build();
+                                
+                            // PINNING LOGIC
+                            let res_clone = res.clone();
+                            let db_clone2 = db_ref.clone();
+                            let grp_name_clone = group_name.clone();
+                            let sub_clone = sub.clone();
+                            pin_btn.connect_clicked(move |_| {
+                                use crate::models::persistence::{PinnedResource, PinnedResourceGroup};
+                                let _ = db_clone2.save_pinned_group(&PinnedResourceGroup {
+                                    id: grp_name_clone.clone(),
+                                    subscription_id: sub_clone.clone(),
+                                    name: grp_name_clone.clone(),
+                                    display_order: 0,
+                                    resources: vec![],
+                                });
+                                let _ = db_clone2.save_pinned_resource(&PinnedResource {
+                                    id: res_clone.id.clone(),
+                                    name: res_clone.name.clone(),
+                                    type_: res_clone.type_.clone(),
+                                    resource_group: grp_name_clone.clone(),
+                                    subscription_id: sub_clone.clone(),
+                                    location: res_clone.location.clone(),
+                                    display_order: 0,
+                                }, &grp_name_clone);
+                            });
+
+                            box_.append(&label);
+                            box_.append(&pin_btn);
+                            res_row.set_child(Some(&box_));
+                            b_list.append(&res_row);
+                        }
+                    }
+                });
+            }
+        });
         
         view_stack.add_titled(&browse_box, Some("browse"), "Browse");
 
@@ -117,6 +203,44 @@ impl MainWindow {
         detail_box.append(&view_stack);
         
         split_view.set_content(Some(&detail_box));
+        root_stack.add_named(&split_view, Some("main"));
+
+        // --- Onboarding View ---
+        let status_page = adw::StatusPage::builder()
+            .title("Welcome to AzPin")
+            .description("Please sign in to your Azure account to view and pin your resources.")
+            .icon_name("network-server-symbolic")
+            .build();
+
+        let sign_in_btn = gtk::Button::builder()
+            .label("Sign In to Azure")
+            .css_classes(vec!["suggested-action".to_string(), "pill".to_string()])
+            .halign(gtk::Align::Center)
+            .margin_bottom(32)
+            .build();
+
+        status_page.set_child(Some(&sign_in_btn));
+        root_stack.add_named(&status_page, Some("onboarding"));
+
+        // --- Logic ---
+        let is_logged_in = !subscription_id.is_empty();
+        if is_logged_in {
+            root_stack.set_visible_child_name("main");
+        } else {
+            root_stack.set_visible_child_name("onboarding");
+        }
+
+        let root_stack_clone = root_stack.clone();
+        sign_in_btn.connect_clicked(move |_| {
+            let root_stack_clone = root_stack_clone.clone();
+            std::thread::spawn(move || {
+                let _ = std::process::Command::new("az").arg("login").output();
+                glib::idle_add_local(move || {
+                    root_stack_clone.set_visible_child_name("main");
+                    glib::ControlFlow::Break
+                });
+            });
+        });
 
         // --- Create ApplicationWindow ---
         let window = adw::ApplicationWindow::builder()
@@ -124,7 +248,7 @@ impl MainWindow {
             .title("AzPin")
             .default_width(900)
             .default_height(600)
-            .content(&split_view)
+            .content(&root_stack)
             .build();
 
         Self { window }
