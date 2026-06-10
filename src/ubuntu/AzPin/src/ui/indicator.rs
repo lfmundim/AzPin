@@ -69,8 +69,7 @@ impl Tray for AzPinTray {
                             label: "Open in Portal".into(),
                             activate: Box::new(move |_| {
                                 let uri = format!("https://portal.azure.com/#resource{}", res_id_portal);
-                                let launcher = gtk::UriLauncher::new(&uri);
-                                launcher.launch(None::<&gtk::Window>, gtk::gio::Cancellable::NONE, |_| {});
+                                let _ = gtk::gio::AppInfo::launch_default_for_uri(&uri, None::<&gtk::gio::AppLaunchContext>);
                             }),
                             ..Default::default()
                         }.into(),

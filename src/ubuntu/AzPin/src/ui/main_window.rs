@@ -138,7 +138,7 @@ impl MainWindow {
         sub_dropdown.set_margin_top(16); sub_dropdown.set_margin_bottom(16);
         sub_dropdown.set_margin_start(16); sub_dropdown.set_margin_end(16);
         browse_azure_page.append(&sub_dropdown);
-        let pinned_res_list_clone = pinned_res_list.clone();
+
         let search_entry = gtk::SearchEntry::new();
         search_entry.set_margin_bottom(16);
         search_entry.set_margin_start(16); search_entry.set_margin_end(16);
@@ -162,6 +162,7 @@ impl MainWindow {
         
         let pinned_tab_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
         let pinned_res_list = gtk::ListBox::new();
+        let pinned_res_list_clone = pinned_res_list.clone();
         pinned_res_list.add_css_class("boxed-list");
         pinned_res_list.set_margin_top(16); pinned_res_list.set_margin_bottom(16);
         pinned_res_list.set_margin_start(16); pinned_res_list.set_margin_end(16);
