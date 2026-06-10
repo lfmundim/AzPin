@@ -10,6 +10,10 @@ on:
       - '.github/workflows/release.yml'
   workflow_dispatch:
     inputs:
+      build_ubuntu:
+        description: 'Build Ubuntu'
+        type: boolean
+        default: true
       build_macos:
         description: 'Build macOS'
         type: boolean
@@ -23,6 +27,7 @@ jobs:
   detect:
     runs-on: ubuntu-latest
     outputs:
+      ubuntu: ${{ steps.changes.outputs.ubuntu }}
       macos: ${{ steps.changes.outputs.macos }}
       windows: ${{ steps.changes.outputs.windows }}
     steps:
@@ -41,10 +46,16 @@ jobs:
         id: changes
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "ubuntu=${{ inputs.build_ubuntu }}" >> $GITHUB_OUTPUT
             echo "macos=${{ inputs.build_macos }}" >> $GITHUB_OUTPUT
             echo "windows=${{ inputs.build_windows }}" >> $GITHUB_OUTPUT
           else
             CHANGED=$(git diff --name-only HEAD^ HEAD)
+            if echo "$CHANGED" | grep -qE '^src/ubuntu/|^\.github/workflows/release\.yml'; then
+              echo "ubuntu=true" >> $GITHUB_OUTPUT
+            else
+              echo "ubuntu=false" >> $GITHUB_OUTPUT
+            fi
             if echo "$CHANGED" | grep -qE '^src/macos/|^\.github/workflows/release\.yml'; then
               echo "macos=true" >> $GITHUB_OUTPUT
             else
@@ -59,7 +70,7 @@ jobs:
 
   create-release:
     needs: detect
-    if: needs.detect.outputs.macos == 'true' || needs.detect.outputs.windows == 'true'
+    if: needs.detect.outputs.ubuntu == 'true' || needs.detect.outputs.macos == 'true' || needs.detect.outputs.windows == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -376,3 +387,33 @@ jobs:
             --urls $msiUrl `
             --token $env:WINGET_TOKEN `
             --submit
+
+  build-ubuntu:
+    needs: [detect, create-release]
+    if: needs.detect.outputs.ubuntu == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libadwaita-1-dev libappindicator3-dev
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-deb
+        run: cargo install cargo-deb
+
+      - name: Build and Package
+        working-directory: src/ubuntu/AzPin
+        run: cargo deb
+
+      - name: Upload DEB to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DEB_FILE=$(ls src/ubuntu/AzPin/target/debian/*.deb | head -n 1)
+          gh release upload "${{ needs.create-release.outputs.tag }}" "$DEB_FILE" --clobber

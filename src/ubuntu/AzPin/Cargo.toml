@@ -14,3 +14,17 @@ rusqlite = { version = "0.31", features = ["bundled"] }
 chrono = "0.4"
 ayatana-appindicator = "0.1" # Alternatively, use libappindicator or other appropriate crate
 dirs = "5.0" # For XDG spec based directories
+
+[package.metadata.deb]
+maintainer = "Lucas Mundim <lucas@example.com>"
+copyright = "2026, Lucas Mundim"
+depends = "libgtk-4-1, libadwaita-1-0, libappindicator3-1"
+recommends = "azure-cli"
+extended-description = "A native GTK4 app and indicator to manage Azure resources."
+section = "utility"
+priority = "optional"
+assets = [
+    ["target/release/azpin", "usr/bin/", "755"],
+    ["assets/linux/com.lfmundim.azpin.desktop", "usr/share/applications/", "644"],
+    ["assets/linux/icons/com.lfmundim.azpin.svg", "usr/share/icons/hicolor/scalable/apps/", "644"]
+]
