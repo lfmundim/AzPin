@@ -47,13 +47,15 @@ impl TokenCache {
         }
 
         if let Ok(naive) = chrono::NaiveDateTime::parse_from_str(expires_on, "%Y-%m-%d %H:%M:%S.%f") {
-            let dt = Utc.from_utc_datetime(&naive);
-            return dt > now + buffer;
+            if let chrono::LocalResult::Single(dt) = chrono::Local.from_local_datetime(&naive) {
+                return dt.with_timezone(&Utc) > now + buffer;
+            }
         }
         
         if let Ok(naive) = chrono::NaiveDateTime::parse_from_str(expires_on, "%Y-%m-%d %H:%M:%S") {
-            let dt = Utc.from_utc_datetime(&naive);
-            return dt > now + buffer;
+            if let chrono::LocalResult::Single(dt) = chrono::Local.from_local_datetime(&naive) {
+                return dt.with_timezone(&Utc) > now + buffer;
+            }
         }
 
         // If we can't parse it, consider it invalid so we fetch a new one
