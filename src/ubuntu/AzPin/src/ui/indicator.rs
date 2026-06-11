@@ -95,7 +95,7 @@ impl Tray for AzPinTray {
 
                             submenu.push(menu::MenuItem::Separator);
                             
-                            if !is_running && !is_transitioning {
+                            if is_stopped && !is_transitioning {
                                 let r_id_start = res.id.clone();
                                 let sub_start = res.subscription_id.clone();
                                 let a_svc_start = arm_svc.clone();
@@ -114,9 +114,7 @@ impl Tray for AzPinTray {
                                     }),
                                     ..Default::default()
                                 }.into());
-                            }
-
-                            if is_running && !is_transitioning {
+                            } else if is_running && !is_transitioning {
                                 let r_id_stop = res.id.clone();
                                 let sub_stop = res.subscription_id.clone();
                                 let a_svc_stop = arm_svc.clone();
@@ -152,6 +150,13 @@ impl Tray for AzPinTray {
                                             let _ = a_svc.restart_resource(&sid, &rid).await;
                                         });
                                     }),
+                                    ..Default::default()
+                                }.into());
+                            } else {
+                                let display_state = if state.eq_ignore_ascii_case("Unknown") { "Loading...".to_string() } else { format!("{}...", state) };
+                                submenu.push(menu::StandardItem {
+                                    label: display_state,
+                                    enabled: false,
                                     ..Default::default()
                                 }.into());
                             }
@@ -267,7 +272,7 @@ impl Tray for AzPinTray {
                         let is_stopped = state.eq_ignore_ascii_case("Stopped") || state.eq_ignore_ascii_case("Deallocated") || state.eq_ignore_ascii_case("Stopped (Deallocated)");
                         let is_transitioning = state.eq_ignore_ascii_case("Starting") || state.eq_ignore_ascii_case("Stopping") || state.eq_ignore_ascii_case("Restarting");
 
-                        if !is_running && !is_transitioning {
+                        if is_stopped && !is_transitioning {
                             let r_id_start = res.id.clone();
                             let sub_start = res.subscription_id.clone();
                             let a_svc_start = self.arm_service.clone();
@@ -286,9 +291,7 @@ impl Tray for AzPinTray {
                                 }),
                                 ..Default::default()
                             }.into());
-                        }
-
-                        if is_running && !is_transitioning {
+                        } else if is_running && !is_transitioning {
                             let r_id_stop = res.id.clone();
                             let sub_stop = res.subscription_id.clone();
                             let a_svc_stop = self.arm_service.clone();
@@ -324,6 +327,13 @@ impl Tray for AzPinTray {
                                         let _ = a_svc.restart_resource(&sid, &rid).await;
                                     });
                                 }),
+                                ..Default::default()
+                            }.into());
+                        } else {
+                            let display_state = if state.eq_ignore_ascii_case("Unknown") { "Loading...".to_string() } else { format!("{}...", state) };
+                            submenu.push(menu::StandardItem {
+                                label: display_state,
+                                enabled: false,
                                 ..Default::default()
                             }.into());
                         }
