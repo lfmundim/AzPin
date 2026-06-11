@@ -53,7 +53,6 @@ async fn main() {
             open_tx, 
             settings_tx, 
             pin_changed_tx,
-            cached_rg_resources: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
         };
         let tray_service = ksni::TrayService::new(tray);
         let tray_handle = tray_service.handle();
