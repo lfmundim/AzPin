@@ -10,6 +10,8 @@ pub struct AzPinTray {
     pub open_tx: gtk::glib::Sender<()>,
     pub settings_tx: gtk::glib::Sender<()>,
     pub pin_changed_tx: gtk::glib::Sender<()>,
+    pub tokio_handle: tokio::runtime::Handle,
+    pub state_cache: Arc<std::sync::RwLock<std::collections::HashMap<String, String>>>,
 }
 
 impl Tray for AzPinTray {
@@ -77,61 +79,100 @@ impl Tray for AzPinTray {
                                           res.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines");
 
                         if is_runnable {
+                            let state = {
+                                if let Ok(cache) = self.state_cache.read() {
+                                    cache.get(&res.id).cloned().unwrap_or_else(|| "Unknown".to_string())
+                                } else {
+                                    "Unknown".to_string()
+                                }
+                            };
+
+                            let is_running = state.eq_ignore_ascii_case("Running") || state.eq_ignore_ascii_case("Succeeded");
+                            let is_stopped = state.eq_ignore_ascii_case("Stopped") || state.eq_ignore_ascii_case("Deallocated") || state.eq_ignore_ascii_case("Stopped (Deallocated)");
+
                             submenu.push(menu::MenuItem::Separator);
                             
-                            let r_id_start = res.id.clone();
-                            let sub_start = res.subscription_id.clone();
-                            let a_svc_start = arm_svc.clone();
-                            submenu.push(menu::StandardItem {
-                                label: "Start".into(),
-                                activate: Box::new(move |_| {
-                                    let a_svc = a_svc_start.clone();
-                                    let sid = sub_start.clone();
-                                    let rid = r_id_start.clone();
-                                    tokio::spawn(async move {
-                                        let _ = a_svc.start_resource(&sid, &rid, "2021-04-01").await;
-                                    });
-                                }),
-                                ..Default::default()
-                            }.into());
+                            if is_stopped || !is_running {
+                                let r_id_start = res.id.clone();
+                                let sub_start = res.subscription_id.clone();
+                                let a_svc_start = arm_svc.clone();
+                                let tokio_handle = self.tokio_handle.clone();
+                                let cache_clone = self.state_cache.clone();
+                                submenu.push(menu::StandardItem {
+                                    label: "Start".into(),
+                                    activate: Box::new(move |_| {
+                                        if let Ok(mut c) = cache_clone.write() { c.insert(r_id_start.clone(), "Starting".to_string()); }
+                                        let a_svc = a_svc_start.clone();
+                                        let sid = sub_start.clone();
+                                        let rid = r_id_start.clone();
+                                        tokio_handle.spawn(async move {
+                                            let _ = a_svc.start_resource(&sid, &rid, "2021-04-01").await;
+                                        });
+                                    }),
+                                    ..Default::default()
+                                }.into());
+                            }
 
-                            let r_id_stop = res.id.clone();
-                            let sub_stop = res.subscription_id.clone();
-                            let a_svc_stop = arm_svc.clone();
-                            submenu.push(menu::StandardItem {
-                                label: "Stop".into(),
-                                activate: Box::new(move |_| {
-                                    let a_svc = a_svc_stop.clone();
-                                    let sid = sub_stop.clone();
-                                    let rid = r_id_stop.clone();
-                                    tokio::spawn(async move {
-                                        let _ = a_svc.stop_resource(&sid, &rid, "2021-04-01").await;
-                                    });
-                                }),
-                                ..Default::default()
-                            }.into());
+                            if is_running || !is_stopped {
+                                let r_id_stop = res.id.clone();
+                                let sub_stop = res.subscription_id.clone();
+                                let a_svc_stop = arm_svc.clone();
+                                let tokio_handle = self.tokio_handle.clone();
+                                let cache_clone = self.state_cache.clone();
+                                submenu.push(menu::StandardItem {
+                                    label: "Stop".into(),
+                                    activate: Box::new(move |_| {
+                                        if let Ok(mut c) = cache_clone.write() { c.insert(r_id_stop.clone(), "Stopping".to_string()); }
+                                        let a_svc = a_svc_stop.clone();
+                                        let sid = sub_stop.clone();
+                                        let rid = r_id_stop.clone();
+                                        tokio_handle.spawn(async move {
+                                            let _ = a_svc.stop_resource(&sid, &rid, "2021-04-01").await;
+                                        });
+                                    }),
+                                    ..Default::default()
+                                }.into());
 
-                            let r_id_restart = res.id.clone();
-                            let sub_restart = res.subscription_id.clone();
-                            let a_svc_restart = arm_svc.clone();
-                            submenu.push(menu::StandardItem {
-                                label: "Restart".into(),
-                                activate: Box::new(move |_| {
-                                    let a_svc = a_svc_restart.clone();
-                                    let sid = sub_restart.clone();
-                                    let rid = r_id_restart.clone();
-                                    tokio::spawn(async move {
-                                        let _ = a_svc.restart_resource(&sid, &rid, "2021-04-01").await;
-                                    });
-                                }),
-                                ..Default::default()
-                            }.into());
+                                let r_id_restart = res.id.clone();
+                                let sub_restart = res.subscription_id.clone();
+                                let a_svc_restart = arm_svc.clone();
+                                let tokio_handle = self.tokio_handle.clone();
+                                let cache_clone = self.state_cache.clone();
+                                submenu.push(menu::StandardItem {
+                                    label: "Restart".into(),
+                                    activate: Box::new(move |_| {
+                                        if let Ok(mut c) = cache_clone.write() { c.insert(r_id_restart.clone(), "Restarting".to_string()); }
+                                        let a_svc = a_svc_restart.clone();
+                                        let sid = sub_restart.clone();
+                                        let rid = r_id_restart.clone();
+                                        tokio_handle.spawn(async move {
+                                            let _ = a_svc.restart_resource(&sid, &rid, "2021-04-01").await;
+                                        });
+                                    }),
+                                    ..Default::default()
+                                }.into());
+                            }
                         }
 
                         // We can either add it as a submenu (if runnable) or standard item
                         if is_runnable {
+                            let state = {
+                                if let Ok(cache) = self.state_cache.read() {
+                                    cache.get(&res.id).cloned().unwrap_or_else(|| "Unknown".to_string())
+                                } else {
+                                    "Unknown".to_string()
+                                }
+                            };
+                            let status_indicator = if state.eq_ignore_ascii_case("Running") || state.eq_ignore_ascii_case("Succeeded") {
+                                "🟢"
+                            } else if state.eq_ignore_ascii_case("Stopped") || state.eq_ignore_ascii_case("Deallocated") || state.eq_ignore_ascii_case("Stopped (Deallocated)") {
+                                "🔴"
+                            } else {
+                                "⚪"
+                            };
+
                             group_submenu.push(menu::SubMenu {
-                                label: res.name.clone(),
+                                label: format!("{} {}", status_indicator, res.name.clone()),
                                 submenu,
                                 ..Default::default()
                             }.into());
@@ -210,53 +251,77 @@ impl Tray for AzPinTray {
                             menu::MenuItem::Separator,
                         ];
                         
-                        let r_id_start = res.id.clone();
-                        let sub_start = res.subscription_id.clone();
-                        let a_svc_start = self.arm_service.clone();
-                        submenu.push(menu::StandardItem {
-                            label: "Start".into(),
-                            activate: Box::new(move |_| {
-                                let a_svc = a_svc_start.clone();
-                                let sid = sub_start.clone();
-                                let rid = r_id_start.clone();
-                                tokio::spawn(async move {
-                                    let _ = a_svc.start_resource(&sid, &rid, "2021-04-01").await;
-                                });
-                            }),
-                            ..Default::default()
-                        }.into());
+                        let state = {
+                            if let Ok(cache) = self.state_cache.read() {
+                                cache.get(&res.id).cloned().unwrap_or_else(|| "Unknown".to_string())
+                            } else {
+                                "Unknown".to_string()
+                            }
+                        };
 
-                        let r_id_stop = res.id.clone();
-                        let sub_stop = res.subscription_id.clone();
-                        let a_svc_stop = self.arm_service.clone();
-                        submenu.push(menu::StandardItem {
-                            label: "Stop".into(),
-                            activate: Box::new(move |_| {
-                                let a_svc = a_svc_stop.clone();
-                                let sid = sub_stop.clone();
-                                let rid = r_id_stop.clone();
-                                tokio::spawn(async move {
-                                    let _ = a_svc.stop_resource(&sid, &rid, "2021-04-01").await;
-                                });
-                            }),
-                            ..Default::default()
-                        }.into());
+                        let is_running = state.eq_ignore_ascii_case("Running") || state.eq_ignore_ascii_case("Succeeded");
+                        let is_stopped = state.eq_ignore_ascii_case("Stopped") || state.eq_ignore_ascii_case("Deallocated") || state.eq_ignore_ascii_case("Stopped (Deallocated)");
 
-                        let r_id_restart = res.id.clone();
-                        let sub_restart = res.subscription_id.clone();
-                        let a_svc_restart = self.arm_service.clone();
-                        submenu.push(menu::StandardItem {
-                            label: "Restart".into(),
-                            activate: Box::new(move |_| {
-                                let a_svc = a_svc_restart.clone();
-                                let sid = sub_restart.clone();
-                                let rid = r_id_restart.clone();
-                                tokio::spawn(async move {
-                                    let _ = a_svc.restart_resource(&sid, &rid, "2021-04-01").await;
-                                });
-                            }),
-                            ..Default::default()
-                        }.into());
+                        if is_stopped || !is_running {
+                            let r_id_start = res.id.clone();
+                            let sub_start = res.subscription_id.clone();
+                            let a_svc_start = self.arm_service.clone();
+                            let tokio_handle = self.tokio_handle.clone();
+                            let cache_clone = self.state_cache.clone();
+                            submenu.push(menu::StandardItem {
+                                label: "Start".into(),
+                                activate: Box::new(move |_| {
+                                    if let Ok(mut c) = cache_clone.write() { c.insert(r_id_start.clone(), "Starting".to_string()); }
+                                    let a_svc = a_svc_start.clone();
+                                    let sid = sub_start.clone();
+                                    let rid = r_id_start.clone();
+                                    tokio_handle.spawn(async move {
+                                        let _ = a_svc.start_resource(&sid, &rid, "2021-04-01").await;
+                                    });
+                                }),
+                                ..Default::default()
+                            }.into());
+                        }
+
+                        if is_running || !is_stopped {
+                            let r_id_stop = res.id.clone();
+                            let sub_stop = res.subscription_id.clone();
+                            let a_svc_stop = self.arm_service.clone();
+                            let tokio_handle = self.tokio_handle.clone();
+                            let cache_clone = self.state_cache.clone();
+                            submenu.push(menu::StandardItem {
+                                label: "Stop".into(),
+                                activate: Box::new(move |_| {
+                                    if let Ok(mut c) = cache_clone.write() { c.insert(r_id_stop.clone(), "Stopping".to_string()); }
+                                    let a_svc = a_svc_stop.clone();
+                                    let sid = sub_stop.clone();
+                                    let rid = r_id_stop.clone();
+                                    tokio_handle.spawn(async move {
+                                        let _ = a_svc.stop_resource(&sid, &rid, "2021-04-01").await;
+                                    });
+                                }),
+                                ..Default::default()
+                            }.into());
+
+                            let r_id_restart = res.id.clone();
+                            let sub_restart = res.subscription_id.clone();
+                            let a_svc_restart = self.arm_service.clone();
+                            let tokio_handle = self.tokio_handle.clone();
+                            let cache_clone = self.state_cache.clone();
+                            submenu.push(menu::StandardItem {
+                                label: "Restart".into(),
+                                activate: Box::new(move |_| {
+                                    if let Ok(mut c) = cache_clone.write() { c.insert(r_id_restart.clone(), "Restarting".to_string()); }
+                                    let a_svc = a_svc_restart.clone();
+                                    let sid = sub_restart.clone();
+                                    let rid = r_id_restart.clone();
+                                    tokio_handle.spawn(async move {
+                                        let _ = a_svc.restart_resource(&sid, &rid, "2021-04-01").await;
+                                    });
+                                }),
+                                ..Default::default()
+                            }.into());
+                        }
 
                         submenu.push(menu::MenuItem::Separator);
                         
@@ -271,8 +336,16 @@ impl Tray for AzPinTray {
                             ..Default::default()
                         }.into());
 
+                        let status_indicator = if state.eq_ignore_ascii_case("Running") || state.eq_ignore_ascii_case("Succeeded") {
+                            "🟢"
+                        } else if state.eq_ignore_ascii_case("Stopped") || state.eq_ignore_ascii_case("Deallocated") || state.eq_ignore_ascii_case("Stopped (Deallocated)") {
+                            "🔴"
+                        } else {
+                            "⚪"
+                        };
+
                         items.push(menu::SubMenu {
-                            label: res.name.clone(),
+                            label: format!("{} {}", status_indicator, res.name.clone()),
                             submenu,
                             ..Default::default()
                         }.into());

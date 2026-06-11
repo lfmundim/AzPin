@@ -47,13 +47,65 @@ async fn main() {
         let (pin_changed_tx, pin_changed_rx) = gtk::glib::MainContext::channel(gtk::glib::Priority::DEFAULT);
 
         // Initialize Tray (without GTK3 linkage)
+        let tokio_handle = tokio::runtime::Handle::current();
+        let state_cache = std::sync::Arc::new(std::sync::RwLock::new(std::collections::HashMap::new()));
+        
         let tray = crate::ui::indicator::AzPinTray { 
             db: db.clone(), 
             arm_service: arm_service.clone(), 
             open_tx, 
             settings_tx, 
             pin_changed_tx,
+            tokio_handle: tokio_handle.clone(),
+            state_cache: state_cache.clone(),
         };
+
+        // Spawn a background task to periodically update the state of runnable pinned resources
+        let state_db = db.clone();
+        let state_arm = arm_service.clone();
+        let state_cache_clone = state_cache.clone();
+        tokio_handle.spawn(async move {
+            loop {
+                let mut runnables = Vec::new();
+                
+                // Get from groups
+                if let Ok(groups) = state_db.get_pinned_groups() {
+                    for g in groups {
+                        if let Ok(res) = state_db.get_pinned_resources(&g.id) {
+                            for r in res {
+                                if r.type_.eq_ignore_ascii_case("Microsoft.Web/sites") || 
+                                   r.type_.eq_ignore_ascii_case("Microsoft.App/containerApps") || 
+                                   r.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines") {
+                                    runnables.push(r);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Get from orphans
+                if let Ok(orphans) = state_db.get_orphan_resources() {
+                    for r in orphans {
+                        if r.type_.eq_ignore_ascii_case("Microsoft.Web/sites") || 
+                           r.type_.eq_ignore_ascii_case("Microsoft.App/containerApps") || 
+                           r.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines") {
+                            runnables.push(r);
+                        }
+                    }
+                }
+
+                // Fetch states
+                for r in runnables {
+                    if let Ok(state) = state_arm.get_resource_state(&r.subscription_id, &r.id, "2021-04-01").await {
+                        if let Ok(mut cache) = state_cache_clone.write() {
+                            cache.insert(r.id.clone(), state);
+                        }
+                    }
+                }
+
+                tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
+            }
+        });
         let tray_service = ksni::TrayService::new(tray);
         let tray_handle = tray_service.handle();
         tray_service.spawn();
