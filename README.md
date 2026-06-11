@@ -10,15 +10,15 @@
 
 AzPin is a native macOS menubar app that reads your existing `az` CLI session and gives you fast, pinnable access to Azure resources. Open the menubar, see your pinned resource groups and their live resources, click to open in the portal, or start/stop/restart runnable resources without leaving the desktop.
 
-There is also a WinUI 3 Windows port under `src/windows/`, distributed as a self-contained zip from GitHub Releases, and a native GTK4 Ubuntu port under `src/ubuntu/` distributed as a `.deb` package.
+There is also a WinUI 3 Windows port under `src/windows/`, distributed as a self-contained zip from GitHub Releases, and a native GTK4 GNOME Linux port under `src/ubuntu/` distributed as a `.deb` package.
 
-No Azure SDK. No App Store. No sandbox. Requires macOS 26 Tahoe, Windows 11, or Ubuntu 24.04.
+No Azure SDK. No App Store. No sandbox. Requires macOS 26 Tahoe, Windows 11, or GNOME Linux.
 
 ---
 
 ## Prerequisites
 
-- **macOS 26 Tahoe** or later | **Windows 11** or later | **Ubuntu 24.04** or later
+- **macOS 26 Tahoe** or later | **Windows 11** or later | **GNOME Linux** (Built for GNOME 46, tested on Ubuntu 26.04 out of the box)
 - **[Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)** installed
 - Signed in: `az login`
 
@@ -51,7 +51,7 @@ Download the latest `AzPin-Windows-*-Installer.msi` from [Releases](../../releas
 
 No separate Windows App SDK runtime is required — the bundle is self-contained.
 
-### Ubuntu - DEB (manual)
+### GNOME Linux - DEB (manual)
 
 Download the latest `AzPin-Ubuntu-*-v*.deb` from [Releases](../../releases) and install it:
 ```bash
@@ -142,7 +142,7 @@ dotnet publish src/windows/AzPin.Windows/AzPin.Windows.csproj `
   -o build/publish/win-x64
 ```
 
-### Ubuntu
+### GNOME Linux
 
 Requires Rust and GTK4 development libraries.
 
