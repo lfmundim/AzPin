@@ -166,12 +166,15 @@ impl ArmService {
 
         let res = self.client.post(&url)
             .header("Authorization", auth)
+            .header("Content-Length", "0")
             .send()
             .await
             .map_err(|e| format!("Request failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("ARM API error: {}", res.status()));
+            let status = res.status();
+            let err_body = res.text().await.unwrap_or_default();
+            return Err(format!("ARM API error: {} - {}", status, err_body));
         }
 
         Ok(())
@@ -183,12 +186,15 @@ impl ArmService {
 
         let res = self.client.post(&url)
             .header("Authorization", auth)
+            .header("Content-Length", "0")
             .send()
             .await
             .map_err(|e| format!("Request failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("ARM API error: {}", res.status()));
+            let status = res.status();
+            let err_body = res.text().await.unwrap_or_default();
+            return Err(format!("ARM API error: {} - {}", status, err_body));
         }
 
         Ok(())
@@ -206,12 +212,15 @@ impl ArmService {
 
         let res = self.client.post(&url)
             .header("Authorization", auth)
+            .header("Content-Length", "0")
             .send()
             .await
             .map_err(|e| format!("Request failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("ARM API error: {}", res.status()));
+            let status = res.status();
+            let err_body = res.text().await.unwrap_or_default();
+            return Err(format!("ARM API error: {} - {}", status, err_body));
         }
 
         Ok(())
