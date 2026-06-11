@@ -88,7 +88,7 @@ impl Tray for AzPinTray {
                                     let a_svc = a_svc_start.clone();
                                     let sid = sub_start.clone();
                                     let rid = r_id_start.clone();
-                                    gtk::glib::spawn_future_local(async move {
+                                    tokio::spawn(async move {
                                         let _ = a_svc.start_resource(&sid, &rid, "2021-04-01").await;
                                     });
                                 }),
@@ -104,7 +104,7 @@ impl Tray for AzPinTray {
                                     let a_svc = a_svc_stop.clone();
                                     let sid = sub_stop.clone();
                                     let rid = r_id_stop.clone();
-                                    gtk::glib::spawn_future_local(async move {
+                                    tokio::spawn(async move {
                                         let _ = a_svc.stop_resource(&sid, &rid, "2021-04-01").await;
                                     });
                                 }),
@@ -120,7 +120,7 @@ impl Tray for AzPinTray {
                                     let a_svc = a_svc_restart.clone();
                                     let sid = sub_restart.clone();
                                     let rid = r_id_restart.clone();
-                                    gtk::glib::spawn_future_local(async move {
+                                    tokio::spawn(async move {
                                         let _ = a_svc.restart_resource(&sid, &rid, "2021-04-01").await;
                                     });
                                 }),
@@ -190,26 +190,25 @@ impl Tray for AzPinTray {
                 items.push(menu::MenuItem::Separator);
                 
                 for res in orphans {
-                    let mut submenu = vec![
-                        menu::StandardItem {
-                            label: "Open in Portal".into(),
-                            activate: Box::new({
-                                let r_id = res.id.clone();
-                                move |_| {
-                                    let uri = format!("https://portal.azure.com/#resource{}", r_id);
-                                    let _ = gtk::gio::AppInfo::launch_default_for_uri(&uri, None::<&gtk::gio::AppLaunchContext>);
-                                }
-                            }),
-                            ..Default::default()
-                        }.into(),
-                    ];
-
                     let is_runnable = res.type_.eq_ignore_ascii_case("Microsoft.Web/sites") || 
                                       res.type_.eq_ignore_ascii_case("Microsoft.App/containerApps") || 
                                       res.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines");
 
                     if is_runnable {
-                        submenu.push(menu::MenuItem::Separator);
+                        let mut submenu = vec![
+                            menu::StandardItem {
+                                label: "Open in Portal".into(),
+                                activate: Box::new({
+                                    let r_id = res.id.clone();
+                                    move |_| {
+                                        let uri = format!("https://portal.azure.com/#resource{}", r_id);
+                                        let _ = gtk::gio::AppInfo::launch_default_for_uri(&uri, None::<&gtk::gio::AppLaunchContext>);
+                                    }
+                                }),
+                                ..Default::default()
+                            }.into(),
+                            menu::MenuItem::Separator,
+                        ];
                         
                         let r_id_start = res.id.clone();
                         let sub_start = res.subscription_id.clone();
@@ -220,7 +219,7 @@ impl Tray for AzPinTray {
                                 let a_svc = a_svc_start.clone();
                                 let sid = sub_start.clone();
                                 let rid = r_id_start.clone();
-                                gtk::glib::spawn_future_local(async move {
+                                tokio::spawn(async move {
                                     let _ = a_svc.start_resource(&sid, &rid, "2021-04-01").await;
                                 });
                             }),
@@ -236,7 +235,7 @@ impl Tray for AzPinTray {
                                 let a_svc = a_svc_stop.clone();
                                 let sid = sub_stop.clone();
                                 let rid = r_id_stop.clone();
-                                gtk::glib::spawn_future_local(async move {
+                                tokio::spawn(async move {
                                     let _ = a_svc.stop_resource(&sid, &rid, "2021-04-01").await;
                                 });
                             }),
@@ -252,32 +251,42 @@ impl Tray for AzPinTray {
                                 let a_svc = a_svc_restart.clone();
                                 let sid = sub_restart.clone();
                                 let rid = r_id_restart.clone();
-                                gtk::glib::spawn_future_local(async move {
+                                tokio::spawn(async move {
                                     let _ = a_svc.restart_resource(&sid, &rid, "2021-04-01").await;
                                 });
                             }),
                             ..Default::default()
                         }.into());
+
+                        submenu.push(menu::MenuItem::Separator);
+                        
+                        let r_id_unpin = res.id.clone();
+                        let db_unpin = self.db.clone();
+                        submenu.push(menu::StandardItem {
+                            label: "Unpin".into(),
+                            activate: Box::new(move |tray: &mut AzPinTray| {
+                                let _ = db_unpin.delete_pinned_resource(&r_id_unpin);
+                                let _ = tray.pin_changed_tx.send(());
+                            }),
+                            ..Default::default()
+                        }.into());
+
+                        items.push(menu::SubMenu {
+                            label: res.name.clone(),
+                            submenu,
+                            ..Default::default()
+                        }.into());
+                    } else {
+                        let r_id = res.id.clone();
+                        items.push(menu::StandardItem {
+                            label: res.name.clone(),
+                            activate: Box::new(move |_| {
+                                let uri = format!("https://portal.azure.com/#resource{}", r_id);
+                                let _ = gtk::gio::AppInfo::launch_default_for_uri(&uri, None::<&gtk::gio::AppLaunchContext>);
+                            }),
+                            ..Default::default()
+                        }.into());
                     }
-
-                    submenu.push(menu::MenuItem::Separator);
-                    
-                    let r_id_unpin = res.id.clone();
-                    let db_unpin = self.db.clone();
-                    submenu.push(menu::StandardItem {
-                        label: "Unpin".into(),
-                        activate: Box::new(move |tray: &mut AzPinTray| {
-                            let _ = db_unpin.delete_pinned_resource(&r_id_unpin);
-                            let _ = tray.pin_changed_tx.send(());
-                        }),
-                        ..Default::default()
-                    }.into());
-
-                    items.push(menu::SubMenu {
-                        label: res.name.clone(),
-                        submenu,
-                        ..Default::default()
-                    }.into());
                 }
             }
         }
