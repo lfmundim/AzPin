@@ -247,9 +247,12 @@ impl MainWindow {
             let load_sidebar_rg = load_sidebar.clone();
             
             Rc::new(move || {
-                let idx = sub_dropdown_ref.selected() as usize;
+                let mut idx = sub_dropdown_ref.selected() as usize;
                 let subs = subs_cache.borrow();
-                if idx >= subs.len() { return; }
+                if subs.is_empty() { return; }
+                if idx >= subs.len() { 
+                    idx = 0; 
+                }
                 
                 let sub_id = subs[idx].id.clone();
                 let a_svc = arm_svc_rg.clone();
