@@ -86,12 +86,12 @@ async fn main() {
                             for r in arm_resources {
                                 let p = PinnedResource {
                                     id: r.id.clone(),
-                                    subscription_id: g.subscription_id.clone(),
-                                    tenant_id: g.tenant_id.clone(),
-                                    group_id: g.id.clone(),
                                     name: r.name,
                                     type_: r.type_,
+                                    resource_group: g.name.clone(),
+                                    subscription_id: g.subscription_id.clone(),
                                     location: r.location,
+                                    display_order: 0,
                                 };
                                 p_res.push(p.clone());
                                 
