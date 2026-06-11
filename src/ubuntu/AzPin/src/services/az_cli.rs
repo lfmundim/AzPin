@@ -5,8 +5,9 @@ use serde::Deserialize;
 struct AzTokenResponse {
     #[serde(rename = "accessToken")]
     pub access_token: String,
+    pub expires_on: Option<u64>,
     #[serde(rename = "expiresOn")]
-    pub expires_on: String,
+    pub expires_on_str: Option<String>,
     pub tenant: String,
 }
 
@@ -38,7 +39,14 @@ impl AzCliService {
         let resp: AzTokenResponse = serde_json::from_slice(&output.stdout)
             .map_err(|e| format!("Failed to parse az output: {}", e))?;
 
-        Ok((resp.access_token, resp.expires_on, resp.tenant))
+        let expires_on_rfc = if let Some(ts) = resp.expires_on {
+            use chrono::TimeZone;
+            chrono::Utc.timestamp_opt(ts as i64, 0).single().unwrap_or_else(chrono::Utc::now).to_rfc3339()
+        } else {
+            (chrono::Utc::now() + chrono::Duration::hours(1)).to_rfc3339()
+        };
+
+        Ok((resp.access_token, expires_on_rfc, resp.tenant))
     }
 
     pub fn get_default_subscription() -> Result<AzSubscription, String> {
