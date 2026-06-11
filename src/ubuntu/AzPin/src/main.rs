@@ -16,7 +16,7 @@ use crate::models::persistence::PinnedResource;
 async fn main() {
     // Initialize standard adw::Application
     let app = Application::builder()
-        .application_id("com.lfmundim.azpin")
+        .application_id("com.kimdim.azpin")
         // Use HANDLES_COMMAND_LINE or simple flags so the main window doesn't open immediately
         .flags(gio::ApplicationFlags::HANDLES_COMMAND_LINE)
         .build();
