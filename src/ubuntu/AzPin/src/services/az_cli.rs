@@ -27,7 +27,7 @@ pub struct AzCliService;
 impl AzCliService {
     pub fn get_access_token(subscription_id: &str) -> Result<(String, String, String), String> {
         let output = Command::new("az")
-            .args(["account", "get-access-token", "--subscription", subscription_id, "--output", "json"])
+            .args(["account", "get-access-token", "--subscription", subscription_id, "--resource", "https://management.azure.com/", "--output", "json"])
             .output()
             .map_err(|e| format!("Failed to execute az cli: {}", e))?;
 

@@ -20,7 +20,7 @@ impl ArmService {
 
     fn get_auth_header(&self, subscription_id: &str) -> Result<String, String> {
         let token = self.token_cache.get_valid_token(subscription_id)?;
-        Ok(format!("Bearer {}", token))
+        Ok(format!("Bearer {}", token.trim()))
     }
 
     pub async fn fetch_resource_groups(&self, subscription_id: &str) -> Result<Vec<ArmResourceGroup>, String> {
@@ -34,7 +34,9 @@ impl ArmService {
             .map_err(|e| format!("Request failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("ARM API error: {}", res.status()));
+            let status = res.status();
+            let err_body = res.text().await.unwrap_or_default();
+            return Err(format!("ARM API error: {} - {}", status, err_body));
         }
 
         #[derive(serde::Deserialize)]
@@ -57,7 +59,9 @@ impl ArmService {
             .map_err(|e| format!("Request failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("ARM API error: {}", res.status()));
+            let status = res.status();
+            let err_body = res.text().await.unwrap_or_default();
+            return Err(format!("ARM API error: {} - {}", status, err_body));
         }
 
         #[derive(serde::Deserialize)]
@@ -101,7 +105,9 @@ impl ArmService {
             .map_err(|e| format!("Request failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("ARM API error: {}", res.status()));
+            let status = res.status();
+            let err_body = res.text().await.unwrap_or_default();
+            return Err(format!("ARM API error: {} - {}", status, err_body));
         }
 
         let body: serde_json::Value = res.json().await.map_err(|e| format!("Failed to parse response: {}", e))?;
