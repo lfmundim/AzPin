@@ -10,7 +10,7 @@ mod utils;
 
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
-use crate::models::persistence::{PinnedGroup, PinnedResource};
+use crate::models::persistence::PinnedResource;
 
 #[tokio::main]
 async fn main() {
