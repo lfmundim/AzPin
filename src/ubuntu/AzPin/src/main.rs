@@ -60,6 +60,12 @@ async fn main() {
             state_cache: state_cache.clone(),
         };
 
+        let tray_service = ksni::TrayService::new(tray);
+        let tray_handle = tray_service.handle();
+        tray_service.spawn();
+
+        let state_tray_handle = tray_handle.clone();
+
         // Spawn a background task to periodically update the state of runnable pinned resources
         let state_db = db.clone();
         let state_arm = arm_service.clone();
@@ -94,21 +100,25 @@ async fn main() {
                     }
                 }
 
+                let mut updated = false;
+
                 // Fetch states
                 for r in runnables {
                     if let Ok(state) = state_arm.get_resource_state(&r.subscription_id, &r.id, "2021-04-01").await {
                         if let Ok(mut cache) = state_cache_clone.write() {
                             cache.insert(r.id.clone(), state);
+                            updated = true;
                         }
                     }
+                }
+
+                if updated {
+                    state_tray_handle.update(|_| {});
                 }
 
                 tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
             }
         });
-        let tray_service = ksni::TrayService::new(tray);
-        let tray_handle = tray_service.handle();
-        tray_service.spawn();
 
         // Present main window for testing as well
         let window = crate::ui::main_window::MainWindow::new(app, db, arm_service, tray_handle, pin_changed_rx);
