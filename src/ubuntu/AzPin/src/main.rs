@@ -8,6 +8,10 @@ mod services;
 mod ui;
 mod utils;
 
+use std::sync::{Arc, RwLock};
+use std::collections::HashMap;
+use crate::models::persistence::{PinnedGroup, PinnedResource};
+
 #[tokio::main]
 async fn main() {
     // Initialize standard adw::Application
