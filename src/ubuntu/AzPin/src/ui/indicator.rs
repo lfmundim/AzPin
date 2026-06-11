@@ -19,7 +19,7 @@ pub struct AzPinTray {
 
 impl Tray for AzPinTray {
     fn icon_name(&self) -> String {
-        "com.kimdim.azpin-tray".into()
+        "weather-overcast".into()
     }
     
     fn title(&self) -> String {
