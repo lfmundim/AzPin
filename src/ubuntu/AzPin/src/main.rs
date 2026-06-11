@@ -48,16 +48,18 @@ async fn main() {
 
         // Initialize Tray (without GTK3 linkage)
         let tokio_handle = tokio::runtime::Handle::current();
-        let state_cache = std::sync::Arc::new(std::sync::RwLock::new(std::collections::HashMap::new()));
+        let state_cache: Arc<RwLock<HashMap<String, String>>> = Arc::new(RwLock::new(HashMap::new()));
+        let rg_resources_cache: Arc<RwLock<HashMap<String, Vec<PinnedResource>>>> = Arc::new(RwLock::new(HashMap::new()));
         
         let tray = crate::ui::indicator::AzPinTray { 
             db: db.clone(), 
             arm_service: arm_service.clone(), 
             open_tx, 
             settings_tx, 
-            pin_changed_tx,
+            pin_changed_tx: pin_changed_tx.clone(),
             tokio_handle: tokio_handle.clone(),
             state_cache: state_cache.clone(),
+            rg_resources_cache: rg_resources_cache.clone(),
         };
 
         let tray_service = ksni::TrayService::new(tray);
@@ -70,21 +72,39 @@ async fn main() {
         let state_db = db.clone();
         let state_arm = arm_service.clone();
         let state_cache_clone = state_cache.clone();
+        let state_rg_cache = rg_resources_cache.clone();
         tokio_handle.spawn(async move {
             loop {
                 let mut runnables = Vec::new();
+                let mut updated = false;
                 
                 // Get from groups
                 if let Ok(groups) = state_db.get_pinned_groups() {
                     for g in groups {
-                        if let Ok(res) = state_db.get_pinned_resources(&g.id) {
-                            for r in res {
-                                if r.type_.eq_ignore_ascii_case("Microsoft.Web/sites") || 
-                                   r.type_.eq_ignore_ascii_case("Microsoft.App/containerApps") || 
-                                   r.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines") ||
-                                   r.type_.eq_ignore_ascii_case("Microsoft.Logic/workflows") {
-                                    runnables.push(r);
+                        if let Ok(arm_resources) = state_arm.fetch_resources(&g.subscription_id, &g.name).await {
+                            let mut p_res = Vec::new();
+                            for r in arm_resources {
+                                let p = PinnedResource {
+                                    id: r.id.clone(),
+                                    subscription_id: g.subscription_id.clone(),
+                                    tenant_id: g.tenant_id.clone(),
+                                    group_id: g.id.clone(),
+                                    name: r.name,
+                                    type_: r.type_,
+                                    location: r.location,
+                                };
+                                p_res.push(p.clone());
+                                
+                                if p.type_.eq_ignore_ascii_case("Microsoft.Web/sites") || 
+                                   p.type_.eq_ignore_ascii_case("Microsoft.App/containerApps") || 
+                                   p.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines") ||
+                                   p.type_.eq_ignore_ascii_case("Microsoft.Logic/workflows") {
+                                    runnables.push(p);
                                 }
+                            }
+                            if let Ok(mut cache) = state_rg_cache.write() {
+                                cache.insert(g.id.clone(), p_res);
+                                updated = true;
                             }
                         }
                     }

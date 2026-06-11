@@ -1,8 +1,11 @@
 use std::sync::Arc;
+use std::sync::{Arc, RwLock};
+use std::collections::HashMap;
 use ksni::{Tray, MenuItem, menu};
 use gtk4 as gtk;
 use crate::services::db::Db;
 use crate::services::arm::ArmService;
+use crate::models::persistence::PinnedResource;
 
 pub struct AzPinTray {
     pub db: Arc<Db>,
@@ -11,7 +14,8 @@ pub struct AzPinTray {
     pub settings_tx: gtk::glib::Sender<()>,
     pub pin_changed_tx: gtk::glib::Sender<()>,
     pub tokio_handle: tokio::runtime::Handle,
-    pub state_cache: Arc<std::sync::RwLock<std::collections::HashMap<String, String>>>,
+    pub state_cache: Arc<RwLock<HashMap<String, String>>>,
+    pub rg_resources_cache: Arc<RwLock<HashMap<String, Vec<PinnedResource>>>>,
 }
 
 impl Tray for AzPinTray {
@@ -59,7 +63,13 @@ impl Tray for AzPinTray {
                 let mut group_submenu = Vec::new();
                 
                 // Fetch resources for this group
-                if let Ok(resources) = db_ref.get_pinned_resources(&group.id) {
+                let resources = if let Ok(cache) = self.rg_resources_cache.read() {
+                    cache.get(&group.id).cloned().unwrap_or_default()
+                } else {
+                    Vec::new()
+                };
+
+                if !resources.is_empty() {
                     for res in resources {
                         let res_id_portal = res.id.clone();
                         
@@ -197,6 +207,12 @@ impl Tray for AzPinTray {
                             }.into());
                         }
                     }
+                } else {
+                    group_submenu.push(menu::StandardItem {
+                        label: "Loading resources...".into(),
+                        enabled: false,
+                        ..Default::default()
+                    }.into());
                 }
                 
                 // Add bottom options for the group
