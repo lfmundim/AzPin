@@ -18,7 +18,7 @@ No Azure SDK. No App Store. No sandbox. Requires macOS 26 Tahoe, Windows 11, or 
 
 ## Prerequisites
 
-- **macOS 26 Tahoe** or later | **Windows 11** or later | **GNOME Linux** (Built for GNOME 46, tested on Ubuntu 26.04 out of the box)
+- **macOS 26 Tahoe** or later | **Windows 11** or later | **GNOME Linux** (Developed and tested on Ubuntu 26.04 using GNOME 46; in theory, it is compatible with any Linux distribution using the GNOME UI.)
 - **[Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)** installed
 - Signed in: `az login`
 
