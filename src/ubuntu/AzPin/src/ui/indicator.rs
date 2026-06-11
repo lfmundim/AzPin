@@ -89,10 +89,12 @@ impl Tray for AzPinTray {
 
                             let is_running = state.eq_ignore_ascii_case("Running") || state.eq_ignore_ascii_case("Succeeded");
                             let is_stopped = state.eq_ignore_ascii_case("Stopped") || state.eq_ignore_ascii_case("Deallocated") || state.eq_ignore_ascii_case("Stopped (Deallocated)");
+                            
+                            let is_transitioning = state.eq_ignore_ascii_case("Starting") || state.eq_ignore_ascii_case("Stopping") || state.eq_ignore_ascii_case("Restarting");
 
                             submenu.push(menu::MenuItem::Separator);
                             
-                            if is_stopped || !is_running {
+                            if !is_running && !is_transitioning {
                                 let r_id_start = res.id.clone();
                                 let sub_start = res.subscription_id.clone();
                                 let a_svc_start = arm_svc.clone();
@@ -113,7 +115,7 @@ impl Tray for AzPinTray {
                                 }.into());
                             }
 
-                            if is_running || !is_stopped {
+                            if is_running && !is_transitioning {
                                 let r_id_stop = res.id.clone();
                                 let sub_stop = res.subscription_id.clone();
                                 let a_svc_stop = arm_svc.clone();
@@ -261,8 +263,9 @@ impl Tray for AzPinTray {
 
                         let is_running = state.eq_ignore_ascii_case("Running") || state.eq_ignore_ascii_case("Succeeded");
                         let is_stopped = state.eq_ignore_ascii_case("Stopped") || state.eq_ignore_ascii_case("Deallocated") || state.eq_ignore_ascii_case("Stopped (Deallocated)");
+                        let is_transitioning = state.eq_ignore_ascii_case("Starting") || state.eq_ignore_ascii_case("Stopping") || state.eq_ignore_ascii_case("Restarting");
 
-                        if is_stopped || !is_running {
+                        if !is_running && !is_transitioning {
                             let r_id_start = res.id.clone();
                             let sub_start = res.subscription_id.clone();
                             let a_svc_start = self.arm_service.clone();
@@ -283,7 +286,7 @@ impl Tray for AzPinTray {
                             }.into());
                         }
 
-                        if is_running || !is_stopped {
+                        if is_running && !is_transitioning {
                             let r_id_stop = res.id.clone();
                             let sub_stop = res.subscription_id.clone();
                             let a_svc_stop = self.arm_service.clone();

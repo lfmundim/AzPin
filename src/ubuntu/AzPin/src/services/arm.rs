@@ -70,7 +70,13 @@ impl ArmService {
     }
 
     pub async fn get_resource_state(&self, subscription_id: &str, resource_id: &str, api_version: &str) -> Result<String, String> {
-        let url = format!("{}{}?api-version={}", ARM_BASE_URL, resource_id, api_version);
+        let is_vm = resource_id.to_lowercase().contains("microsoft.compute/virtualmachines");
+        let url = if is_vm {
+            format!("{}{}?api-version={}&$expand=instanceView", ARM_BASE_URL, resource_id, api_version)
+        } else {
+            format!("{}{}?api-version={}", ARM_BASE_URL, resource_id, api_version)
+        };
+        
         let auth = self.get_auth_header(subscription_id)?;
 
         let res = self.client.get(&url)
@@ -83,18 +89,33 @@ impl ArmService {
             return Err(format!("ARM API error: {}", res.status()));
         }
 
-        #[derive(serde::Deserialize)]
-        struct ResourceWithProperties {
-            properties: Option<serde_json::Value>,
-        }
-
-        let body: ResourceWithProperties = res.json().await.map_err(|e| format!("Failed to parse response: {}", e))?;
+        let body: serde_json::Value = res.json().await.map_err(|e| format!("Failed to parse response: {}", e))?;
         
-        if let Some(props) = body.properties {
-            if let Some(state) = props.get("provisioningState").and_then(|v| v.as_str()) {
+        if is_vm {
+            if let Some(instance_view) = body.get("properties").and_then(|p| p.get("instanceView")) {
+                if let Some(statuses) = instance_view.get("statuses").and_then(|s| s.as_array()) {
+                    for status in statuses {
+                        if let Some(code) = status.get("code").and_then(|c| c.as_str()) {
+                            if code.starts_with("PowerState/") {
+                                return Ok(code.replace("PowerState/", ""));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        if let Some(props) = body.get("properties") {
+            if let Some(state) = props.get("state").and_then(|v| v.as_str()) {
+                return Ok(state.to_string());
+            }
+            if let Some(state) = props.get("runningState").and_then(|v| v.as_str()) {
                 return Ok(state.to_string());
             }
             if let Some(state) = props.get("powerState").and_then(|v| v.as_str()) {
+                return Ok(state.to_string());
+            }
+            if let Some(state) = props.get("provisioningState").and_then(|v| v.as_str()) {
                 return Ok(state.to_string());
             }
         }
@@ -120,7 +141,12 @@ impl ArmService {
     }
 
     pub async fn stop_resource(&self, subscription_id: &str, resource_id: &str, api_version: &str) -> Result<(), String> {
-        let url = format!("{}{}/powerOff?api-version={}", ARM_BASE_URL, resource_id, api_version);
+        let action = if resource_id.to_lowercase().contains("microsoft.compute/virtualmachines") {
+            "powerOff"
+        } else {
+            "stop"
+        };
+        let url = format!("{}{}/{}?api-version={}", ARM_BASE_URL, resource_id, action, api_version);
         let auth = self.get_auth_header(subscription_id)?;
 
         let res = self.client.post(&url)
