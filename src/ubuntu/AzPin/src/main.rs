@@ -47,7 +47,14 @@ async fn main() {
         let (pin_changed_tx, pin_changed_rx) = gtk::glib::MainContext::channel(gtk::glib::Priority::DEFAULT);
 
         // Initialize Tray (without GTK3 linkage)
-        let tray = crate::ui::indicator::AzPinTray { db: db.clone(), arm_service: arm_service.clone(), open_tx, settings_tx, pin_changed_tx };
+        let tray = crate::ui::indicator::AzPinTray { 
+            db: db.clone(), 
+            arm_service: arm_service.clone(), 
+            open_tx, 
+            settings_tx, 
+            pin_changed_tx,
+            cached_rg_resources: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
+        };
         let tray_service = ksni::TrayService::new(tray);
         let tray_handle = tray_service.handle();
         tray_service.spawn();

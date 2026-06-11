@@ -185,7 +185,102 @@ impl Tray for AzPinTray {
         }
 
         // 3. Pinned Individual Resources (that are NOT part of a pinned group)
-        // For now we will just show groups as per screenshot.
+        if let Ok(orphans) = self.db.get_orphan_resources() {
+            if !orphans.is_empty() {
+                items.push(menu::MenuItem::Separator);
+                
+                for res in orphans {
+                    let mut submenu = vec![
+                        menu::StandardItem {
+                            label: "Open in Portal".into(),
+                            activate: Box::new({
+                                let r_id = res.id.clone();
+                                move |_| {
+                                    let uri = format!("https://portal.azure.com/#resource{}", r_id);
+                                    let _ = gtk::gio::AppInfo::launch_default_for_uri(&uri, None::<&gtk::gio::AppLaunchContext>);
+                                }
+                            }),
+                            ..Default::default()
+                        }.into(),
+                    ];
+
+                    let is_runnable = res.type_.eq_ignore_ascii_case("Microsoft.Web/sites") || 
+                                      res.type_.eq_ignore_ascii_case("Microsoft.App/containerApps") || 
+                                      res.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines");
+
+                    if is_runnable {
+                        submenu.push(menu::MenuItem::Separator);
+                        
+                        let r_id_start = res.id.clone();
+                        let sub_start = res.subscription_id.clone();
+                        let a_svc_start = self.arm_service.clone();
+                        submenu.push(menu::StandardItem {
+                            label: "Start".into(),
+                            activate: Box::new(move |_| {
+                                let a_svc = a_svc_start.clone();
+                                let sid = sub_start.clone();
+                                let rid = r_id_start.clone();
+                                gtk::glib::spawn_future_local(async move {
+                                    let _ = a_svc.start_resource(&sid, &rid, "2021-04-01").await;
+                                });
+                            }),
+                            ..Default::default()
+                        }.into());
+
+                        let r_id_stop = res.id.clone();
+                        let sub_stop = res.subscription_id.clone();
+                        let a_svc_stop = self.arm_service.clone();
+                        submenu.push(menu::StandardItem {
+                            label: "Stop".into(),
+                            activate: Box::new(move |_| {
+                                let a_svc = a_svc_stop.clone();
+                                let sid = sub_stop.clone();
+                                let rid = r_id_stop.clone();
+                                gtk::glib::spawn_future_local(async move {
+                                    let _ = a_svc.stop_resource(&sid, &rid, "2021-04-01").await;
+                                });
+                            }),
+                            ..Default::default()
+                        }.into());
+
+                        let r_id_restart = res.id.clone();
+                        let sub_restart = res.subscription_id.clone();
+                        let a_svc_restart = self.arm_service.clone();
+                        submenu.push(menu::StandardItem {
+                            label: "Restart".into(),
+                            activate: Box::new(move |_| {
+                                let a_svc = a_svc_restart.clone();
+                                let sid = sub_restart.clone();
+                                let rid = r_id_restart.clone();
+                                gtk::glib::spawn_future_local(async move {
+                                    let _ = a_svc.restart_resource(&sid, &rid, "2021-04-01").await;
+                                });
+                            }),
+                            ..Default::default()
+                        }.into());
+                    }
+
+                    submenu.push(menu::MenuItem::Separator);
+                    
+                    let r_id_unpin = res.id.clone();
+                    let db_unpin = self.db.clone();
+                    submenu.push(menu::StandardItem {
+                        label: "Unpin".into(),
+                        activate: Box::new(move |tray: &mut AzPinTray| {
+                            let _ = db_unpin.delete_pinned_resource(&r_id_unpin);
+                            let _ = tray.pin_changed_tx.send(());
+                        }),
+                        ..Default::default()
+                    }.into());
+
+                    items.push(menu::SubMenu {
+                        label: res.name.clone(),
+                        submenu,
+                        ..Default::default()
+                    }.into());
+                }
+            }
+        }
 
         items.push(menu::MenuItem::Separator);
 

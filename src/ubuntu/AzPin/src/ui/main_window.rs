@@ -370,10 +370,8 @@ impl MainWindow {
                                                         res_pin_btn.connect_toggled(move |btn| {
                                                             use crate::models::persistence::{PinnedResource, PinnedResourceGroup};
                                                             if btn.is_active() {
-                                                                // Ensure group exists in DB
-                                                                let _ = db_r_pin.save_pinned_group(&PinnedResourceGroup {
-                                                                    id: group_id_for_fk.clone(), subscription_id: sub_for_fk.clone(), name: group_name_for_fk.clone(), display_order: 0, resources: vec![]
-                                                                });
+                                                                // Ensure group exists in DB implicitly
+                                                                let _ = db_r_pin.ensure_implicit_group(&group_id_for_fk, &sub_for_fk, &group_name_for_fk);
                                                                 let _ = db_r_pin.save_pinned_resource(&PinnedResource {
                                                                     id: r_id.clone(), name: r_name.clone(), type_: r_type.clone(),
                                                                     resource_group: g_r.clone(), subscription_id: s_r.clone(), location: r_loc.clone(), display_order: 0,
@@ -414,17 +412,31 @@ impl MainWindow {
         let subs_cache_clone = subs_cache.clone();
         let sub_dropdown_clone = sub_dropdown.clone();
         let load_rgs_clone = load_rgs.clone();
-        sub_rx.attach(None, move |subs: Vec<AzSubscription>| {
-            sub_dropdown_clone.set_selected(gtk::INVALID_LIST_POSITION);
-            sub_model_clone.splice(0, sub_model_clone.n_items(), &subs.iter().map(|s| s.name.as_str()).collect::<Vec<_>>());
-            *subs_cache_clone.borrow_mut() = subs;
-            sub_dropdown_clone.set_selected(0);
-            load_rgs_clone();
+        sub_rx.attach(None, move |result: Result<Vec<AzSubscription>, String>| {
+            match result {
+                Ok(subs) => {
+                    sub_dropdown_clone.set_selected(gtk::INVALID_LIST_POSITION);
+                    sub_model_clone.splice(0, sub_model_clone.n_items(), &subs.iter().map(|s| s.name.as_str()).collect::<Vec<_>>());
+                    *subs_cache_clone.borrow_mut() = subs;
+                    sub_dropdown_clone.set_selected(0);
+                    load_rgs_clone();
+                }
+                Err(e) => {
+                    sub_dropdown_clone.set_selected(gtk::INVALID_LIST_POSITION);
+                    sub_model_clone.splice(0, sub_model_clone.n_items(), &[&format!("Error: {}", e)]);
+                }
+            }
             gtk::glib::ControlFlow::Continue
         });
+        let sub_tx_err = sub_tx.clone();
         std::thread::spawn(move || {
-            if let Ok(subs) = crate::services::az_cli::AzCliService::list_subscriptions() {
-                let _ = sub_tx.send(subs);
+            match crate::services::az_cli::AzCliService::list_subscriptions() {
+                Ok(subs) => {
+                    let _ = sub_tx.send(Ok(subs));
+                }
+                Err(e) => {
+                    let _ = sub_tx_err.send(Err(e));
+                }
             }
         });
 

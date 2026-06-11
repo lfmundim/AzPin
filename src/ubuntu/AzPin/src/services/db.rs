@@ -121,6 +121,16 @@ impl Db {
         Ok(())
     }
 
+    pub fn ensure_implicit_group(&self, id: &str, subscription_id: &str, name: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT OR IGNORE INTO pinned_resource_groups (id, subscription_id, name, display_order)
+             VALUES (?1, ?2, ?3, -1)",
+            params![id, subscription_id, name],
+        )?;
+        Ok(())
+    }
+
     pub fn save_pinned_resource(&self, resource: &PinnedResource, group_id: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
@@ -136,7 +146,7 @@ impl Db {
 
     pub fn get_pinned_groups(&self) -> Result<Vec<PinnedResourceGroup>> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT id, subscription_id, name, display_order FROM pinned_resource_groups ORDER BY display_order ASC")?;
+        let mut stmt = conn.prepare("SELECT id, subscription_id, name, display_order FROM pinned_resource_groups WHERE display_order >= 0 ORDER BY display_order ASC")?;
         
         let group_iter = stmt.query_map([], |row| {
             let id: String = row.get(0)?;
@@ -164,6 +174,28 @@ impl Db {
         Ok(groups)
     }
 
+    pub fn get_orphan_resources(&self) -> Result<Vec<PinnedResource>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT r.id, r.name, r.type, r.resource_group, r.subscription_id, r.location, r.display_order FROM pinned_resources r JOIN pinned_resource_groups g ON r.group_id = g.id WHERE g.display_order < 0 ORDER BY r.display_order ASC")?;
+        let res_iter = stmt.query_map([], |row| {
+            Ok(PinnedResource {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                type_: row.get(2)?,
+                resource_group: row.get(3)?,
+                subscription_id: row.get(4)?,
+                location: row.get(5)?,
+                display_order: row.get(6)?,
+            })
+        })?;
+
+        let mut resources = Vec::new();
+        for res in res_iter {
+            resources.push(res?);
+        }
+        Ok(resources)
+    }
+
     pub fn get_pinned_resources(&self, group_id: &str) -> Result<Vec<PinnedResource>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT id, name, type, resource_group, subscription_id, location, display_order FROM pinned_resources WHERE group_id = ?1 ORDER BY display_order ASC")?;
@@ -188,14 +220,30 @@ impl Db {
 
     pub fn delete_pinned_group(&self, id: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();
-        conn.execute("DELETE FROM pinned_resource_groups WHERE id = ?1", params![id])?;
-        // Resources are cascade-deleted due to FOREIGN KEY
+        // Check if it has resources
+        let count: i64 = conn.query_row("SELECT COUNT(*) FROM pinned_resources WHERE group_id = ?1", params![id], |row| row.get(0))?;
+        if count > 0 {
+            // Keep it but mark as implicit
+            conn.execute("UPDATE pinned_resource_groups SET display_order = -1 WHERE id = ?1", params![id])?;
+        } else {
+            conn.execute("DELETE FROM pinned_resource_groups WHERE id = ?1", params![id])?;
+        }
         Ok(())
     }
 
     pub fn delete_pinned_resource(&self, id: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();
+        // get group id before delete
+        let group_id: Result<String> = conn.query_row("SELECT group_id FROM pinned_resources WHERE id = ?1", params![id], |row| row.get(0));
         conn.execute("DELETE FROM pinned_resources WHERE id = ?1", params![id])?;
+        
+        if let Ok(gid) = group_id {
+            let count: i64 = conn.query_row("SELECT COUNT(*) FROM pinned_resources WHERE group_id = ?1", params![gid], |row| row.get(0)).unwrap_or(0);
+            let display_order: i32 = conn.query_row("SELECT display_order FROM pinned_resource_groups WHERE id = ?1", params![gid], |row| row.get(0)).unwrap_or(0);
+            if count == 0 && display_order < 0 {
+                conn.execute("DELETE FROM pinned_resource_groups WHERE id = ?1", params![gid])?;
+            }
+        }
         Ok(())
     }
 
