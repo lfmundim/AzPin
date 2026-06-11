@@ -22,6 +22,27 @@ jobs:
         working-directory: src/ubuntu/AzPin
         run: cargo test
 
+      - name: Install cargo-deb
+        run: cargo install cargo-deb
+
+      - name: Build and Package
+        working-directory: src/ubuntu/AzPin
+        run: cargo deb
+
+      - name: Rename DEB
+        working-directory: src/ubuntu/AzPin
+        run: |
+          DEB_FILE=$(ls target/debian/*.deb | head -n 1)
+          VERSION=$(grep '^version =' Cargo.toml | awk -F'"' '{print $2}')
+          NEW_NAME="target/debian/AzPin-Ubuntu-x64-v${VERSION}.deb"
+          mv "$DEB_FILE" "$NEW_NAME"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: azpin-ubuntu-amd64-deb
+          path: src/ubuntu/AzPin/target/debian/AzPin-Ubuntu-x64-v*.deb
+
 
 
   build-arm64:
@@ -39,6 +60,27 @@ jobs:
       - name: Run Cargo Test
         working-directory: src/ubuntu/AzPin
         run: cargo test
+
+      - name: Install cargo-deb
+        run: cargo install cargo-deb
+
+      - name: Build and Package
+        working-directory: src/ubuntu/AzPin
+        run: cargo deb
+
+      - name: Rename DEB
+        working-directory: src/ubuntu/AzPin
+        run: |
+          DEB_FILE=$(ls target/debian/*.deb | head -n 1)
+          VERSION=$(grep '^version =' Cargo.toml | awk -F'"' '{print $2}')
+          NEW_NAME="target/debian/AzPin-Ubuntu-arm64-v${VERSION}.deb"
+          mv "$DEB_FILE" "$NEW_NAME"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: azpin-ubuntu-arm64-deb
+          path: src/ubuntu/AzPin/target/debian/AzPin-Ubuntu-arm64-v*.deb
 
 
 
