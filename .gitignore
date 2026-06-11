@@ -71,3 +71,8 @@ src/windows/tasks/
 **/bin/
 **/obj/
 .vs/
+
+# Rust / Ubuntu
+src/ubuntu/AzPin/target/
+**/*.rs.bk
+*.deb

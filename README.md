@@ -10,15 +10,15 @@
 
 AzPin is a native macOS menubar app that reads your existing `az` CLI session and gives you fast, pinnable access to Azure resources. Open the menubar, see your pinned resource groups and their live resources, click to open in the portal, or start/stop/restart runnable resources without leaving the desktop.
 
-There is also a WinUI 3 Windows port under `src/windows/`, distributed as a self-contained zip from GitHub Releases.
+There is also a WinUI 3 Windows port under `src/windows/`, distributed as a self-contained zip from GitHub Releases, and a native GTK4 Ubuntu port under `src/ubuntu/` distributed as a `.deb` package.
 
-No Azure SDK. No App Store. No sandbox. Requires macOS 26 Tahoe.
+No Azure SDK. No App Store. No sandbox. Requires macOS 26 Tahoe, Windows 11, or Ubuntu 24.04.
 
 ---
 
 ## Prerequisites
 
-- **macOS 26 Tahoe** or later | **Windows 11** or later
+- **macOS 26 Tahoe** or later | **Windows 11** or later | **Ubuntu 24.04** or later
 - **[Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)** installed
 - Signed in: `az login`
 
@@ -50,6 +50,13 @@ Download the latest `AzPin-Windows-*-Installer.msi` from [Releases](../../releas
 > **Note:** The installer is self-signed. Your browser and Windows SmartScreen may flag it as unrecognized. Click **More info → Run anyway** (SmartScreen) or keep the file if your browser warns. The app is safe to install. If there is enough demand, a recognized certificate may be obtained in the future.
 
 No separate Windows App SDK runtime is required — the bundle is self-contained.
+
+### Ubuntu - DEB (manual)
+
+Download the latest `AzPin-Ubuntu-*-v*.deb` from [Releases](../../releases) and install it:
+```bash
+sudo apt install ./AzPin-Ubuntu-x64-v1.0.0.deb
+```
 
 ---
 
@@ -133,6 +140,23 @@ dotnet publish src/windows/AzPin.Windows/AzPin.Windows.csproj `
   -c Release -r win-x64 -p:Platform=x64 `
   -p:WindowsAppSDKSelfContained=true --self-contained true `
   -o build/publish/win-x64
+```
+
+### Ubuntu
+
+Requires Rust and GTK4 development libraries.
+
+```bash
+# Install dependencies
+sudo apt-get install libgtk-4-dev libadwaita-1-dev libayatana-appindicator3-dev
+
+# Build and run
+cd src/ubuntu/AzPin
+cargo run
+
+# Build DEB package
+cargo install cargo-deb
+cargo deb
 ```
 
 ---
