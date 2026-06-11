@@ -76,7 +76,8 @@ impl Tray for AzPinTray {
 
                         let is_runnable = res.type_.eq_ignore_ascii_case("Microsoft.Web/sites") || 
                                           res.type_.eq_ignore_ascii_case("Microsoft.App/containerApps") || 
-                                          res.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines");
+                                          res.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines") ||
+                                          res.type_.eq_ignore_ascii_case("Microsoft.Logic/workflows");
 
                         if is_runnable {
                             let state = {
@@ -108,7 +109,7 @@ impl Tray for AzPinTray {
                                         let sid = sub_start.clone();
                                         let rid = r_id_start.clone();
                                         tokio_handle.spawn(async move {
-                                            let _ = a_svc.start_resource(&sid, &rid, "2021-04-01").await;
+                                            let _ = a_svc.start_resource(&sid, &rid).await;
                                         });
                                     }),
                                     ..Default::default()
@@ -129,7 +130,7 @@ impl Tray for AzPinTray {
                                         let sid = sub_stop.clone();
                                         let rid = r_id_stop.clone();
                                         tokio_handle.spawn(async move {
-                                            let _ = a_svc.stop_resource(&sid, &rid, "2021-04-01").await;
+                                            let _ = a_svc.stop_resource(&sid, &rid).await;
                                         });
                                     }),
                                     ..Default::default()
@@ -148,7 +149,7 @@ impl Tray for AzPinTray {
                                         let sid = sub_restart.clone();
                                         let rid = r_id_restart.clone();
                                         tokio_handle.spawn(async move {
-                                            let _ = a_svc.restart_resource(&sid, &rid, "2021-04-01").await;
+                                            let _ = a_svc.restart_resource(&sid, &rid).await;
                                         });
                                     }),
                                     ..Default::default()
@@ -235,7 +236,8 @@ impl Tray for AzPinTray {
                 for res in orphans {
                     let is_runnable = res.type_.eq_ignore_ascii_case("Microsoft.Web/sites") || 
                                       res.type_.eq_ignore_ascii_case("Microsoft.App/containerApps") || 
-                                      res.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines");
+                                      res.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines") ||
+                                      res.type_.eq_ignore_ascii_case("Microsoft.Logic/workflows");
 
                     if is_runnable {
                         let mut submenu = vec![
@@ -279,7 +281,7 @@ impl Tray for AzPinTray {
                                     let sid = sub_start.clone();
                                     let rid = r_id_start.clone();
                                     tokio_handle.spawn(async move {
-                                        let _ = a_svc.start_resource(&sid, &rid, "2021-04-01").await;
+                                        let _ = a_svc.start_resource(&sid, &rid).await;
                                     });
                                 }),
                                 ..Default::default()
@@ -300,7 +302,7 @@ impl Tray for AzPinTray {
                                     let sid = sub_stop.clone();
                                     let rid = r_id_stop.clone();
                                     tokio_handle.spawn(async move {
-                                        let _ = a_svc.stop_resource(&sid, &rid, "2021-04-01").await;
+                                        let _ = a_svc.stop_resource(&sid, &rid).await;
                                     });
                                 }),
                                 ..Default::default()
@@ -319,7 +321,7 @@ impl Tray for AzPinTray {
                                     let sid = sub_restart.clone();
                                     let rid = r_id_restart.clone();
                                     tokio_handle.spawn(async move {
-                                        let _ = a_svc.restart_resource(&sid, &rid, "2021-04-01").await;
+                                        let _ = a_svc.restart_resource(&sid, &rid).await;
                                     });
                                 }),
                                 ..Default::default()

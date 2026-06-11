@@ -81,7 +81,8 @@ async fn main() {
                             for r in res {
                                 if r.type_.eq_ignore_ascii_case("Microsoft.Web/sites") || 
                                    r.type_.eq_ignore_ascii_case("Microsoft.App/containerApps") || 
-                                   r.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines") {
+                                   r.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines") ||
+                                   r.type_.eq_ignore_ascii_case("Microsoft.Logic/workflows") {
                                     runnables.push(r);
                                 }
                             }
@@ -94,7 +95,8 @@ async fn main() {
                     for r in orphans {
                         if r.type_.eq_ignore_ascii_case("Microsoft.Web/sites") || 
                            r.type_.eq_ignore_ascii_case("Microsoft.App/containerApps") || 
-                           r.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines") {
+                           r.type_.eq_ignore_ascii_case("Microsoft.Compute/virtualMachines") ||
+                           r.type_.eq_ignore_ascii_case("Microsoft.Logic/workflows") {
                             runnables.push(r);
                         }
                     }
@@ -104,7 +106,7 @@ async fn main() {
 
                 // Fetch states
                 for r in runnables {
-                    if let Ok(state) = state_arm.get_resource_state(&r.subscription_id, &r.id, "2021-04-01").await {
+                    if let Ok(state) = state_arm.get_resource_state(&r.subscription_id, &r.id).await {
                         if let Ok(mut cache) = state_cache_clone.write() {
                             cache.insert(r.id.clone(), state);
                             updated = true;

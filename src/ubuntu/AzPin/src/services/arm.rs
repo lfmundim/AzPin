@@ -69,8 +69,23 @@ impl ArmService {
         Ok(body.value)
     }
 
-    pub async fn get_resource_state(&self, subscription_id: &str, resource_id: &str, api_version: &str) -> Result<String, String> {
+    fn get_api_version(resource_id: &str) -> &'static str {
+        let id_lower = resource_id.to_lowercase();
+        if id_lower.contains("microsoft.app/containerapps") {
+            "2023-05-01"
+        } else if id_lower.contains("microsoft.logic/workflows") {
+            "2019-05-01"
+        } else if id_lower.contains("microsoft.compute/virtualmachines") {
+            "2023-09-01"
+        } else {
+            "2023-01-01"
+        }
+    }
+
+    pub async fn get_resource_state(&self, subscription_id: &str, resource_id: &str) -> Result<String, String> {
         let is_vm = resource_id.to_lowercase().contains("microsoft.compute/virtualmachines");
+        let api_version = Self::get_api_version(resource_id);
+        
         let url = if is_vm {
             format!("{}{}?api-version={}&$expand=instanceView", ARM_BASE_URL, resource_id, api_version)
         } else {
@@ -109,6 +124,9 @@ impl ArmService {
             if let Some(state) = props.get("state").and_then(|v| v.as_str()) {
                 return Ok(state.to_string());
             }
+            if let Some(state) = props.get("runningStatus").and_then(|v| v.as_str()) {
+                return Ok(state.to_string());
+            }
             if let Some(state) = props.get("runningState").and_then(|v| v.as_str()) {
                 return Ok(state.to_string());
             }
@@ -123,30 +141,27 @@ impl ArmService {
         Ok("Unknown".to_string())
     }
 
-    pub async fn start_resource(&self, subscription_id: &str, resource_id: &str, api_version: &str) -> Result<(), String> {
-        let url = format!("{}{}/start?api-version={}", ARM_BASE_URL, resource_id, api_version);
-        let auth = self.get_auth_header(subscription_id)?;
-
-        let res = self.client.post(&url)
-            .header("Authorization", auth)
-            .send()
-            .await
-            .map_err(|e| format!("Request failed: {}", e))?;
-
-        if !res.status().is_success() {
-            return Err(format!("ARM API error: {}", res.status()));
-        }
-
-        Ok(())
-    }
-
-    pub async fn stop_resource(&self, subscription_id: &str, resource_id: &str, api_version: &str) -> Result<(), String> {
-        let action = if resource_id.to_lowercase().contains("microsoft.compute/virtualmachines") {
+    fn get_action_url(resource_id: &str, action: &str) -> String {
+        let api_version = Self::get_api_version(resource_id);
+        let id_lower = resource_id.to_lowercase();
+        
+        let mapped_action = if id_lower.contains("microsoft.logic/workflows") {
+            match action {
+                "start" => "enable",
+                "stop" => "disable",
+                _ => action,
+            }
+        } else if id_lower.contains("microsoft.compute/virtualmachines") && action == "stop" {
             "powerOff"
         } else {
-            "stop"
+            action
         };
-        let url = format!("{}{}/{}?api-version={}", ARM_BASE_URL, resource_id, action, api_version);
+        
+        format!("{}{}/{}?api-version={}", ARM_BASE_URL, resource_id, mapped_action, api_version)
+    }
+
+    pub async fn start_resource(&self, subscription_id: &str, resource_id: &str) -> Result<(), String> {
+        let url = Self::get_action_url(resource_id, "start");
         let auth = self.get_auth_header(subscription_id)?;
 
         let res = self.client.post(&url)
@@ -162,8 +177,31 @@ impl ArmService {
         Ok(())
     }
 
-    pub async fn restart_resource(&self, subscription_id: &str, resource_id: &str, api_version: &str) -> Result<(), String> {
-        let url = format!("{}{}/restart?api-version={}", ARM_BASE_URL, resource_id, api_version);
+    pub async fn stop_resource(&self, subscription_id: &str, resource_id: &str) -> Result<(), String> {
+        let url = Self::get_action_url(resource_id, "stop");
+        let auth = self.get_auth_header(subscription_id)?;
+
+        let res = self.client.post(&url)
+            .header("Authorization", auth)
+            .send()
+            .await
+            .map_err(|e| format!("Request failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!("ARM API error: {}", res.status()));
+        }
+
+        Ok(())
+    }
+
+    pub async fn restart_resource(&self, subscription_id: &str, resource_id: &str) -> Result<(), String> {
+        // Container apps don't have restart, so we stop then start
+        if resource_id.to_lowercase().contains("microsoft.app/containerapps") {
+            self.stop_resource(subscription_id, resource_id).await?;
+            return self.start_resource(subscription_id, resource_id).await;
+        }
+
+        let url = Self::get_action_url(resource_id, "restart");
         let auth = self.get_auth_header(subscription_id)?;
 
         let res = self.client.post(&url)
