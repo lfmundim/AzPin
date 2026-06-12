@@ -425,6 +425,11 @@ jobs:
           mv "$DEB_FILE" "$NEW_NAME"
           gh release upload "${{ needs.create-release.outputs.tag }}" "$NEW_NAME" --clobber
 
+      - name: Inject Snap Version
+        working-directory: src/ubuntu/AzPin
+        run: |
+          sed -i "s/^version: 'git'/version: '${{ needs.create-release.outputs.version }}'/" snap/snapcraft.yaml
+
       - name: Build Snap
         id: build-snap
         uses: snapcore/action-build@v1
@@ -476,6 +481,11 @@ jobs:
           NEW_NAME="AzPin-Ubuntu-arm64-v${{ needs.create-release.outputs.version }}.deb"
           mv "$DEB_FILE" "$NEW_NAME"
           gh release upload "${{ needs.create-release.outputs.tag }}" "$NEW_NAME" --clobber
+
+      - name: Inject Snap Version
+        working-directory: src/ubuntu/AzPin
+        run: |
+          sed -i "s/^version: 'git'/version: '${{ needs.create-release.outputs.version }}'/" snap/snapcraft.yaml
 
       - name: Build Snap
         id: build-snap
