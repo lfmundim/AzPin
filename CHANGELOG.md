@@ -28,6 +28,20 @@ All notable changes to AzPin are documented in this file.
 - Introduced native GTK4 Linux port built with Rust and `libadwaita`.
 - Added dynamic background polling to maintain live azure state in the system tray.
 - Settings: Implemented an "Updates" tab using `reqwest` to query the GitHub Releases API and allow one-click browser-based `.deb` updates.
+- **Security**: `PermissionsService` now performs real ARM `GET .../providers/Microsoft.Authorization/permissions` checks with wildcard pattern matching (`*`, trailing `/*`, exact). Action buttons (Start/Stop/Restart) only appear for users with confirmed write permissions. Fail-safe: no buttons shown until permissions are verified.
+- **Fix**: Token expiry parsing now handles the `az` CLI 2.x datetime format (`"YYYY-MM-DD HH:MM:SS.ffffff"`); tokens are cached for their actual TTL rather than a hardcoded 1-hour fallback.
+- **Fix**: All `az` CLI invocations converted to `tokio::process::Command` (async), eliminating blocking I/O on Tokio worker threads.
+- **Fix**: `menu()` no longer performs any I/O; account info, permissions, and resource states are all fetched in the async polling loop and read from caches in the synchronous render path.
+- **Fix**: Removed shadowed `updated` variable in polling loop — tray now correctly refreshes when resource group contents load, not only when runnable resource state changes.
+- **Fix**: Quit action now uses GTK `app.quit()` via channel instead of `std::process::exit(0)`, ensuring SQLite WAL flush and GTK lifecycle hooks execute cleanly.
+- **Fix**: Replaced emoji indicators (`✅`, `⚠️`, `🟢`, `🔴`, `⚪`) with Unicode geometric symbols (`▶`, `■`, `…`, `○`) and plain text per spec.
+- **Refactor**: `is_runnable` extracted to `utils/resource_type.rs`; now covers 5 resource types including `microsoft.web/sites/slots`. All inline type-string checks removed.
+- **Refactor**: `ResourceState` typed enum replaces raw `String` state storage; `state_cache` is now type-safe end-to-end.
+- **Refactor**: Portal URL construction centralized in `utils/portal_url.rs`; no inline `portal.azure.com` strings remain in the UI layer.
+- **Refactor**: `icon_mapper.rs` uses exact resource type matching instead of `contains()` substring matching.
+- **Model**: `ArmResource` gains optional `tags: Option<HashMap<String, String>>` field.
+- **Model**: `PinnedResourceGroup` gains `subscription_display_name: Option<String>`; DB column added automatically via migration on startup.
+- **Tests**: Unit tests added for `resource_type`, `portal_url`, `az_cli` expiry parsing, `permissions` wildcard matching, and `token_cache` validity logic.
 
 ### macOS
 

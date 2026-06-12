@@ -19,6 +19,13 @@ impl Db {
         Ok(db)
     }
 
+    pub fn new_in_memory() -> Result<Self> {
+        let conn = Connection::open_in_memory()?;
+        let db = Self { conn: Mutex::new(conn) };
+        db.init()?;
+        Ok(db)
+    }
+
     fn get_db_path() -> PathBuf {
         let data_dir = dirs::data_dir().unwrap_or_else(|| {
             PathBuf::from(std::env::var("HOME").unwrap_or_else(|_| String::from("~"))).join(".local/share")
@@ -42,11 +49,18 @@ impl Db {
             "CREATE TABLE IF NOT EXISTS pinned_resource_groups (
                 id TEXT PRIMARY KEY,
                 subscription_id TEXT NOT NULL,
+                subscription_display_name TEXT,
                 name TEXT NOT NULL,
                 display_order INTEGER NOT NULL
             )",
             [],
         )?;
+
+        // Migrate existing installs that lack the subscription_display_name column
+        let _ = conn.execute(
+            "ALTER TABLE pinned_resource_groups ADD COLUMN subscription_display_name TEXT",
+            [],
+        );
 
         conn.execute(
             "CREATE TABLE IF NOT EXISTS pinned_resources (
@@ -108,9 +122,9 @@ impl Db {
         {
             let conn = self.conn.lock().unwrap();
             conn.execute(
-                "INSERT OR REPLACE INTO pinned_resource_groups (id, subscription_id, name, display_order)
-                 VALUES (?1, ?2, ?3, ?4)",
-                params![group.id, group.subscription_id, group.name, group.display_order],
+                "INSERT OR REPLACE INTO pinned_resource_groups (id, subscription_id, subscription_display_name, name, display_order)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
+                params![group.id, group.subscription_id, group.subscription_display_name, group.name, group.display_order],
             )?;
         }
 
@@ -121,12 +135,18 @@ impl Db {
         Ok(())
     }
 
-    pub fn ensure_implicit_group(&self, id: &str, subscription_id: &str, name: &str) -> Result<()> {
+    pub fn ensure_implicit_group(
+        &self,
+        id: &str,
+        subscription_id: &str,
+        name: &str,
+        subscription_display_name: Option<&str>,
+    ) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
-            "INSERT OR IGNORE INTO pinned_resource_groups (id, subscription_id, name, display_order)
-             VALUES (?1, ?2, ?3, -1)",
-            params![id, subscription_id, name],
+            "INSERT OR IGNORE INTO pinned_resource_groups (id, subscription_id, subscription_display_name, name, display_order)
+             VALUES (?1, ?2, ?3, ?4, -1)",
+            params![id, subscription_id, subscription_display_name, name],
         )?;
         Ok(())
     }
@@ -146,15 +166,16 @@ impl Db {
 
     pub fn get_pinned_groups(&self) -> Result<Vec<PinnedResourceGroup>> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT id, subscription_id, name, display_order FROM pinned_resource_groups WHERE display_order >= 0 ORDER BY display_order ASC")?;
-        
+        let mut stmt = conn.prepare("SELECT id, subscription_id, subscription_display_name, name, display_order FROM pinned_resource_groups WHERE display_order >= 0 ORDER BY display_order ASC")?;
+
         let group_iter = stmt.query_map([], |row| {
             let id: String = row.get(0)?;
             Ok(PinnedResourceGroup {
                 id: id.clone(),
                 subscription_id: row.get(1)?,
-                name: row.get(2)?,
-                display_order: row.get(3)?,
+                subscription_display_name: row.get(2)?,
+                name: row.get(3)?,
+                display_order: row.get(4)?,
                 resources: Vec::new(),
             })
         })?;

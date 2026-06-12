@@ -1,11 +1,11 @@
 use serde::Deserialize;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ArmResourceGroup {
     pub id: String,
     pub name: String,
     pub location: String,
-    // Add other fields mapped from Azure JSON as needed
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -15,5 +15,6 @@ pub struct ArmResource {
     #[serde(rename = "type")]
     pub type_: String,
     pub location: String,
-    // Add other fields mapped from Azure JSON as needed
+    #[serde(default)]
+    pub tags: Option<HashMap<String, String>>,
 }

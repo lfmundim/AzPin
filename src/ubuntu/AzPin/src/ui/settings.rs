@@ -34,7 +34,7 @@ impl SettingsWindow {
 
         let id_row_clone = identity_row.clone();
         gtk::glib::spawn_future_local(async move {
-            if let Ok(sub) = AzCliService::get_default_subscription() {
+            if let Ok(sub) = AzCliService::get_default_subscription().await {
                 id_row_clone.set_subtitle(&sub.tenant_id);
             } else {
                 id_row_clone.set_subtitle("Not signed in");
@@ -59,7 +59,7 @@ impl SettingsWindow {
         gtk::glib::spawn_future_local(async move {
             let hidden_subs = db_clone.get_hidden_subscriptions().unwrap_or_default();
             
-            if let Ok(subs) = AzCliService::list_subscriptions() {
+            if let Ok(subs) = AzCliService::list_subscriptions().await {
                 for sub in subs {
                     let is_hidden = hidden_subs.contains(&sub.id);
                     

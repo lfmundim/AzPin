@@ -7,6 +7,7 @@ use crate::services::db::Db;
 use crate::services::arm::ArmService;
 use crate::services::az_cli::{AzCliService, AzSubscription};
 use crate::ui::settings::SettingsWindow;
+use crate::utils::portal_url;
 
 pub struct MainWindow {
     window: adw::ApplicationWindow,
@@ -151,7 +152,7 @@ impl MainWindow {
                         let g_id = group.id.clone();
                         let tap = gtk::GestureClick::new();
                         tap.connect_pressed(move |_, _, _, _| {
-                            let uri = format!("https://portal.azure.com/#resource{}", g_id);
+                            let uri = portal_url::resource_url(&g_id);
                             let _ = gtk::gio::AppInfo::launch_default_for_uri(&uri, None::<&gtk::gio::AppLaunchContext>);
                         });
                         row.add_controller(tap);
@@ -195,7 +196,7 @@ impl MainWindow {
                     let g_id = group.id.clone();
                     let tap = gtk::GestureClick::new();
                     tap.connect_pressed(move |_, _, _, _| {
-                        let uri = format!("https://portal.azure.com/#resource{}", g_id);
+                        let uri = portal_url::resource_url(&g_id);
                         let _ = gtk::gio::AppInfo::launch_default_for_uri(&uri, None::<&gtk::gio::AppLaunchContext>);
                     });
                     row.add_controller(tap);
@@ -215,7 +216,7 @@ impl MainWindow {
                             let r_id = res.id.clone();
                             let tap = gtk::GestureClick::new();
                             tap.connect_pressed(move |_, _, _, _| {
-                                let uri = format!("https://portal.azure.com/#resource{}", r_id);
+                                let uri = portal_url::resource_url(&r_id);
                                 let _ = gtk::gio::AppInfo::launch_default_for_uri(&uri, None::<&gtk::gio::AppLaunchContext>);
                             });
                             row.add_controller(tap);
@@ -371,7 +372,7 @@ impl MainWindow {
                                                             use crate::models::persistence::{PinnedResource, PinnedResourceGroup};
                                                             if btn.is_active() {
                                                                 // Ensure group exists in DB implicitly
-                                                                let _ = db_r_pin.ensure_implicit_group(&group_id_for_fk, &sub_for_fk, &group_name_for_fk);
+                                                                let _ = db_r_pin.ensure_implicit_group(&group_id_for_fk, &sub_for_fk, &group_name_for_fk, None);
                                                                 let _ = db_r_pin.save_pinned_resource(&PinnedResource {
                                                                     id: r_id.clone(), name: r_name.clone(), type_: r_type.clone(),
                                                                     resource_group: g_r.clone(), subscription_id: s_r.clone(), location: r_loc.clone(), display_order: 0,
@@ -430,7 +431,8 @@ impl MainWindow {
         });
         let sub_tx_err = sub_tx.clone();
         std::thread::spawn(move || {
-            match crate::services::az_cli::AzCliService::list_subscriptions() {
+            let handle = tokio::runtime::Handle::current();
+            match handle.block_on(crate::services::az_cli::AzCliService::list_subscriptions()) {
                 Ok(subs) => {
                     let _ = sub_tx.send(Ok(subs));
                 }
@@ -471,7 +473,8 @@ impl MainWindow {
             gtk::glib::ControlFlow::Continue
         });
         std::thread::spawn(move || {
-            let is_logged_in = AzCliService::get_default_subscription().is_ok();
+            let handle = tokio::runtime::Handle::current();
+            let is_logged_in = handle.block_on(AzCliService::get_default_subscription()).is_ok();
             let _ = chk_tx.send(is_logged_in);
         });
 
@@ -487,7 +490,8 @@ impl MainWindow {
         refresh_btn.connect_clicked(move |_| {
             let sender = sender.clone();
             std::thread::spawn(move || {
-                let is_logged_in = AzCliService::get_default_subscription().is_ok();
+                let handle = tokio::runtime::Handle::current();
+                let is_logged_in = handle.block_on(AzCliService::get_default_subscription()).is_ok();
                 let _ = sender.send(is_logged_in);
             });
         });

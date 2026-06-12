@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct PinnedResourceGroup {
     pub id: String,
     pub subscription_id: String,
+    pub subscription_display_name: Option<String>,
     pub name: String,
     pub display_order: i32,
     pub resources: Vec<PinnedResource>,
@@ -25,5 +26,5 @@ pub struct CachedToken {
     pub subscription_id: String,
     pub tenant_id: String,
     pub access_token: String,
-    pub expires_on: String, // Or u64 depending on API
+    pub expires_on: String,
 }

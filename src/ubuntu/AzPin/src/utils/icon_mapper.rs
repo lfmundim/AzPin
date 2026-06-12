@@ -1,38 +1,18 @@
-pub fn get_gnome_icon(sf_symbol: &str) -> &'static str {
-    match sf_symbol {
-        // Core shapes and cloud
-        "cloud.fill" => "weather-overcast-symbolic",
-        "cloud" => "weather-overcast",
-        
-        // Operations
-        "play.fill" => "media-playback-start-symbolic",
-        "stop.fill" => "media-playback-stop-symbolic",
-        "arrow.clockwise" => "view-refresh-symbolic",
-        
-        // Resources
-        "folder.fill" => "folder-symbolic",
-        "desktopcomputer" => "computer-symbolic",
-        "server.rack" => "network-server-symbolic",
-        "database" => "drive-harddisk-symbolic",
-        
-        // Fallback
-        _ => "emblem-system-symbolic",
-    }
-}
-
 pub fn get_icon_for_type(resource_type: &str) -> &'static str {
-    let lower = resource_type.to_lowercase();
-    if lower.contains("virtualmachine") || lower.contains("compute") {
-        "computer-symbolic"
-    } else if lower.contains("database") || lower.contains("sql") {
-        "drive-harddisk-symbolic"
-    } else if lower.contains("web/sites") {
-        "applications-internet-symbolic"
-    } else if lower.contains("storage") {
-        "folder-symbolic"
-    } else if lower.contains("network") {
-        "network-workgroup-symbolic"
-    } else {
-        "emblem-system-symbolic"
+    match resource_type.to_lowercase().as_str() {
+        "microsoft.compute/virtualmachines" => "computer-symbolic",
+        "microsoft.sql/servers"
+        | "microsoft.documentdb/databaseaccounts"
+        | "microsoft.sql/managedinstances" => "drive-harddisk-symbolic",
+        "microsoft.web/sites" | "microsoft.web/sites/slots" => "applications-internet-symbolic",
+        "microsoft.storage/storageaccounts" => "folder-symbolic",
+        "microsoft.network/virtualnetworks" | "microsoft.network/loadbalancers" => {
+            "network-workgroup-symbolic"
+        }
+        "microsoft.app/containerapps" => "package-x-generic-symbolic",
+        "microsoft.keyvault/vaults" => "dialog-password-symbolic",
+        "microsoft.servicebus/namespaces" => "mail-send-symbolic",
+        "microsoft.logic/workflows" => "system-run-symbolic",
+        _ => "emblem-system-symbolic",
     }
 }

@@ -15,6 +15,9 @@ chrono = "0.4"
 ksni = "0.2"
 dirs = "5.0" # For XDG spec based directories
 
+[dev-dependencies]
+mockito = "1"
+
 [package.metadata.deb]
 maintainer = "Lucas Mundim <lucas@example.com>"
 copyright = "2026, Lucas Mundim"
