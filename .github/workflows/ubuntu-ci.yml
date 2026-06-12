@@ -43,27 +43,10 @@ jobs:
           name: azpin-ubuntu-amd64-deb
           path: src/ubuntu/AzPin/target/debian/AzPin-Ubuntu-x64-v*.deb
 
-      - name: Inject Snap Version
-        working-directory: src/ubuntu/AzPin
-        run: |
-          VERSION=$(grep '^version =' Cargo.toml | awk -F'"' '{print $2}')
-          sed -i "s/^version: 'git'/version: '${VERSION}'/" snap/snapcraft.yaml
-
-      - name: Build Snap
-        id: build-snap
-        uses: snapcore/action-build@v1
-        with:
-          path: src/ubuntu/AzPin
-          snapcraft-args: pack
-
-      - name: Publish Snap
-        uses: snapcore/action-publish@v1
-        env:
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-        with:
-          snap: ${{ steps.build-snap.outputs.snap }}
-          release: ${{ github.event_name == 'push' && 'candidate' || 'edge' }}
-
+      # Snap disabled pending Snap Store manual review of first submission
+      # - name: Inject Snap Version
+      # - name: Build Snap
+      # - name: Publish Snap
 
 
   build-arm64:
@@ -103,26 +86,7 @@ jobs:
           name: azpin-ubuntu-arm64-deb
           path: src/ubuntu/AzPin/target/debian/AzPin-Ubuntu-arm64-v*.deb
 
-      - name: Inject Snap Version
-        working-directory: src/ubuntu/AzPin
-        run: |
-          VERSION=$(grep '^version =' Cargo.toml | awk -F'"' '{print $2}')
-          sed -i "s/^version: 'git'/version: '${VERSION}'/" snap/snapcraft.yaml
-
-      - name: Build Snap
-        id: build-snap
-        uses: snapcore/action-build@v1
-        with:
-          path: src/ubuntu/AzPin
-          snapcraft-args: pack
-
-      - name: Publish Snap
-        uses: snapcore/action-publish@v1
-        env:
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-        with:
-          snap: ${{ steps.build-snap.outputs.snap }}
-          release: ${{ github.event_name == 'push' && 'candidate' || 'edge' }}
-
-
-
+      # Snap disabled pending Snap Store manual review of first submission
+      # - name: Inject Snap Version
+      # - name: Build Snap
+      # - name: Publish Snap

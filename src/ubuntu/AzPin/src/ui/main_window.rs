@@ -28,6 +28,10 @@ fn get_icon_for_type(res_type: &str) -> &'static str {
 
 impl MainWindow {
     pub fn new(app: &adw::Application, db: Arc<Db>, arm_service: Arc<ArmService>, tray_handle: ksni::Handle<crate::ui::indicator::AzPinTray>, pin_changed_rx: gtk::glib::Receiver<()>) -> Self {
+        // Capture handle here (GTK callback runs inside Tokio runtime). Cloned into
+        // std::thread::spawn closures below — Handle::current() would panic there.
+        let tokio_handle = tokio::runtime::Handle::current();
+
         let root_stack = gtk::Stack::new();
         root_stack.set_transition_type(gtk::StackTransitionType::Crossfade);
 
@@ -431,7 +435,7 @@ impl MainWindow {
         });
         let sub_tx_err = sub_tx.clone();
         std::thread::spawn(move || {
-            let handle = tokio::runtime::Handle::current();
+            let handle = tokio_handle.clone();
             match handle.block_on(crate::services::az_cli::AzCliService::list_subscriptions()) {
                 Ok(subs) => {
                     let _ = sub_tx.send(Ok(subs));
@@ -473,7 +477,7 @@ impl MainWindow {
             gtk::glib::ControlFlow::Continue
         });
         std::thread::spawn(move || {
-            let handle = tokio::runtime::Handle::current();
+            let handle = tokio_handle.clone();
             let is_logged_in = handle.block_on(AzCliService::get_default_subscription()).is_ok();
             let _ = chk_tx.send(is_logged_in);
         });
@@ -490,7 +494,7 @@ impl MainWindow {
         refresh_btn.connect_clicked(move |_| {
             let sender = sender.clone();
             std::thread::spawn(move || {
-                let handle = tokio::runtime::Handle::current();
+                let handle = tokio_handle.clone();
                 let is_logged_in = handle.block_on(AzCliService::get_default_subscription()).is_ok();
                 let _ = sender.send(is_logged_in);
             });
