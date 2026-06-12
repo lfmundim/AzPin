@@ -286,21 +286,28 @@ impl MainWindow {
                                 
                                 // Check if pinned
                                 let is_pinned = db_c.get_pinned_groups().unwrap_or_default().iter().any(|g| g.id == group.id);
-                                
+
+                                // Pinning the whole RG hides the per-resource pin buttons —
+                                // resources are already covered by the group pin.
+                                let rg_pinned = Rc::new(RefCell::new(is_pinned));
+                                let res_pin_btns: Rc<RefCell<Vec<gtk::ToggleButton>>> = Rc::new(RefCell::new(Vec::new()));
+
                                 let pin_btn = gtk::ToggleButton::builder()
-                                    .icon_name("bookmark-new-symbolic")
+                                    .icon_name("view-pin-symbolic")
                                     .css_classes(vec!["flat".to_string()])
                                     .valign(gtk::Align::Center)
                                     .active(is_pinned)
                                     .build();
-                                    
+
                                 let g_id = group.id.clone();
                                 let s_id = sub_id.clone();
                                 let g_name = group.name.clone();
                                 let db_pin = db_c.clone();
                                 let tr_pin = tray_c.clone();
                                 let ls_pin = ls_c.clone();
-                                
+                                let rg_pinned_toggle = rg_pinned.clone();
+                                let res_pin_btns_toggle = res_pin_btns.clone();
+
                                 pin_btn.connect_toggled(move |btn| {
                                     use crate::models::persistence::PinnedResourceGroup;
                                     if btn.is_active() {
@@ -309,6 +316,10 @@ impl MainWindow {
                                         });
                                     } else {
                                         let _ = db_pin.delete_pinned_group(&g_id);
+                                    }
+                                    *rg_pinned_toggle.borrow_mut() = btn.is_active();
+                                    for res_btn in res_pin_btns_toggle.borrow().iter() {
+                                        res_btn.set_visible(!btn.is_active());
                                     }
                                     let _ = tr_pin.update(|_| {});
                                     ls_pin();
@@ -325,7 +336,9 @@ impl MainWindow {
                                 let tray_res = tray_c.clone();
                                 let ls_res = ls_c.clone();
                                 let exp_row_clone = exp_row.clone();
-                                
+                                let rg_pinned_expand = rg_pinned.clone();
+                                let res_pin_btns_expand = res_pin_btns.clone();
+
                                 exp_row.connect_expanded_notify(move |exp| {
                                     if exp.is_expanded() && !*loaded.borrow() {
                                         *loaded.borrow_mut() = true;
@@ -337,6 +350,8 @@ impl MainWindow {
                                         let lsr = ls_res.clone();
                                         let er = exp_row_clone.clone();
                                         let g_id_r = g_id_res.clone();
+                                        let rg_pinned_load = rg_pinned_expand.clone();
+                                        let res_pin_btns_load = res_pin_btns_expand.clone();
                                         
                                         gtk::glib::spawn_future_local(async move {
                                             match asr.fetch_resources(&sr, &gr).await {
@@ -350,12 +365,14 @@ impl MainWindow {
                                                         let is_res_pinned = dbr.get_pinned_resources(&g_id_r).unwrap_or_default().iter().any(|r| r.id == res.id);
                                                         
                                                         let res_pin_btn = gtk::ToggleButton::builder()
-                                                            .icon_name("bookmark-new-symbolic")
+                                                            .icon_name("view-pin-symbolic")
                                                             .css_classes(vec!["flat".to_string()])
                                                             .valign(gtk::Align::Center)
                                                             .active(is_res_pinned)
+                                                            .visible(!*rg_pinned_load.borrow())
                                                             .build();
-                                                            
+                                                        res_pin_btns_load.borrow_mut().push(res_pin_btn.clone());
+
                                                         let r_id = res.id.clone();
                                                         let r_name = res.name.clone();
                                                         let r_type = res.type_.clone();

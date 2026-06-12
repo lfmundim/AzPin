@@ -43,6 +43,9 @@ All notable changes to AzPin are documented in this file.
 - **Model**: `ArmResource` gains optional `tags: Option<HashMap<String, String>>` field.
 - **Model**: `PinnedResourceGroup` gains `subscription_display_name: Option<String>`; DB column added automatically via migration on startup.
 - **Tests**: Unit tests added for `resource_type`, `portal_url`, `az_cli` expiry parsing, `permissions` wildcard matching, and `token_cache` validity logic.
+- **UI**: Tray menu state glyphs moved off resource names onto the action items themselves (`▶ Start`, `■ Stop`, `⟳ Restart`, `… Starting/Stopping`); resource names now render plain.
+- **UI**: Pinning a resource group hides the per-resource pin buttons inside it (resources are covered by the group pin); unpinning the group shows them again.
+- **UI**: Pin buttons now use the GNOME `view-pin-symbolic` icon instead of `bookmark-new-symbolic`.
 
 ### macOS
 

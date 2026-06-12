@@ -132,11 +132,7 @@ impl Tray for AzPinTray {
                             // can_manage == Some(false) — no buttons
                         }
 
-                        let label = if runnable {
-                            format!("{} {}", state_prefix(&state), res.name)
-                        } else {
-                            res.name.clone()
-                        };
+                        let label = res.name.clone();
 
                         if runnable {
                             group_submenu.push(
@@ -289,7 +285,7 @@ impl Tray for AzPinTray {
 
                         items.push(
                             menu::SubMenu {
-                                label: format!("{} {}", state_prefix(&state), res.name),
+                                label: res.name.clone(),
                                 submenu,
                                 ..Default::default()
                             }
@@ -358,15 +354,6 @@ impl Tray for AzPinTray {
     }
 }
 
-fn state_prefix(state: &ResourceState) -> &'static str {
-    match state {
-        ResourceState::Running => "▶",
-        ResourceState::Stopped => "■",
-        ResourceState::Starting | ResourceState::Stopping | ResourceState::Restarting => "…",
-        ResourceState::Unknown => "○",
-    }
-}
-
 fn build_action_items(
     submenu: &mut Vec<MenuItem<AzPinTray>>,
     res: &PinnedResource,
@@ -376,7 +363,7 @@ fn build_action_items(
     state_cache: &Arc<RwLock<HashMap<String, ResourceState>>>,
 ) {
     if state.is_transitioning() {
-        let label = format!("{}...", state.display_label());
+        let label = format!("… {}", state.display_label());
         submenu.push(
             menu::StandardItem {
                 label,
@@ -396,7 +383,7 @@ fn build_action_items(
         let cache = state_cache.clone();
         submenu.push(
             menu::StandardItem {
-                label: "Start".into(),
+                label: "▶ Start".into(),
                 activate: Box::new(move |_| {
                     if let Ok(mut c) = cache.write() {
                         c.insert(r_id.clone(), ResourceState::Starting);
@@ -420,7 +407,7 @@ fn build_action_items(
         let cache_stop = state_cache.clone();
         submenu.push(
             menu::StandardItem {
-                label: "Stop".into(),
+                label: "■ Stop".into(),
                 activate: Box::new(move |_| {
                     if let Ok(mut c) = cache_stop.write() {
                         c.insert(r_id_stop.clone(), ResourceState::Stopping);
@@ -444,7 +431,7 @@ fn build_action_items(
         let cache_restart = state_cache.clone();
         submenu.push(
             menu::StandardItem {
-                label: "Restart".into(),
+                label: "⟳ Restart".into(),
                 activate: Box::new(move |_| {
                     if let Ok(mut c) = cache_restart.write() {
                         c.insert(r_id_restart.clone(), ResourceState::Restarting);
