@@ -33,6 +33,7 @@ All notable changes to AzPin are documented in this file.
 - **Fix**: All `az` CLI invocations converted to `tokio::process::Command` (async), eliminating blocking I/O on Tokio worker threads.
 - **Fix**: `menu()` no longer performs any I/O; account info, permissions, and resource states are all fetched in the async polling loop and read from caches in the synchronous render path.
 - **Fix**: Removed shadowed `updated` variable in polling loop — tray now correctly refreshes when resource group contents load, not only when runnable resource state changes.
+- **Fix**: Subscriptions never loaded in the main window — `Handle::current()` panicked inside spawned OS threads (no Tokio context), silently killing the loader thread. The Tokio runtime handle is now captured once in `MainWindow::new` and cloned into each thread closure.
 - **Fix**: Quit action now uses GTK `app.quit()` via channel instead of `std::process::exit(0)`, ensuring SQLite WAL flush and GTK lifecycle hooks execute cleanly.
 - **Fix**: Replaced emoji indicators (`✅`, `⚠️`, `🟢`, `🔴`, `⚪`) with Unicode geometric symbols (`▶`, `■`, `…`, `○`) and plain text per spec.
 - **Refactor**: `is_runnable` extracted to `utils/resource_type.rs`; now covers 5 resource types including `microsoft.web/sites/slots`. All inline type-string checks removed.

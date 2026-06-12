@@ -434,8 +434,8 @@ impl MainWindow {
             gtk::glib::ControlFlow::Continue
         });
         let sub_tx_err = sub_tx.clone();
+        let handle = tokio_handle.clone();
         std::thread::spawn(move || {
-            let handle = tokio_handle.clone();
             match handle.block_on(crate::services::az_cli::AzCliService::list_subscriptions()) {
                 Ok(subs) => {
                     let _ = sub_tx.send(Ok(subs));
@@ -476,8 +476,8 @@ impl MainWindow {
             }
             gtk::glib::ControlFlow::Continue
         });
+        let handle = tokio_handle.clone();
         std::thread::spawn(move || {
-            let handle = tokio_handle.clone();
             let is_logged_in = handle.block_on(AzCliService::get_default_subscription()).is_ok();
             let _ = chk_tx.send(is_logged_in);
         });
@@ -493,8 +493,8 @@ impl MainWindow {
 
         refresh_btn.connect_clicked(move |_| {
             let sender = sender.clone();
+            let handle = tokio_handle.clone();
             std::thread::spawn(move || {
-                let handle = tokio_handle.clone();
                 let is_logged_in = handle.block_on(AzCliService::get_default_subscription()).is_ok();
                 let _ = sender.send(is_logged_in);
             });
