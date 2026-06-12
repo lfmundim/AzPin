@@ -1,6 +1,8 @@
 use gtk4::prelude::*;
 use adw::prelude::*;
 use gtk4 as gtk;
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::Arc;
 use crate::services::db::Db;
 use crate::services::az_cli::AzCliService;
@@ -129,6 +131,33 @@ impl SettingsWindow {
             .css_classes(["suggested-action"])
             .build();
 
+        // Snap update suggestion — shown alongside the download button when
+        // an update is available (snap package name: azpin).
+        let snap_cmd = "sudo snap refresh azpin";
+        let snap_box = gtk::Box::builder()
+            .orientation(gtk::Orientation::Horizontal)
+            .spacing(6)
+            .halign(gtk::Align::Center)
+            .visible(false)
+            .build();
+        let snap_hint = gtk::Label::new(Some("Or update via Snap:"));
+        snap_hint.add_css_class("dim-label");
+        let snap_cmd_label = gtk::Label::new(Some(snap_cmd));
+        snap_cmd_label.add_css_class("monospace");
+        snap_cmd_label.set_selectable(true);
+        let snap_copy_btn = gtk::Button::builder()
+            .icon_name("edit-copy-symbolic")
+            .tooltip_text("Copy command")
+            .css_classes(["flat"])
+            .valign(gtk::Align::Center)
+            .build();
+        snap_copy_btn.connect_clicked(move |btn| {
+            btn.clipboard().set_text(snap_cmd);
+        });
+        snap_box.append(&snap_hint);
+        snap_box.append(&snap_cmd_label);
+        snap_box.append(&snap_copy_btn);
+
         let updates_vbox = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
             .spacing(6)
@@ -141,6 +170,7 @@ impl SettingsWindow {
         updates_vbox.append(&check_btn);
         updates_vbox.append(&status_label);
         updates_vbox.append(&download_btn);
+        updates_vbox.append(&snap_box);
 
         let updates_container_row = adw::ActionRow::new();
         updates_container_row.set_child(Some(&updates_vbox));
@@ -150,18 +180,33 @@ impl SettingsWindow {
         updates_page.add(&updates_group);
         window.add(&updates_page);
 
+        // Single click handler reading the latest URL — connecting inside the
+        // check callback would stack one handler per check.
+        let release_url_cell: Rc<RefCell<String>> = Rc::new(RefCell::new(String::new()));
+        let url_for_click = release_url_cell.clone();
+        download_btn.connect_clicked(move |_| {
+            let url = url_for_click.borrow().clone();
+            if !url.is_empty() {
+                let _ = gtk::gio::AppInfo::launch_default_for_uri(&url, None::<&gtk::gio::AppLaunchContext>);
+            }
+        });
+
         let status_label_clone = status_label.clone();
         let download_btn_clone = download_btn.clone();
+        let snap_box_clone = snap_box.clone();
         let check_btn_clone = check_btn.clone();
 
         check_btn.connect_clicked(move |_| {
             let status = status_label_clone.clone();
             let download = download_btn_clone.clone();
+            let snap = snap_box_clone.clone();
             let btn = check_btn_clone.clone();
+            let url_cell = release_url_cell.clone();
 
             btn.set_sensitive(false);
             status.set_label("Checking for updates...");
             download.set_visible(false);
+            snap.set_visible(false);
 
             gtk::glib::spawn_future_local(async move {
                 let updater = UpdaterService::new();
@@ -171,12 +216,9 @@ impl SettingsWindow {
                     }
                     UpdateCheckState::UpdateAvailable { latest, release_url, .. } => {
                         status.set_label(&format!("Update available! v{}", latest));
+                        *url_cell.borrow_mut() = release_url.clone();
                         download.set_visible(true);
-                        
-                        let url = release_url.clone();
-                        download.connect_clicked(move |_| {
-                            let _ = gtk::gio::AppInfo::launch_default_for_uri(&url, None::<&gtk::gio::AppLaunchContext>);
-                        });
+                        snap.set_visible(true);
                     }
                     UpdateCheckState::Failed(err) => {
                         status.set_label(&format!("Failed to check for updates: {}", err));
