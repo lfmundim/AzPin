@@ -430,6 +430,7 @@ jobs:
         uses: snapcore/action-build@v1
         with:
           path: src/ubuntu/AzPin
+          snapcraft-args: pack
 
       - name: Publish Snap
         uses: snapcore/action-publish@v1
@@ -481,6 +482,7 @@ jobs:
         uses: snapcore/action-build@v1
         with:
           path: src/ubuntu/AzPin
+          snapcraft-args: pack
 
       - name: Publish Snap
         uses: snapcore/action-publish@v1
