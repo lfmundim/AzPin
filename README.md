@@ -58,6 +58,14 @@ Download the latest `AzPin-Ubuntu-*-v*.deb` from [Releases](../../releases) and 
 sudo apt install ./AzPin-Ubuntu-x64-v1.0.0.deb
 ```
 
+### GNOME Linux - Snap
+
+If you install via the Snap Store, you **must** manually grant AzPin permission to read your `~/.azure/` configuration folder so it can access your active `az login` session. Run this once after installation:
+```bash
+sudo snap install azpin
+snap connect azpin:dot-azure
+```
+
 ---
 
 ## How Pinning Works

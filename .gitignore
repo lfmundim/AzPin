@@ -76,3 +76,4 @@ src/windows/tasks/
 src/ubuntu/AzPin/target/
 **/*.rs.bk
 *.deb
+snapcraft.login

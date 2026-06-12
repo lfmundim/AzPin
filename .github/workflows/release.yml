@@ -425,6 +425,20 @@ jobs:
           mv "$DEB_FILE" "$NEW_NAME"
           gh release upload "${{ needs.create-release.outputs.tag }}" "$NEW_NAME" --clobber
 
+      - name: Build Snap
+        id: build-snap
+        uses: snapcore/action-build@v1
+        with:
+          path: src/ubuntu/AzPin
+
+      - name: Publish Snap
+        uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        with:
+          snap: ${{ steps.build-snap.outputs.snap }}
+          release: stable
+
   build-ubuntu-arm64:
     needs: [detect, create-release]
     if: needs.detect.outputs.ubuntu == 'true'
@@ -461,3 +475,17 @@ jobs:
           NEW_NAME="AzPin-Ubuntu-arm64-v${{ needs.create-release.outputs.version }}.deb"
           mv "$DEB_FILE" "$NEW_NAME"
           gh release upload "${{ needs.create-release.outputs.tag }}" "$NEW_NAME" --clobber
+
+      - name: Build Snap
+        id: build-snap
+        uses: snapcore/action-build@v1
+        with:
+          path: src/ubuntu/AzPin
+
+      - name: Publish Snap
+        uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        with:
+          snap: ${{ steps.build-snap.outputs.snap }}
+          release: stable

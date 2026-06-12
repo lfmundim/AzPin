@@ -3,7 +3,7 @@ name: Ubuntu CI
 on:
   workflow_dispatch:
   push:
-    branches: [ feature/ubuntu-support ]
+    branches: [ main ]
 
 jobs:
   build-amd64:
@@ -43,6 +43,20 @@ jobs:
           name: azpin-ubuntu-amd64-deb
           path: src/ubuntu/AzPin/target/debian/AzPin-Ubuntu-x64-v*.deb
 
+      - name: Build Snap
+        id: build-snap
+        uses: snapcore/action-build@v1
+        with:
+          path: src/ubuntu/AzPin
+
+      - name: Publish Snap
+        uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        with:
+          snap: ${{ steps.build-snap.outputs.snap }}
+          release: ${{ github.event_name == 'push' && 'candidate' || 'edge' }}
+
 
 
   build-arm64:
@@ -81,6 +95,20 @@ jobs:
         with:
           name: azpin-ubuntu-arm64-deb
           path: src/ubuntu/AzPin/target/debian/AzPin-Ubuntu-arm64-v*.deb
+
+      - name: Build Snap
+        id: build-snap
+        uses: snapcore/action-build@v1
+        with:
+          path: src/ubuntu/AzPin
+
+      - name: Publish Snap
+        uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        with:
+          snap: ${{ steps.build-snap.outputs.snap }}
+          release: ${{ github.event_name == 'push' && 'candidate' || 'edge' }}
 
 
 
