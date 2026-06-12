@@ -18,6 +18,7 @@ All notable changes to AzPin are documented in this file.
 - Winget manifest URL updated to match new MSI filename.
 - Added full automated Ubuntu builds for both `amd64` and `arm64` architectures.
 - Ubuntu artifacts renamed to universal format: `AzPin-Ubuntu-x64-v{version}.deb` and `AzPin-Ubuntu-arm64-v{version}.deb`.
+- Re-enabled snap build and publish steps in Ubuntu CI (were disabled pending Snap Store manual review of the first submission).
 
 ### General
 
