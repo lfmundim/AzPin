@@ -301,7 +301,7 @@ impl MainWindow {
                                     use crate::models::persistence::PinnedResourceGroup;
                                     if btn.is_active() {
                                         let _ = db_pin.save_pinned_group(&PinnedResourceGroup {
-                                            id: g_id.clone(), subscription_id: s_id.clone(), name: g_name.clone(), display_order: 0, resources: vec![]
+                                            id: g_id.clone(), subscription_id: s_id.clone(), subscription_display_name: None, name: g_name.clone(), display_order: 0, resources: vec![]
                                         });
                                     } else {
                                         let _ = db_pin.delete_pinned_group(&g_id);
