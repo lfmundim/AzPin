@@ -46,6 +46,7 @@ All notable changes to AzPin are documented in this file.
 - **UI**: Tray menu state glyphs moved off resource names onto the action items themselves (`▶ Start`, `■ Stop`, `⟳ Restart`, `… Starting/Stopping`); resource names now render plain.
 - **UI**: Pinning a resource group hides the per-resource pin buttons inside it (resources are covered by the group pin); unpinning the group shows them again.
 - **UI**: Pin buttons now use the GNOME `view-pin-symbolic` icon instead of `bookmark-new-symbolic`.
+- **UI**: Tray account row now shows the signed-in user (`✓ user@domain`) instead of `● <subscription name>`, matching the macOS app. `AzSubscription` gains optional `user` field parsed from `az account show`.
 
 ### macOS
 

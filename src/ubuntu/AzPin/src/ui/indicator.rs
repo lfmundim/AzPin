@@ -46,7 +46,14 @@ impl Tray for AzPinTray {
         // 1. Account info — read from cache, never call AzCliService here
         let account_label = if let Ok(cache) = self.account_cache.read() {
             match cache.as_ref() {
-                Some(sub) => format!("● {}", sub.name),
+                Some(sub) => {
+                    let who = sub
+                        .user
+                        .as_ref()
+                        .map(|u| u.name.as_str())
+                        .unwrap_or(sub.name.as_str());
+                    format!("✓ {}", who)
+                }
                 None => "Not signed in".to_string(),
             }
         } else {

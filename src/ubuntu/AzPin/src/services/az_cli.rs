@@ -12,6 +12,11 @@ struct AzTokenResponse {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+pub struct AzUser {
+    pub name: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
 pub struct AzSubscription {
     pub id: String,
     pub name: String,
@@ -20,6 +25,8 @@ pub struct AzSubscription {
     #[serde(rename = "isDefault")]
     pub is_default: bool,
     pub state: String,
+    #[serde(default)]
+    pub user: Option<AzUser>,
 }
 
 pub struct AzCliService;
