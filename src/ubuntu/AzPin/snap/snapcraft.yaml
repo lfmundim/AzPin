@@ -19,6 +19,7 @@ parts:
       - libadwaita-1-dev
       - libayatana-appindicator3-dev
       - pkg-config
+      - libssl-dev
     stage-packages:
       - libgtk-4-1
       - libadwaita-1-0
