@@ -21,6 +21,7 @@ All notable changes to AzPin are documented in this file.
 
 ### General
 
+- Added `AZURE.md`: exhaustive, audit-oriented reference of every Azure interaction the app performs (az CLI invocations, ARM endpoints, api-versions, action mappings, portal links) across all three platforms. Referenced from `README.md`; keeping it current on any Azure-interaction change is now a hard constraint in `CLAUDE.md`.
 - Added update checker: "Check for Updates" queries the GitHub Releases API (`api.github.com/repos/lfmundim/AzPin/releases/latest`), compares the latest tag against the running version, and shows platform-specific upgrade instructions (`brew upgrade azpin` on macOS, `winget upgrade lfmundim.AzPin` on Windows, or `.deb` direct download on Ubuntu) with a direct link to the release page.
 
 ### Ubuntu

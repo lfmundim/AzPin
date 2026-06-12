@@ -185,6 +185,7 @@ cargo deb
 |---|---|
 | `CLAUDE.md` | Architecture rules and hard constraints |
 | `AZPIN_SPEC.md` | Full product specification |
+| `AZURE.md` | Every Azure interaction the app performs (audit reference) |
 | `CHANGELOG.md` | Release history |
 | `ROADMAP.md` | Planned future features |
 | `RELEASE_PROCESS.md` | How to cut a release |
