@@ -77,3 +77,4 @@ src/ubuntu/AzPin/target/
 **/*.rs.bk
 *.deb
 snapcraft.login
+feature-plans/
