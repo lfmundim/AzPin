@@ -86,6 +86,7 @@ These are non-negotiable for both platforms unless noted.
 - **No custom fonts.** System font only.
 - **No emoji in UI.** SF Symbols (macOS) or Segoe Fluent Icons / WinUI built-ins (Windows) only.
 - **Every testable unit of code must ship with tests.** All happy paths and all mapped error/sad paths. No exceptions for service layer code. See `.claude/skills/testing-approach.md`.
+- **Every Azure interaction must be documented in `AZURE.md`.** Whenever an interaction with Azure is added or changed — a new `az` invocation, a new ARM endpoint, a changed `api-version`, a new action mapping — update `AZURE.md` in the same change. It is the audit trail of everything the app does against Azure.
 
 ### macOS-only
 

@@ -1,0 +1,41 @@
+name: azpin
+base: core24
+version: 'git'
+icon: assets/linux/icons/com.kimdim.azpin.svg
+summary: Native menubar app for fast, pinnable access to Azure resources.
+description: |
+  AzPin reads your existing az CLI session and gives you fast, pinnable access 
+  to Azure resources from your desktop.
+
+grade: stable
+confinement: strict
+
+parts:
+  azpin:
+    plugin: rust
+    source: .
+    build-packages:
+      - libgtk-4-dev
+      - libadwaita-1-dev
+      - libayatana-appindicator3-dev
+      - pkg-config
+      - libssl-dev
+    stage-packages:
+      - libgtk-4-1
+      - libadwaita-1-0
+      - libayatana-appindicator3-1
+
+apps:
+  azpin:
+    command: bin/azpin
+    extensions: [gnome]
+    plugs:
+      - network
+      - home
+      - dot-azure
+
+plugs:
+  dot-azure:
+    interface: personal-files
+    read:
+      - $HOME/.azure

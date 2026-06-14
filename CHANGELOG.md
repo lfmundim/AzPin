@@ -16,10 +16,41 @@ All notable changes to AzPin are documented in this file.
 - Windows MSI renamed to `AzPin-Windows-{version}-Installer.msi` (release) / `AzPin-Windows-{version}-beta-Installer.msi` (beta).
 - Windows beta tag unified to `beta-v{version}` (was `beta-win-v{version}`).
 - Winget manifest URL updated to match new MSI filename.
+- Added full automated Ubuntu builds for both `amd64` and `arm64` architectures.
+- Ubuntu artifacts renamed to universal format: `AzPin-Ubuntu-x64-v{version}.deb` and `AzPin-Ubuntu-arm64-v{version}.deb`.
+- Re-enabled snap build and publish steps in Ubuntu CI (were disabled pending Snap Store manual review of the first submission).
 
 ### General
 
-- Added update checker: "Check for Updates" queries the GitHub Releases API (`api.github.com/repos/lfmundim/AzPin/releases/latest`), compares the latest tag against the running version, and shows platform-specific upgrade instructions (`brew upgrade azpin` on macOS, `winget upgrade lfmundim.AzPin` on Windows) with a direct link to the release page.
+- Added `AZURE.md`: exhaustive, audit-oriented reference of every Azure interaction the app performs (az CLI invocations, ARM endpoints, api-versions, action mappings, portal links) across all three platforms. Referenced from `README.md`; keeping it current on any Azure-interaction change is now a hard constraint in `CLAUDE.md`.
+- Added update checker: "Check for Updates" queries the GitHub Releases API (`api.github.com/repos/lfmundim/AzPin/releases/latest`), compares the latest tag against the running version, and shows platform-specific upgrade instructions (`brew upgrade azpin` on macOS, `winget upgrade lfmundim.AzPin` on Windows, or `.deb` direct download on Ubuntu) with a direct link to the release page.
+
+### Ubuntu
+
+- Introduced native GTK4 Linux port built with Rust and `libadwaita`.
+- Added dynamic background polling to maintain live azure state in the system tray.
+- Settings: Implemented an "Updates" tab using `reqwest` to query the GitHub Releases API and allow one-click browser-based `.deb` updates.
+- **Security**: `PermissionsService` now performs real ARM `GET .../providers/Microsoft.Authorization/permissions` checks with wildcard pattern matching (`*`, trailing `/*`, exact). Action buttons (Start/Stop/Restart) only appear for users with confirmed write permissions. Fail-safe: no buttons shown until permissions are verified.
+- **Fix**: Token expiry parsing now handles the `az` CLI 2.x datetime format (`"YYYY-MM-DD HH:MM:SS.ffffff"`); tokens are cached for their actual TTL rather than a hardcoded 1-hour fallback.
+- **Fix**: All `az` CLI invocations converted to `tokio::process::Command` (async), eliminating blocking I/O on Tokio worker threads.
+- **Fix**: `menu()` no longer performs any I/O; account info, permissions, and resource states are all fetched in the async polling loop and read from caches in the synchronous render path.
+- **Fix**: Removed shadowed `updated` variable in polling loop — tray now correctly refreshes when resource group contents load, not only when runnable resource state changes.
+- **Fix**: Subscriptions never loaded in the main window — `Handle::current()` panicked inside spawned OS threads (no Tokio context), silently killing the loader thread. The Tokio runtime handle is now captured once in `MainWindow::new` and cloned into each thread closure.
+- **Fix**: Quit action now uses GTK `app.quit()` via channel instead of `std::process::exit(0)`, ensuring SQLite WAL flush and GTK lifecycle hooks execute cleanly.
+- **Fix**: Replaced emoji indicators (`✅`, `⚠️`, `🟢`, `🔴`, `⚪`) with Unicode geometric symbols (`▶`, `■`, `…`, `○`) and plain text per spec.
+- **Refactor**: `is_runnable` extracted to `utils/resource_type.rs`; now covers 5 resource types including `microsoft.web/sites/slots`. All inline type-string checks removed.
+- **Refactor**: `ResourceState` typed enum replaces raw `String` state storage; `state_cache` is now type-safe end-to-end.
+- **Refactor**: Portal URL construction centralized in `utils/portal_url.rs`; no inline `portal.azure.com` strings remain in the UI layer.
+- **Refactor**: `icon_mapper.rs` uses exact resource type matching instead of `contains()` substring matching.
+- **Model**: `ArmResource` gains optional `tags: Option<HashMap<String, String>>` field.
+- **Model**: `PinnedResourceGroup` gains `subscription_display_name: Option<String>`; DB column added automatically via migration on startup.
+- **Tests**: Unit tests added for `resource_type`, `portal_url`, `az_cli` expiry parsing, `permissions` wildcard matching, and `token_cache` validity logic.
+- **UI**: Tray menu state glyphs moved off resource names onto the action items themselves (`▶ Start`, `■ Stop`, `⟳ Restart`, `… Starting/Stopping`); resource names now render plain.
+- **UI**: Pinning a resource group hides the per-resource pin buttons inside it (resources are covered by the group pin); unpinning the group shows them again.
+- **UI**: Pin buttons now use the GNOME `view-pin-symbolic` icon instead of `bookmark-new-symbolic`.
+- **UI**: Tray account row now shows the signed-in user (`✓ user@domain`) instead of `● <subscription name>`, matching the macOS app. `AzSubscription` gains optional `user` field parsed from `az account show`.
+- **UI**: Update checker now also suggests `sudo snap refresh azpin` (with copy-to-clipboard button) alongside the release-page download button when an update is available.
+- **Fix**: "Download Update" button no longer stacks a click handler per update check — repeated checks previously opened multiple browser tabs on click.
 
 ### macOS
 

@@ -3,6 +3,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/lfmundim/AzPin?cacheSeconds=3600)](https://github.com/lfmundim/AzPin/releases/latest)
 ![Brew Release](https://img.shields.io/badge/dynamic/regex?url=https://raw.githubusercontent.com/lfmundim/homebrew-tap/main/Casks/azpin.rb&search=version%20%22(.%2B)%22&replace=v%241&label=brew)
 [![Winget Release](https://img.shields.io/winget/v/KimDim.AzPin)](https://github.com/lfmundim/AzPin/releases/latest)
+[![Snap Release](https://snapcraft.io/azpin/badge.svg)](https://snapcraft.io/azpin)
 
 <p align="center">
   <img src="assets/iconset/original.svg" alt="Logo" width="30%" />
@@ -10,15 +11,15 @@
 
 AzPin is a native macOS menubar app that reads your existing `az` CLI session and gives you fast, pinnable access to Azure resources. Open the menubar, see your pinned resource groups and their live resources, click to open in the portal, or start/stop/restart runnable resources without leaving the desktop.
 
-There is also a WinUI 3 Windows port under `src/windows/`, distributed as a self-contained zip from GitHub Releases.
+There is also a WinUI 3 Windows port under `src/windows/`, distributed as a self-contained zip from GitHub Releases, and a native GTK4 GNOME Linux port under `src/ubuntu/` distributed as a `.deb` package.
 
-No Azure SDK. No App Store. No sandbox. Requires macOS 26 Tahoe.
+No Azure SDK. No App Store. No sandbox. Requires macOS 26 Tahoe, Windows 11, or GNOME Linux.
 
 ---
 
 ## Prerequisites
 
-- **macOS 26 Tahoe** or later | **Windows 11** or later
+- **macOS 26 Tahoe** or later | **Windows 11** or later | **GNOME Linux** (Developed and tested on Ubuntu 26.04 using GNOME 46; in theory, it is compatible with any Linux distribution using the GNOME UI.)
 - **[Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)** installed
 - Signed in: `az login`
 
@@ -37,7 +38,7 @@ brew install --cask azpin
 
 Download the latest `.dmg` from [Releases](../../releases), drag `AzPin.app` to `/Applications`.
 
-### Windows - Winget (recommended)
+### Windows - Winget (recommended, not yet available)
 
 ```powershell
 winget install KimDim.AzPin
@@ -50,6 +51,21 @@ Download the latest `AzPin-Windows-*-Installer.msi` from [Releases](../../releas
 > **Note:** The installer is self-signed. Your browser and Windows SmartScreen may flag it as unrecognized. Click **More info → Run anyway** (SmartScreen) or keep the file if your browser warns. The app is safe to install. If there is enough demand, a recognized certificate may be obtained in the future.
 
 No separate Windows App SDK runtime is required — the bundle is self-contained.
+
+### GNOME Linux - DEB (manual)
+
+Download the latest `AzPin-Ubuntu-*-v*.deb` from [Releases](../../releases) and install it:
+```bash
+sudo apt install ./AzPin-Ubuntu-x64-v1.0.0.deb
+```
+
+### GNOME Linux - Snap
+
+If you install via the Snap Store, you **must** manually grant AzPin permission to read your `~/.azure/` configuration folder so it can access your active `az login` session. Run this once after installation:
+```bash
+sudo snap install azpin
+snap connect azpin:dot-azure
+```
 
 ---
 
@@ -135,6 +151,23 @@ dotnet publish src/windows/AzPin.Windows/AzPin.Windows.csproj `
   -o build/publish/win-x64
 ```
 
+### GNOME Linux
+
+Requires Rust and GTK4 development libraries.
+
+```bash
+# Install dependencies
+sudo apt-get install libgtk-4-dev libadwaita-1-dev libayatana-appindicator3-dev
+
+# Build and run
+cd src/ubuntu/AzPin
+cargo run
+
+# Build DEB package
+cargo install cargo-deb
+cargo deb
+```
+
 ---
 
 ## Contributing
@@ -152,6 +185,7 @@ dotnet publish src/windows/AzPin.Windows/AzPin.Windows.csproj `
 |---|---|
 | `CLAUDE.md` | Architecture rules and hard constraints |
 | `AZPIN_SPEC.md` | Full product specification |
+| `AZURE.md` | Every Azure interaction the app performs (audit reference) |
 | `CHANGELOG.md` | Release history |
 | `ROADMAP.md` | Planned future features |
 | `RELEASE_PROCESS.md` | How to cut a release |

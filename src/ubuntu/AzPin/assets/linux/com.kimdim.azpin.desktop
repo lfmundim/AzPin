@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=AzPin
+Comment=Pin your Azure Resources
+Exec=/usr/bin/azpin
+Icon=com.kimdim.azpin
+Terminal=false
+Type=Application
+Categories=Utility;Development;
