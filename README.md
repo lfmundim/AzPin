@@ -3,7 +3,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/lfmundim/AzPin?cacheSeconds=3600)](https://github.com/lfmundim/AzPin/releases/latest)
 ![Brew Release](https://img.shields.io/badge/dynamic/regex?url=https://raw.githubusercontent.com/lfmundim/homebrew-tap/main/Casks/azpin.rb&search=version%20%22(.%2B)%22&replace=v%241&label=brew)
 [![Winget Release](https://img.shields.io/winget/v/KimDim.AzPin)](https://github.com/lfmundim/AzPin/releases/latest)
-[![Snap Release](https://snapcraft.io/azpin/badge.svg)](https://snapcraft.io/azpin)
+<!-- [![Snap Release](https://snapcraft.io/azpin/badge.svg)](https://snapcraft.io/azpin) -->
 
 <p align="center">
   <img src="assets/iconset/original.svg" alt="Logo" width="30%" />
@@ -38,7 +38,7 @@ brew install --cask azpin
 
 Download the latest `.dmg` from [Releases](../../releases), drag `AzPin.app` to `/Applications`.
 
-### Windows - Winget (recommended, not yet available)
+### Windows - Winget
 
 ```powershell
 winget install KimDim.AzPin
